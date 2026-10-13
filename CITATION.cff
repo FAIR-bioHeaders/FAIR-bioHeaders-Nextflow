@@ -6,10 +6,11 @@ type: software
 authors:
 - given-names: David
   family-names: Molik
+  email: molik@fhref.org
   orcid: https://orcid.org/0000-0003-3192-6538
 - given-names: Adam
   family-names: Wright
-  email: AWright@oicr.on.ca
+  email: wright@fhref.org
   affiliation: OICR
   orcid: https://orcid.org/0000-0002-5719-4024
 abstract: Reusable Nextflow DSL2 modules for FHR JSON creation, metadata conversion
