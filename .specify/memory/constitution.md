@@ -11,7 +11,7 @@
 Validation, conversion, and exact-byte checksums come from the pinned
 FHR-File-Converter. This repository never copies schema rules or adds a second
 validator. Required fields and schemaVersion semantics belong to
-FHR-Specification.
+FAIR-bioHeaders-Specification.
 
 ### II. Native, composable DSL2 modules
 

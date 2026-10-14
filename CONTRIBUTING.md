@@ -1,6 +1,6 @@
 # Contributing
 
-This is the development prototype for [FHR-Specification issue #15](https://github.com/FAIR-bioHeaders/FHR-Specification/issues/15). Development is hosted in [FHR-Nextflow](https://github.com/FAIR-bioHeaders/FHR-Nextflow); there is no published release yet. Develop on a focused branch and submit a pull request for review, or commit directly to main when explicitly requested. Publishing releases or changing repository visibility requires an explicit request.
+This is the development prototype for [FAIR-bioHeaders-Specification issue #15](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/issues/15). Development is hosted in [FHR-Nextflow](https://github.com/FAIR-bioHeaders/FHR-Nextflow); there is no published release yet. Develop on a focused branch and submit a pull request for review, or commit directly to main when explicitly requested. Publishing releases or changing repository visibility requires an explicit request.
 
 Start with a use case or reproducible failure. Keep changes focused and explain the resulting behavior, compatibility implications and relevant verification. Use synthetic fixtures (GFF3 fixtures are byte-exact copies from the gff3-validator conformance suite; see [their source note](tests/fixtures/gff3/README.md)); exclude private genome data, credentials and unrelated formatting. Follow the [code of conduct](CODE_OF_CONDUCT.md); report sensitive findings using [SECURITY.md](SECURITY.md).
 
@@ -34,7 +34,7 @@ Keep JSON serialization and orchestration native to Nextflow. Reuse the converte
 
 Update channel contracts in README and the [pipeline guide](docs/PIPELINES.md) when inputs or outputs change. Keep examples and tests consistent. Document checksum and SeqCol semantics: the former can be computed during attachment, while the latter is supplied by the caller. Do not infer authors, accessions or software provenance.
 
-Schema changes belong in FHR-Specification and must coordinate converter schema copies, serializers, examples and mapping documentation. David Molik and Adam Wright are the maintainers and jointly hold schema authority ([GOVERNANCE](https://github.com/FAIR-bioHeaders/FHR-Specification/blob/main/GOVERNANCE.md)); the steering-group option described there is not active.
+Schema changes belong in FAIR-bioHeaders-Specification and must coordinate converter schema copies, serializers, examples and mapping documentation. David Molik and Adam Wright are the maintainers and jointly hold schema authority ([GOVERNANCE](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/blob/main/GOVERNANCE.md)); the steering-group option described there is not active.
 
 ## Documentation, citations and releases
 

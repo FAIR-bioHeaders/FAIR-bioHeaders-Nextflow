@@ -1,6 +1,6 @@
 # Agent instructions
 
-This DSL2 module suite implements FHR-Specification issue #15 in https://github.com/FAIR-bioHeaders/FHR-Nextflow. Commit or push only within the user-authorized scope; publication of a release or a visibility change requires an explicit request.
+This DSL2 module suite implements FAIR-bioHeaders-Specification issue #15 in https://github.com/FAIR-bioHeaders/FHR-Nextflow. Commit or push only within the user-authorized scope; publication of a release or a visibility change requires an explicit request.
 
 Keep orchestration and JSON creation native to Nextflow. `modules/utils/main.nf` performs serialization, filename checks and shell quoting; it is not a second schema validator. Use the pinned converter for field validation, conversion and exact-byte checksums, and the pinned gff3-validate (0.1.0) for GFF3 rules; never reimplement either. Required FHR fields and schemaVersion semantics belong to the companion specification.
 
