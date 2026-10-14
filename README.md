@@ -2,7 +2,7 @@
 
 # FHR-Nextflow
 
-Reusable Nextflow DSL2 modules for creating, converting, validating and attaching [FAIR bioHeaders](https://doi.org/10.1093/bib/bbae122), plus GFF3 validation. This development prototype implements [FHR-Specification issue #15](https://github.com/FAIR-bioHeaders/FHR-Specification/issues/15). The dedicated repository is [FHR-Nextflow](https://github.com/FAIR-bioHeaders/FHR-Nextflow); it has no published release.
+Reusable Nextflow DSL2 modules for creating, converting, validating and attaching [FAIR bioHeaders](https://doi.org/10.1093/bib/bbae122), plus GFF3 validation. This development prototype implements [FAIR-bioHeaders-Specification issue #15](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/issues/15). The dedicated repository is [FHR-Nextflow](https://github.com/FAIR-bioHeaders/FHR-Nextflow); it has no published release.
 
 Compatibility: Nextflow **26.04.6**, Java **21**, [FAIR-bioHeaders-Tools](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Tools) **0.5.0**, [gff3-validator](https://github.com/FAIR-bioHeaders/gff3-validator) **0.1.0**, FHR schemaVersion **1**. The suite version is **0.1.0-dev**. JSON creation and channel composition are native DSL2/Groovy; the converter supplies schema validation, format conversion and file checksums.
 
@@ -66,7 +66,7 @@ workflow {
 }
 ```
 
-The input map accepts **all FHR schema fields**, including nested maps/lists, rather than a restricted set of CLI flags. Required fields are `schema`, `schemaVersion`, `genome`, `taxon`, `version`, `metadataAuthor`, `assemblyAuthor`, `dateCreated`, `masking`, and `checksum`. Optional fields include `genomeSynonym`, `voucherSpecimen`, `accessionID`, `instrument`, `scholarlyArticle`, `documentation`, `identifier`, `relatedLink`, `funding`, `reuseConditions`, `vitalStats`, `assemblySoftware`, `assemblyProtocol`, and `seqcol_id`. See [examples/metadata.json](examples/metadata.json) for a full map and the [specification](https://github.com/FAIR-bioHeaders/FHR-Specification/tree/v0.3.0) for field constraints.
+The input map accepts **all FHR schema fields**, including nested maps/lists, rather than a restricted set of CLI flags. Required fields are `schema`, `schemaVersion`, `genome`, `taxon`, `version`, `metadataAuthor`, `assemblyAuthor`, `dateCreated`, `masking`, and `checksum`. Optional fields include `genomeSynonym`, `voucherSpecimen`, `accessionID`, `instrument`, `scholarlyArticle`, `documentation`, `identifier`, `relatedLink`, `funding`, `reuseConditions`, `vitalStats`, `assemblySoftware`, `assemblyProtocol`, and `seqcol_id`. See [examples/metadata.json](examples/metadata.json) for a full map and the [specification](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/tree/v0.3.0) for field constraints.
 
 No field values are inferred or silently supplied. Provide a valid checksum for standalone metadata. For sequence construction, provide the metadata checksum explicitly, then use `FHR_ATTACH` to compute the attached file's final checksum and extract JSON matching that file. No sequence statistics or SeqCol digest are inferred. The converter rejects fields outside the schema.
 
@@ -117,7 +117,7 @@ Wright, Adam, Mark D. Wilkinson, Christopher Mungall, Scott Cain, Stephen Richar
 - [Agent instructions](AGENTS.md): repository layout and implementation strategy inferred from the FHR paper.
 - [Citation metadata](CITATION.cff), [license notice](LICENSE) and [changelog](CHANGELOG.md).
 
-This repository is licensed under the [Mozilla Public License 2.0](LICENSE) (`MPL-2.0`). External dependencies retain their own licenses. The suite has no published DOI; the paper citation describes the FHR standard. Schema governance rests with the maintainers, David and Adam ([GOVERNANCE](https://github.com/FAIR-bioHeaders/FHR-Specification/blob/main/GOVERNANCE.md)).
+This repository is licensed under the [Mozilla Public License 2.0](LICENSE) (`MPL-2.0`). External dependencies retain their own licenses. The suite has no published DOI; the paper citation describes the FHR standard. Schema governance rests with the maintainers, David and Adam ([GOVERNANCE](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/blob/main/GOVERNANCE.md)).
 
 ## Licensing
 
