@@ -42,17 +42,19 @@ for implementing an existing contract. Never rewrite immutable releases, fixed
 schema aliases or existing file-bound headers as incidental cleanup. Header edits
 require checksum recomputation and may affect downstream parent links.
 
-Proposals are not adopted contracts: FAIR-bioHeaders-Specification#139 / draft
-PR #140 (structured vouchers) and profiles still under review in that repository
-(#56) remain proposals until adopted. Implemented subsets do not establish full
-profile or header-family support. The mapping page in fair-bioheaders.github.io#29
-depends on approved profiles.
+Check the adoption decision and released support before implementing a proposal;
+an issue or PR's existence does not establish adoption. Structured vouchers
+(FAIR-bioHeaders-Specification#139/#140) and mapping profiles (#56 in that same
+repository) have their own review history. Implemented subsets do not establish
+full profile or header-family support. The mapping page tracked in
+fair-bioheaders.github.io#29 depends on approved profiles. Recheck these records
+rather than relying on a copied description of their temporary status.
 
-This DSL2 module suite implements FAIR-bioHeaders-Specification issue #15 in https://github.com/FAIR-bioHeaders/FHR-Nextflow. Commit or push only within the user-authorized scope; publication of a release or a visibility change requires an explicit request.
+This DSL2 module suite implements FAIR-bioHeaders-Specification issue #15 in <https://github.com/FAIR-bioHeaders/FHR-Nextflow>. Commit or push only within the user-authorized scope; publication of a release or a visibility change requires an explicit request.
 
 Keep orchestration and JSON creation native to Nextflow. `modules/utils/main.nf` performs serialization, filename checks and shell quoting; it is not a second schema validator. Use the pinned converter for field validation, conversion and exact-byte checksums, and the pinned gff3-validate (0.1.0) for GFF3 rules; never reimplement either. Required FHR fields and schemaVersion semantics belong to the companion specification.
 
-The FHR paper (https://doi.org/10.1093/bib/bbae122) motivates provenance preservation, minimal required metadata and interoperable serializations. Interpreting those goals here: pass sample IDs through channels, never invent authors/software/accessions/SeqCol digests, preserve sequence bytes, and validate before exposing outputs downstream.
+The FHR paper (<https://doi.org/10.1093/bib/bbae122>) motivates provenance preservation, minimal required metadata and interoperable serializations. Interpreting those goals here: pass sample IDs through channels, never invent authors/software/accessions/SeqCol digests, preserve sequence bytes, and validate before exposing outputs downstream.
 
 Run `python tests/run.py` with Nextflow 26.04.6, Java 21 and the hash-locked environment in environment/requirements.txt (generated from requirements.in). Tests exercise module composition, both sequence formats, all conversions, malformed/missing metadata, metadata quoting and converter tests. Use `--converter-source ../FAIR-bioHeaders-Tools` to run its tests. Docker environment checks use `docker build -t fhr-nextflow:0.1.0 environment` and `-profile docker`.
 
@@ -74,3 +76,24 @@ This repository already uses MPL-2.0. Preserve its existing LICENSE and all
 third-party terms. The USDA public-domain notices in companion repositories
 do not apply here. Keep README badges and package/citation metadata consistent;
 do not rewrite historical releases or silently relicense upstream material.
+
+## Pin changes and the two Nextflow integration surfaces
+
+This repository owns the runnable demo, DSL2 composition and external-project
+integration tests. FAIR-bioHeaders-Tools separately owns nf-core-style modules
+under its `nextflow/` tree; a change here does not update or validate those modules.
+Keep cross-repository handoffs explicit and avoid creating another schema/parser.
+
+For a compatibility upgrade, inspect `environment/requirements.in`, its generated
+hash-locked `requirements.txt`, `environment/Dockerfile`, CI's converter commit and
+Nextflow download/hash pins, README compatibility claims, examples and tests.
+Change only the pins needed for the intended support; regenerate locks by their
+documented command and retain reproducible artifact checks. The suite's own
+version, toolkit version, validator version and schema contract are separate.
+
+Run `python tests/run.py --converter-source /path/to/pinned-toolkit` for the
+supported baseline and exercise the Docker sequence/GFF3 examples in CI. The
+Python runner option is `--converter-source`; the Nextflow workflow parameter is
+`--converter_source`. Keep these interfaces distinct. Record candidate-version
+checks separately from the pinned baseline so a passing old environment is not
+reported as support for a new header family or release.
