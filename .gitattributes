@@ -3,3 +3,6 @@ examples/*.fasta -text whitespace=cr-at-eol
 examples/*.gfa -text whitespace=cr-at-eol
 # GFF3 conformance fixtures are byte-exact copies; never convert line endings.
 tests/fixtures/gff3/* -text
+# FHP protein fixtures carry FHR-family checksums over exact bytes.
+tests/fixtures/fhp/** -text
+examples/*.faa -text

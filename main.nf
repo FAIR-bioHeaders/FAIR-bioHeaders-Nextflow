@@ -8,6 +8,7 @@ include { FHR_CONVERT } from './modules/convert/main'
 include { FHR_ATTACH } from './subworkflows/attach/main'
 include { FHR_CONVERTER_TESTS } from './modules/converter_tests/main'
 include { GFF3_VALIDATE } from './modules/gff3_validate/main'
+include { FHR_VERIFY_LINKS } from './modules/verify_links/main'
 include { isSampleId } from './modules/utils/main'
 
 // One record per metadata file. --id names the output of a single file;
@@ -32,6 +33,22 @@ def metadataIdProblem(List sources) {
 // One record per --gff3 file; its ID is the file name without .gff3/.gff and .gz.
 def gff3Id(Path source) {
     return source.name.replaceFirst(/\.(gff3|gff)(\.gz)?$/, '')
+}
+
+// One record per --verify_links file; its ID drops the sequence extension and
+// any .gz/.bgz compression suffix.
+def verifyId(Path source) {
+    return source.name.replaceFirst(/\.(faa|fasta|fa|fna|gfa|gff3|gff)(\.(gz|bgz))?$/, '')
+}
+
+def verifyIdProblem(List sources) {
+    def invalid = sources.find { source -> !isSampleId(verifyId(source)) }
+    if (invalid)
+        return "Invalid meta.id '${verifyId(invalid)}' for ${invalid}: meta.id must contain only letters, digits, dot, underscore or hyphen, starting with a letter or digit; rename the sequence file"
+    def duplicates = sources.groupBy { source -> verifyId(source) }.findAll { id, group -> group.size() > 1 }
+    if (duplicates)
+        return 'Duplicate meta.id from verify-links files: ' + duplicates.collect { id, group -> "${id} (${group.join(', ')})" }.join('; ')
+    return null
 }
 
 def gff3IdProblem(List sources) {
@@ -84,6 +101,21 @@ workflow {
         }
         : channel.empty())
 
+    // With --verify_links, each file's recorded derivedFrom parents are checked
+    // against --verify_parents (a glob; empty when omitted). Reports are
+    // published per ID. A match proves file identity, not translation correctness.
+    def parentFiles = params.verify_parents
+        ? channel.fromPath(params.verify_parents, checkIfExists: true).toSortedList()
+        : channel.value([])
+    FHR_VERIFY_LINKS(params.verify_links
+        ? channel.fromPath(params.verify_links, checkIfExists: true).toSortedList().flatMap { sources ->
+            def problem = verifyIdProblem(sources)
+            if (problem)
+                throw new IllegalArgumentException(problem)
+            sources.collect { source -> tuple([id: verifyId(source)], source) }
+        }.combine(parentFiles).map { meta, source, parents -> tuple(meta, source, parents) }
+        : channel.empty())
+
     // With --converter_source, results are published only after converter tests
     // pass. Test reports are published either way and failing tests fail the run.
     FHR_CONVERTER_TESTS(params.converter_source
@@ -96,11 +128,15 @@ workflow {
     gff3_reports = GFF3_VALIDATE.out.reports
         .combine(gate)
         .flatMap { meta, json, html, _passed -> [tuple(meta, json), tuple(meta, html)] }
+    verify_reports = FHR_VERIFY_LINKS.out.report
+        .combine(gate)
+        .map { meta, report, _passed -> tuple(meta, report) }
 
     publish:
     metadata = params.sequence ? channel.empty() : results
     sequence = params.sequence ? results : channel.empty()
     gff3 = gff3_reports
+    verify_links = verify_reports
     converter_tests = FHR_CONVERTER_TESTS.out.reports
 }
 
@@ -113,6 +149,9 @@ output {
     }
     gff3 {
         path { meta, path -> path >> "${meta.id}/gff3/${path.name}" }
+    }
+    verify_links {
+        path { meta, path -> path >> "${meta.id}/verify-links/${path.name}" }
     }
     converter_tests {
         path 'converter-tests'

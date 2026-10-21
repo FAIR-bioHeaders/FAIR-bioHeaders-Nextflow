@@ -42,7 +42,7 @@ workflow {
 }
 ```
 
-Provide a converter source directory containing `pyproject.toml`, `tests/` and `pytest.ini` that declares version 0.5.0, preferably the v0.5.0 checkout; other versions are rejected, and the installed converter version is checked separately. The workflow copies the checkout into its task directory (the input is never modified and no bytecode is written), runs its tests against the installed converter (tests that invoke the checkout's own scripts use the copy), and always emits JUnit XML plus a log so that they can be published. A separate check task then fails the run if pytest failed. An independent test branch does not gate other workflow outputs automatically: combine release or publication channels with `FHR_CONVERTER_TESTS.out.passed` if those steps must wait for passing tests, as the example `main.nf` does:
+Provide a toolkit source directory containing `pyproject.toml`, `tests/` and `pytest.ini` that declares version 0.8.0, preferably the v0.8.0 checkout; other versions are rejected, and the installed toolkit version is checked separately. The workflow copies the checkout into its task directory (the input is never modified and no bytecode is written), runs its tests against the installed converter (tests that invoke the checkout's own scripts use the copy), and always emits JUnit XML plus a log so that they can be published. A separate check task then fails the run if pytest failed. An independent test branch does not gate other workflow outputs automatically: combine release or publication channels with `FHR_CONVERTER_TESTS.out.passed` if those steps must wait for passing tests, as the example `main.nf` does:
 
 ```nextflow
 gate = FHR_CONVERTER_TESTS.out.passed.first()
@@ -90,9 +90,44 @@ process {
 
 The validator checks only the rules its catalogue marks as implemented; the JSON report lists the layers it skipped. Each file is validated twice (JSON, then HTML), so allow for twice the validator runtime on large files.
 
+## Compose protein FASTA and verify parent links
+
+Protein FASTA uses the same composition with `kind` `faa`. The FHP metadata map must cite an FHP `schema` URL and carry the required FHP fields; the toolkit's bundled FHP schema validates it, so no FHP rule is repeated here.
+
+```nextflow
+include { FHR_CREATE_JSON } from '/path/to/FHR-Nextflow/modules/create_json/main'
+include { FHR_ATTACH } from '/path/to/FHR-Nextflow/subworkflows/attach/main'
+include { FHR_VERIFY_LINKS } from '/path/to/FHR-Nextflow/modules/verify_links/main'
+
+workflow {
+    FHR_CREATE_JSON(records)  // records: tuple([id: 'proteome1'], fhp_fields)
+    FHR_ATTACH(FHR_CREATE_JSON.out.json.map { meta, json ->
+        tuple(meta, json, file(params.protein, checkIfExists: true), 'faa')
+    })
+    FHR_VERIFY_LINKS(FHR_ATTACH.out.sequence.map { meta, sequence ->
+        tuple(meta, sequence, params.parents ? params.parents.collect { file(it) } : [])
+    })
+    // FHR_VERIFY_LINKS.out.report emits tuple(meta, report) whenever verification completes.
+    // FHR_VERIFY_LINKS.out.verified emits tuple(meta, sequence) only on a match.
+}
+```
+
+| `FHR_VERIFY_LINKS` input | Meaning |
+| --- | --- |
+| `meta` | Map with a safe `id`; the report is named `ID.verify-links.txt` |
+| `sequence_path` | A FASTA/FAA/GFA/GFF3 file whose header records `derivedFrom` (plain, gzip or BGZ) |
+| parents | `[]` for none, or a list of candidate parent files |
+
+| `task.ext` option | Default | Effect |
+| --- | --- | --- |
+| `require_all` | `false` | `true` also fails when a recorded parent could not be checked |
+| `fail_on_mismatch` | `true` | `false` emits the report for a mismatch and continues, omitting the input from `verified` |
+
+A match confirms **file identity only**, never biological translation or annotation correctness. Exit status 1 (unreadable or invalid input, or an invalid parent) always fails; exit status 3 is a mismatch (or, with `require_all`, an unchecked parent). The FHP fixtures under `tests/fixtures/fhp/chain/` demonstrate an FHR genome FASTA, an FHGFF3 annotation GFF3 recording the genome, and an FHP protein FASTA recording the annotation; each link is verified by checksum. FHP JSON-LD and HTML microdata are not supported until FAIR-bioHeaders-Tools#58 is released.
+
 ## Execution and publication
 
-Converter and GFF3 validation processes have the label `fhr`. Configuration from this repository does not accompany imports into another project. With the supplied image built locally, a consumer can configure:
+Converter, GFF3-validation and parent-link verification processes have the label `fhr`. Configuration from this repository does not accompany imports into another project. With the supplied image built locally, a consumer can configure:
 
 ```groovy
 nextflow.enable.dsl = 2
@@ -118,7 +153,8 @@ Modules leave files in their task work directories. The example workflow publish
 - **Checksum mismatch:** verify that no program changed the header, whitespace, line endings or sequence bytes after attachment. Reattach when changing metadata.
 - **Unsafe ID or unsupported format:** use IDs and format values from the README contract. Paths are quoted; command formats are explicitly restricted.
 - **GFF3 validation failed:** read the findings in the task error or the JSON/HTML report in the task work directory; with `fail_on_errors = false` the reports are emitted instead. An "incomplete" failure means the GFF3 or genome could not be read.
-- **Failed converter tests:** inspect the published `converter-tests/converter-tests.log` and JUnit XML. A checkout that does not declare version 0.5.0 is rejected before tests run.
+- **Failed converter tests:** inspect the published `converter-tests/converter-tests.log` and JUnit XML. A checkout that does not declare version 0.8.0 is rejected before tests run.
+- **Parent-link verification failed:** read the report (and the task error) for the `derivedFrom` entry that did not match; supply the parent file the header records, recombine the parent if it changed, or set `ext.fail_on_mismatch = false` to survey a batch. An "incomplete" failure means the input or a parent could not be read or validated. A match proves file identity, not translation correctness.
 - **JSON serialization errors:** the message names the field location, for example `$.dateCreated`; convert dates to ISO 8601 strings and remove NaN, Infinity and `null` list items.
 
 See [SECURITY.md](../SECURITY.md) for sensitive findings and [CONTRIBUTING.md](../CONTRIBUTING.md) for changes to modules or their contracts.

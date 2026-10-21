@@ -1,0 +1,22 @@
+##gff-version 3
+#~schema: https://w3id.org/fair-bioheaders/fhgff3/v0.4.0
+#~schemaVersion: '1.0'
+#~annotation: Synthetic example annotation
+#~taxon:
+#~  name: Homo sapiens
+#~  uri: https://identifiers.org/taxonomy:9606
+#~version: 0.0.1
+#~metadataAuthor:
+#~- name: Adam Wright
+#~  uri: https://orcid.org/0000-0002-5719-4024
+#~dateCreated: '2026-10-21'
+#~annotationProtocol: https://example.org/synthetic-annotation-protocol
+#~annotationSoftware:
+#~- name: Synthetic annotator
+#~  version: '1.0'
+#~derivedFrom:
+#~- headerType: FHR
+#~  checksum: IHnspOEQ7lB6QJ5S+ZoWIFgWkOekkupMTD+O8pDY9IA=
+#~  relationship: annotates
+#~checksum: i39XyXNn8l+EuiVfS3TaZMD6LnYXG9xVzhZByFMGe8c=
+chr1	synthetic	gene	1	30	.	+	.	ID=synth-gene-1

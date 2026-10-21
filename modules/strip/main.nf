@@ -3,7 +3,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-include { fhrFormat; quote; sampleId; versionCheck; versionReport } from '../utils/main'
+include { fhrFormat; quote; sampleId; sequenceType; versionCheck; versionReport } from '../utils/main'
 
 process FHR_STRIP {
     tag "${meta.id}: ${kind}"
@@ -18,10 +18,10 @@ process FHR_STRIP {
 
     script:
     def id = sampleId(meta)
-    def type = fhrFormat(kind, ['fasta', 'gfa'])
+    def type = fhrFormat(kind, ['fasta', 'faa', 'gfa'])
     """
     ${versionCheck()}
-    fhr-${type}-strip ${quote(sequence)} ${quote("${id}.stripped.${type}")}
+    fhr-${sequenceType(type, ['fasta', 'faa', 'gfa'])}-strip ${quote(sequence)} ${quote("${id}.stripped.${type}")}
     ${versionReport()}
     """
 }

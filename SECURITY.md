@@ -2,9 +2,10 @@
 
 This repository is an unreleased development prototype (`0.1.0-dev`). Security fixes
 currently target its current development branch. The tested dependency is
-FAIR-bioHeaders-Tools 0.5.0 with schemaVersion 1; no long-term support or
-response-time commitment is made. Check the companion converter's security
-policy when reporting a vulnerability in that dependency.
+FAIR-bioHeaders-Tools 0.8.0 (FHR schemaVersion 1 cited through the `fhr/v0.3.1`
+release URL, FHP schemaVersion 1.0); no long-term support or response-time
+commitment is made. Check the companion toolkit's security policy when reporting a
+vulnerability in that dependency.
 
 Report suspected vulnerabilities privately, including affected version/commit,
 reproduction steps, impact, and any safe proof of concept. Avoid posting

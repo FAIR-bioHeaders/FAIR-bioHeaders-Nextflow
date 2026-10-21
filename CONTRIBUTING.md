@@ -6,7 +6,7 @@ Start with a use case or reproducible failure. Keep changes focused and explain 
 
 ## Development environment
 
-Follow [README.md](README.md) for Nextflow 26.04.6, Java 21 and the Python 3.13 converter environment. The pinned converter is 0.5.0; its schema validation is the source of truth. GFF3 rules belong to the pinned gff3-validator 0.1.0. From this checkout:
+Follow [README.md](README.md) for Nextflow 26.04.6, Java 21 and the Python 3.13 converter environment. The pinned toolkit is fair-bioheaders 0.8.0; its schema selection and validation are the source of truth, including the FHP protein schema. GFF3 rules belong to the pinned gff3-validator 0.1.0. From this checkout:
 
 ```sh
 python tests/run.py
@@ -14,7 +14,7 @@ python tests/run.py --converter-source ../FAIR-bioHeaders-Tools
 git diff --check
 ```
 
-Use a converter v0.5.0 checkout for reproducible pytest inputs. To verify the container path:
+Use a toolkit v0.8.0 checkout for reproducible pytest inputs. To verify the container path:
 
 ```sh
 docker build -t fhr-nextflow:0.1.0 environment
@@ -26,7 +26,7 @@ nextflow run main.nf -profile docker \
   --gff3_fail_on_errors false
 ```
 
-The integration harness checks imports from an external DSL2 project, five metadata formats, exact-byte FASTA/GFA preservation, quoting, JSON serialization edge cases, per-file IDs, publication gates and invalid cases. It uses explicit checks, so it remains effective under `python -O`. Add a regression case when changing behavior. [CI](.github/workflows/ci.yml) runs the harness and the Docker example on the supported baseline; keep its pinned versions and action digests in step with the compatibility baseline. For documentation-only changes, verify links, examples and command names; a full pipeline rerun is unnecessary unless an executable example changes.
+The integration harness checks imports from an external DSL2 project, five metadata formats, exact-byte FASTA/GFA/FAA preservation, quoting, JSON serialization edge cases, per-file IDs, publication gates, protein FHP composition and parent-link verification, and invalid cases. It uses explicit checks, so it remains effective under `python -O`. Add a regression case when changing behavior. [CI](.github/workflows/ci.yml) runs the harness and the Docker example on the supported baseline; keep its pinned versions and action digests in step with the compatibility baseline. For documentation-only changes, verify links, examples and command names; a full pipeline rerun is unnecessary unless an executable example changes.
 
 ## Module and metadata changes
 
@@ -46,7 +46,7 @@ Contributions to this repository are made under [MPL-2.0](LICENSE). Preserve lic
 
 ## Compatibility and release policy
 
-The current tested combination is Nextflow 26.04.6, Java 21, Python 3.13, FAIR-bioHeaders-Tools 0.5.0, gff3-validator 0.1.0 and FHR schemaVersion 1. These are the supported development baseline; newer Nextflow versions allowed by the manifest are not automatically verified. Other converters or schema versions require explicit compatibility review and passing integration tests before being declared supported. Older suite releases have no maintenance or long-term support commitment.
+The current tested combination is Nextflow 26.04.6, Java 21, Python 3.13, FAIR-bioHeaders-Tools 0.8.0, gff3-validator 0.1.0, FHR schemaVersion 1 (cited through the `fhr/v0.3.1` release URL) and FHP schemaVersion 1.0 (the `fhp/v0.4.0` release URL). Since toolkit 0.7.0 a raw-main FHR URL selects schemaVersion 2.0; the bundled example stays on v1 by citing the v0.3.1 release URL. These are the supported development baseline; newer Nextflow versions allowed by the manifest are not automatically verified. Other converters or schema versions require explicit compatibility review and passing integration tests before being declared supported. Older suite releases have no maintenance or long-term support commitment.
 
 Suite versions describe this module API independently of converter releases and schemaVersion:
 

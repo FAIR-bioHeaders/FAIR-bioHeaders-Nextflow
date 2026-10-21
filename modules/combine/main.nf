@@ -3,7 +3,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-include { fhrFormat; quote; sampleId; versionCheck; versionReport } from '../utils/main'
+include { fhrFormat; quote; sampleId; sequenceType; versionCheck; versionReport } from '../utils/main'
 
 process FHR_COMBINE {
     tag "${meta.id}: ${kind}"
@@ -18,10 +18,10 @@ process FHR_COMBINE {
 
     script:
     def id = sampleId(meta)
-    def type = fhrFormat(kind, ['fasta', 'gfa'])
+    def type = fhrFormat(kind, ['fasta', 'faa', 'gfa'])
     """
     ${versionCheck()}
-    fhr-${type}-combine ${quote(metadata)} ${quote(sequence)} -o ${quote("${id}.fhr.${type}")}
+    fhr-${sequenceType(type, ['fasta', 'faa', 'gfa'])}-combine ${quote(metadata)} ${quote(sequence)} -o ${quote("${id}.fhr.${type}")}
     ${versionReport()}
     """
 }
