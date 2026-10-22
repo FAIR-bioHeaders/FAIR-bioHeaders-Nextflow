@@ -62,7 +62,7 @@ Inspect module channel contracts and docs together. Native exec tasks write only
 
 ## Repository map and review
 
-`main.nf` is the runnable example; `modules/*/main.nf` contains reusable processes and the JSON workflow; `subworkflows/attach/main.nf` composes attachment, validation and JSON extraction. `nextflow.config` configures the example, not importing projects. `environment/` pins the converter runtime. `tests/integration.nf` checks native composition; `tests/run.py` drives positive and rejection cases from an external project.
+`main.nf` is the runnable example; `modules/*/main.nf` contains reusable processes and the JSON workflow — `create_json`, `validate`, `convert`, `combine`, `strip`, `converter_tests` and `utils`, plus `verify_links` (`FHR_VERIFY_LINKS`, wrapping `bioheaders verify-links` parent checks) and `gff3_validate` (`GFF3_VALIDATE`, wrapping the pinned gff3-validator 0.1.0); `subworkflows/attach/main.nf` composes attachment, validation and JSON extraction. Protein (`.faa`/FHP) coverage and the FHR→FHGFF3→FHP parent-chain fixtures are recorded in CHANGELOG.md. `nextflow.config` configures the example, not importing projects. `environment/` pins the converter runtime. `tests/integration.nf` checks native composition; `tests/run.py` drives positive and rejection cases from an external project.
 
 Read README, CONTRIBUTING, SECURITY and the pipeline guide before changing their contracts. Preserve CRLF fixture bytes and sample IDs. For documentation-only changes, check relative links and examples; rerun pipelines when executable behavior changes. Update CHANGELOG with relevant verification. Keep human-readable citations in Chicago style with DOI links and machine-readable citation metadata distinct from release identifiers.
 
