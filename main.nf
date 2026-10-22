@@ -102,18 +102,21 @@ workflow {
         : channel.empty())
 
     // With --verify_links, each file's recorded derivedFrom parents are checked
-    // against --verify_parents (a glob; empty when omitted). Reports are
+    // against --verify_parents (a glob; an empty list when omitted). Reports are
     // published per ID. A match proves file identity, not translation correctness.
-    def parentFiles = params.verify_parents
-        ? channel.fromPath(params.verify_parents, checkIfExists: true).toSortedList()
-        : channel.value([])
+    // Resolve the parent glob eagerly: combining a channel with an empty-list
+    // value does not append the third tuple element, so an omitted list would
+    // otherwise reach the module as a two-element record and fail.
+    def verifyParents = params.verify_links && params.verify_parents
+        ? files(params.verify_parents).sort { left, right -> left.name <=> right.name }
+        : []
     FHR_VERIFY_LINKS(params.verify_links
         ? channel.fromPath(params.verify_links, checkIfExists: true).toSortedList().flatMap { sources ->
             def problem = verifyIdProblem(sources)
             if (problem)
                 throw new IllegalArgumentException(problem)
-            sources.collect { source -> tuple([id: verifyId(source)], source) }
-        }.combine(parentFiles).map { meta, source, parents -> tuple(meta, source, parents) }
+            sources.collect { source -> tuple([id: verifyId(source)], source, verifyParents) }
+        }
         : channel.empty())
 
     // With --converter_source, results are published only after converter tests

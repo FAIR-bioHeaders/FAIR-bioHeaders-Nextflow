@@ -107,8 +107,8 @@ workflow {
     FHR_VERIFY_LINKS(FHR_ATTACH.out.sequence.map { meta, sequence ->
         tuple(meta, sequence, params.parents ? params.parents.collect { file(it) } : [])
     })
-    // FHR_VERIFY_LINKS.out.report emits tuple(meta, report) whenever verification completes.
-    // FHR_VERIFY_LINKS.out.verified emits tuple(meta, sequence) only on a match.
+    // FHR_VERIFY_LINKS.out.report emits tuple(meta, report) when verification completes successfully.
+    // FHR_VERIFY_LINKS.out.verified emits tuple(meta, sequence) only when every recorded parent was checked and matched.
 }
 ```
 
@@ -123,7 +123,7 @@ workflow {
 | `require_all` | `false` | `true` also fails when a recorded parent could not be checked |
 | `fail_on_mismatch` | `true` | `false` emits the report for a mismatch and continues, omitting the input from `verified` |
 
-A match confirms **file identity only**, never biological translation or annotation correctness. Exit status 1 (unreadable or invalid input, or an invalid parent) always fails; exit status 3 is a mismatch (or, with `require_all`, an unchecked parent). The FHP fixtures under `tests/fixtures/fhp/chain/` demonstrate an FHR genome FASTA, an FHGFF3 annotation GFF3 recording the genome, and an FHP protein FASTA recording the annotation; each link is verified by checksum. FHP JSON-LD and HTML microdata are not supported until FAIR-bioHeaders-Tools#58 is released.
+A match confirms **file identity only**, never biological translation or annotation correctness. Exit status 1 (unreadable or invalid input, or an invalid parent) always fails; exit status 3 is a mismatch (or, with `require_all`, an unchecked parent). An exit-0 run whose report contains `not checked` (an unavailable or unsupported candidate) emits the report but omits the input from `verified`; supply the recorded parents, or set `require_all = true` to fail instead. Only a run with every recorded parent checked and matched (or none recorded) emits `verified`. The FHP fixtures under `tests/fixtures/fhp/chain/` demonstrate an FHR genome FASTA, an FHGFF3 annotation GFF3 recording the genome, and an FHP protein FASTA recording the annotation; each link is verified by checksum. FHP JSON-LD and HTML microdata are not supported until FAIR-bioHeaders-Tools#58 is released.
 
 ## Execution and publication
 

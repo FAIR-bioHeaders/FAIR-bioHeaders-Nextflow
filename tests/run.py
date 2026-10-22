@@ -310,8 +310,12 @@ workflow {
         check('REPORT protein protein.verify-links.txt' in output and 'VERIFIED protein protein.fhp.faa' in output, f'matching parent was not verified:\n{output}')
         report = next((work / 'work').glob('*/*/protein.verify-links.txt')).read_text()
         check('matched' in report and 'file identity only' in report, f'unexpected verify-links report:\n{report}')
-        output = run(verify_script, work, ['--sequence', str(chain / 'protein.fhp.faa')])
-        check('VERIFIED protein protein.fhp.faa' in output, f'unavailable parents should not fail without require_all:\n{output}')
+        # Unavailable parents: the task succeeds, but "not checked" must never be
+        # emitted on verified (a missing parent is not a match).
+        output = run(verify_script, work, ['--id', 'unchecked', '--sequence', str(chain / 'protein.fhp.faa')])
+        check('REPORT unchecked unchecked.verify-links.txt' in output and 'VERIFIED' not in output, f'unchecked parents were emitted on verified:\n{output}')
+        report = next((work / 'work').glob('*/*/unchecked.verify-links.txt')).read_text()
+        check('not checked' in report, f'unavailable parents were not reported as unchecked:\n{report}')
         run(verify_script, work, ['--sequence', str(chain / 'protein.fhp.faa'), '--parents', str(chain / 'other-annotation.fhgff3.gff3')], failure='Parent-link verification failed')
         required = work / 'verify-required'
         required.mkdir()
@@ -339,6 +343,11 @@ workflow {
         check((output / 'protein.fhp/verify-links/protein.fhp.verify-links.txt').exists(), 'main.nf did not publish the verify-links report')
         run(ROOT / 'main.nf', work, ['--verify_links', str(chain / 'protein.fhp.faa'), '--verify_parents', str(chain / 'other-annotation.fhgff3.gff3'), '--outdir', str(work / 'verify-bad')], failure='Parent-link verification failed')
         check(not (work / 'verify-bad/protein.fhp').exists(), 'verify-links reports were published after a mismatch')
+        # Omitting --verify_parents must reach the module as an empty list.
+        output = work / 'verify-no-parents'
+        run(ROOT / 'main.nf', work, ['--verify_links', str(chain / 'protein.fhp.faa'), '--outdir', str(output)])
+        report = (output / 'protein.fhp/verify-links/protein.fhp.verify-links.txt').read_text()
+        check('not checked' in report, f'omitted --verify_parents did not reach the module as an empty list:\n{report}')
 
         if args.converter_source:
             source = args.converter_source.resolve()

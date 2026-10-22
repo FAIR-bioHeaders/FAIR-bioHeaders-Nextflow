@@ -11,12 +11,15 @@ include { bioheadersVersionCheck; bioheadersVersionReport; failOnMismatch; quote
 // composes it, preserves meta, quotes staged paths and constrains the report
 // name. A match proves file identity by checksum, never biological correctness.
 //
-// The report is always emitted. `verified` is emitted only when the recorded
-// parents matched (or none were recorded). Exit status 1 (unreadable or invalid
-// input, or an invalid parent) always fails; exit status 3 (a recorded parent
-// did not match, or with ext.require_all could not be checked) fails unless
-// ext.fail_on_mismatch is false, in which case the report is emitted and the
-// input is omitted from `verified`.
+// The report is emitted whenever the task succeeds. `verified` is emitted only
+// when every recorded parent was checked and matched (or no parents were
+// recorded): an exit-0 run whose report contains "not checked" (an unavailable
+// or unsupported candidate) emits the report but omits `verified`, so downstream
+// steps cannot mistake an unchecked file for a verified one. Exit status 1
+// (unreadable or invalid input, or an invalid parent) always fails; exit status 3
+// (a recorded parent did not match, or with ext.require_all could not be checked)
+// fails unless ext.fail_on_mismatch is false, in which case the report is emitted
+// and the input is omitted from `verified`.
 process FHR_VERIFY_LINKS {
     tag "${meta.id}"
     label 'fhr'
@@ -26,8 +29,9 @@ process FHR_VERIFY_LINKS {
 
     output:
     tuple val(meta), path("${meta.id}.verify-links.txt"), emit: report
-    // The verified input is linked into verified/ by the script; only a match is
-    // emitted, so a mismatching file never reaches `verified`.
+    // The verified input is linked into verified/ by the script; only a run with
+    // every recorded parent checked and matched is emitted, so a mismatch or an
+    // unchecked parent never reaches `verified`.
     tuple val(meta), path("verified/*"), emit: verified, optional: true
     tuple val(meta), path('versions.yml'), emit: versions
 
@@ -59,6 +63,11 @@ process FHR_VERIFY_LINKS {
             printf 'Parent-link verification failed for %s: a recorded parent did not match a supplied file (report: %s). Set ext.fail_on_mismatch = false to emit the report and continue.\\n' ${name} ${report} >&2
             exit 1
         fi
+    # Exit 0 does not mean every recorded parent was checked: an unavailable or
+    # unsupported candidate leaves a "not checked" entry. Only a report with no
+    # such entry can be emitted on verified.
+    elif grep -q ': not checked (' ${report}; then
+        printf 'Parent-link verification of %s completed with unchecked parents (report: %s); the input is omitted from verified. Supply the recorded parents or set ext.require_all = true to fail instead.\\n' ${name} ${report} >&2
     else
         mkdir -p verified
         ln -s ../${input} verified/

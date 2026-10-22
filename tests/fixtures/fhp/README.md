@@ -1,8 +1,12 @@
 # FHP (protein FASTA) fixtures
 
-Synthetic inputs for the protein slice of `tests/run.py`. **Every value is
-invented** for testing: no real accessions, taxa records, software or parent
-files are represented. The protein sequences are short synthetic peptides.
+Synthetic inputs for the protein slice of `tests/run.py`. The structure, protein
+sequences, accessions, software and parent files are invented for testing. The
+taxon (*Homo sapiens*, NCBI taxonomy 9606), the author identities (Adam Wright,
+ORCID 0000-0002-5719-4024; David Molik, ORCID 0000-0003-3192-6538) and the
+existing example schema style are reused from `examples/metadata.json` so the
+fixtures match the repository's example; they are not new assertions about a
+real dataset.
 
 The metadata cites the bundled FHP release schema
 `https://w3id.org/fair-bioheaders/fhp/v0.4.0` (`schemaVersion` `1.0`) and the
