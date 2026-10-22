@@ -6,7 +6,7 @@ Start with a use case or reproducible failure. Keep changes focused and explain 
 
 ## Development environment
 
-Follow [README.md](README.md) for Nextflow 26.04.6, Java 21 and the Python 3.13 converter environment. The pinned toolkit is fair-bioheaders 0.8.0; its schema selection and validation are the source of truth, including the FHP protein schema. GFF3 rules belong to the pinned gff3-validator 0.1.0. From this checkout:
+Follow [README.md](README.md) for Nextflow 26.04.6, Java 21 and the Python 3.13 converter environment. The pinned toolkit is fair-bioheaders 0.8.1; its schema selection and validation are the source of truth, including the FHP protein schema. GFF3 rules belong to the pinned gff3-validator 0.1.0. From this checkout:
 
 ```sh
 python tests/run.py
@@ -14,7 +14,7 @@ python tests/run.py --converter-source ../FAIR-bioHeaders-Tools
 git diff --check
 ```
 
-Use a toolkit v0.8.0 checkout for reproducible pytest inputs. To verify the container path:
+Use a toolkit v0.8.1 checkout for reproducible pytest inputs. To verify the container path:
 
 ```sh
 docker build -t fhr-nextflow:0.1.0 environment
@@ -46,7 +46,7 @@ Contributions to this repository are made under [MPL-2.0](LICENSE). Preserve lic
 
 ## Compatibility and release policy
 
-The current tested combination is Nextflow 26.04.6, Java 21, Python 3.13, FAIR-bioHeaders-Tools 0.8.0, gff3-validator 0.1.0, FHR schemaVersion 1 (cited through the `fhr/v0.3.1` release URL) and FHP schemaVersion 1.0 (the `fhp/v0.4.0` release URL). Since toolkit 0.7.0 a raw-main FHR URL selects schemaVersion 2.0; the bundled example stays on v1 by citing the v0.3.1 release URL. These are the supported development baseline; newer Nextflow versions allowed by the manifest are not automatically verified. Other converters or schema versions require explicit compatibility review and passing integration tests before being declared supported. Older suite releases have no maintenance or long-term support commitment.
+The current tested combination is Nextflow 26.04.6, Java 21, Python 3.13, FAIR-bioHeaders-Tools 0.8.1, gff3-validator 0.1.0, FHR schemaVersion 1 (cited through the `fhr/v0.3.1` release URL) and FHP schemaVersion 1.0 (the `fhp/v0.4.0` release URL). Since toolkit 0.7.0 a raw-main FHR URL selects schemaVersion 2.0; the bundled example stays on v1 by citing the v0.3.1 release URL. These are the supported development baseline; newer Nextflow versions allowed by the manifest are not automatically verified. Other converters or schema versions require explicit compatibility review and passing integration tests before being declared supported. Older suite releases have no maintenance or long-term support commitment.
 
 Suite versions describe this module API independently of converter releases and schemaVersion:
 

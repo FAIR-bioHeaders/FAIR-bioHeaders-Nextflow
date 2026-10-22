@@ -42,7 +42,7 @@ workflow {
 }
 ```
 
-Provide a toolkit source directory containing `pyproject.toml`, `tests/` and `pytest.ini` that declares version 0.8.0, preferably the v0.8.0 checkout; other versions are rejected, and the installed toolkit version is checked separately. The workflow copies the checkout into its task directory (the input is never modified and no bytecode is written), runs its tests against the installed converter (tests that invoke the checkout's own scripts use the copy), and always emits JUnit XML plus a log so that they can be published. A separate check task then fails the run if pytest failed. An independent test branch does not gate other workflow outputs automatically: combine release or publication channels with `FHR_CONVERTER_TESTS.out.passed` if those steps must wait for passing tests, as the example `main.nf` does:
+Provide a toolkit source directory containing `pyproject.toml`, `tests/` and `pytest.ini` that declares version 0.8.1, preferably the v0.8.1 checkout; other versions are rejected, and the installed toolkit version is checked separately. The workflow copies the checkout into its task directory (the input is never modified and no bytecode is written), runs its tests against the installed converter (tests that invoke the checkout's own scripts use the copy), and always emits JUnit XML plus a log so that they can be published. A separate check task then fails the run if pytest failed. An independent test branch does not gate other workflow outputs automatically: combine release or publication channels with `FHR_CONVERTER_TESTS.out.passed` if those steps must wait for passing tests, as the example `main.nf` does:
 
 ```nextflow
 gate = FHR_CONVERTER_TESTS.out.passed.first()
@@ -153,7 +153,7 @@ Modules leave files in their task work directories. The example workflow publish
 - **Checksum mismatch:** verify that no program changed the header, whitespace, line endings or sequence bytes after attachment. Reattach when changing metadata.
 - **Unsafe ID or unsupported format:** use IDs and format values from the README contract. Paths are quoted; command formats are explicitly restricted.
 - **GFF3 validation failed:** read the findings in the task error or the JSON/HTML report in the task work directory; with `fail_on_errors = false` the reports are emitted instead. An "incomplete" failure means the GFF3 or genome could not be read.
-- **Failed converter tests:** inspect the published `converter-tests/converter-tests.log` and JUnit XML. A checkout that does not declare version 0.8.0 is rejected before tests run.
+- **Failed converter tests:** inspect the published `converter-tests/converter-tests.log` and JUnit XML. A checkout that does not declare version 0.8.1 is rejected before tests run.
 - **Parent-link verification failed:** read the report (and the task error) for the `derivedFrom` entry that did not match; supply the parent file the header records, recombine the parent if it changed, or set `ext.fail_on_mismatch = false` to survey a batch. An "incomplete" failure means the input or a parent could not be read or validated. A match proves file identity, not translation correctness.
 - **JSON serialization errors:** the message names the field location, for example `$.dateCreated`; convert dates to ISO 8601 strings and remove NaN, Infinity and `null` list items.
 
