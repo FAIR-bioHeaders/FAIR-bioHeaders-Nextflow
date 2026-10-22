@@ -18,7 +18,7 @@ process FHR_CONVERT {
 
     script:
     def id = sampleId(meta)
-    def ext = fhrFormat(format, ['json', 'yaml', 'html', 'fasta', 'gfa'])
+    def ext = fhrFormat(format, ['json', 'yaml', 'html', 'fasta', 'faa', 'gfa'])
     """
     ${versionCheck()}
     fhr-convert ${quote(metadata)} ${quote("${id}.fhr.${ext}")}

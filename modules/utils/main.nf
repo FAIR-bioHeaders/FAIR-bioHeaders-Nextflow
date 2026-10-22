@@ -24,6 +24,31 @@ def fhrFormat(Object value, List allowed) {
     return value.toString()
 }
 
+def sequenceType(Object value, List allowed = ['fasta', 'faa', 'gfa']) {
+    // The toolkit's fhr-<type>-* commands are keyed by sequence type, not by
+    // extension: protein FASTA (.faa) is FASTA to the toolkit. The modules keep
+    // 'faa' as a distinct kind so outputs keep the .faa extension and callers
+    // can select protein explicitly; this maps it back for the command name.
+    def kind = fhrFormat(value, allowed)
+    return kind == 'faa' ? 'fasta' : kind
+}
+
+def sequenceKindOf(Object sequence) {
+    // Sequence files this suite produces and consumes carry their kind in the
+    // extension: ID.fhr.faa, ID.fhr.fasta, ID.fhr.gfa, ID.stripped.faa, plus an
+    // optional .gz or .bgz. The toolkit reads compression from the magic bytes.
+    def name = sequence.name.replaceFirst(/\.(gz|bgz)$/, '')
+    if (name.endsWith('.faa'))
+        return 'faa'
+    if (name.endsWith('.gff3') || name.endsWith('.gff'))
+        return 'gff3'
+    if (name.endsWith('.gfa'))
+        return 'gfa'
+    if (name.endsWith('.fasta') || name.endsWith('.fa') || name.endsWith('.fna'))
+        return 'fasta'
+    throw new IllegalArgumentException("Cannot infer a sequence kind from '${sequence.name}'; expected .fasta, .fa, .fna, .faa, .gfa, .gff3 or .gff, optionally .gz or .bgz")
+}
+
 def metadataJson(Map fields) {
     // Serialization only: the converter owns all schema and format validation.
     // Map entries whose value is null are treated as absent optional fields and
@@ -88,13 +113,37 @@ def directoryDigest(Path directory) {
 }
 
 def versionCheck() {
-    return 'fhr_version="$(fhr-convert --version || true)"; if [ "$fhr_version" != "0.5.0" ]; then echo "FHR-Nextflow requires fhr-convert 0.5.0; found \'${fhr_version:-none}\'" >&2; exit 1; fi'
+    return 'fhr_version="$(fhr-convert --version || true)"; if [ "$fhr_version" != "0.8.0" ]; then echo "FHR-Nextflow requires fhr-convert 0.8.0; found \'${fhr_version:-none}\'" >&2; exit 1; fi'
 }
 
 def versionReport() {
     // Escaped so that the shell, not Groovy, sees \n: a literal newline here
     // would defeat Nextflow's script indentation stripping.
     return 'printf "fhr: %s\\n" "$(fhr-convert --version)" > versions.yml'
+}
+
+def bioheadersVersionCheck() {
+    // The bioheaders subcommands (verify-links) share the fhr-* entry points'
+    // implementation but have their own program name.
+    return 'bioheaders_version="$(bioheaders --version || true)"; if [ "$bioheaders_version" != "0.8.0" ]; then echo "FHR-Nextflow requires bioheaders 0.8.0; found \'${bioheaders_version:-none}\'" >&2; exit 1; fi'
+}
+
+def bioheadersVersionReport() {
+    return 'printf "fair-bioheaders: %s\\n" "$(bioheaders --version)" > versions.yml'
+}
+
+def requireAllParents(Object ext) {
+    def value = ext.require_all == null ? false : ext.require_all
+    if (!(value instanceof Boolean))
+        throw new IllegalArgumentException("ext.require_all must be true or false; found '${value}'")
+    return value
+}
+
+def failOnMismatch(Object ext) {
+    def value = ext.fail_on_mismatch == null ? true : ext.fail_on_mismatch
+    if (!(value instanceof Boolean))
+        throw new IllegalArgumentException("ext.fail_on_mismatch must be true or false; found '${value}'")
+    return value
 }
 
 def gff3VersionCheck() {

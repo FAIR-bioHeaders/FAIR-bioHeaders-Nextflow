@@ -6,6 +6,7 @@
 include { FHR_COMBINE } from '../../modules/combine/main'
 include { FHR_VALIDATE as CHECK_COMBINED } from '../../modules/validate/main'
 include { FHR_CONVERT as EXTRACT_JSON } from '../../modules/convert/main'
+include { sequenceKindOf } from '../../modules/utils/main'
 
 workflow FHR_ATTACH {
     take:
@@ -14,7 +15,7 @@ workflow FHR_ATTACH {
     main:
     FHR_COMBINE(records)
     CHECK_COMBINED(FHR_COMBINE.out.combined.map { meta, sequence ->
-        tuple(meta, sequence, sequence.name.endsWith('.fasta') ? 'fasta' : 'gfa')
+        tuple(meta, sequence, sequenceKindOf(sequence))
     })
     EXTRACT_JSON(CHECK_COMBINED.out.validated.map { meta, sequence -> tuple(meta, sequence, 'json') })
 

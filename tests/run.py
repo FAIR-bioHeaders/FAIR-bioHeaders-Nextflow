@@ -200,6 +200,155 @@ def main():
         shutil.copy(gff3 / 'canonical-gene-gzip.gff3.gz', duplicate_gff3 / 'sample.gff3.gz')
         run(ROOT / 'main.nf', work, ['--gff3', str(duplicate_gff3 / '*'), '--outdir', str(work / 'gff3-duplicate')], failure='Duplicate meta.id from GFF3 files')
 
+        # Protein FASTA (FHP): create/convert/attach/strip, validation, malformed
+        # headers and parent-link verification through the pinned toolkit.
+        fhp = ROOT / 'tests/fixtures/fhp'
+        chain = fhp / 'chain'
+        create = "include { FHR_CREATE_JSON } from '" + str(ROOT / 'modules/create_json/main') + "'\n"
+        convert = "include { FHR_CONVERT } from '" + str(ROOT / 'modules/convert/main') + "'\n"
+        attach = "include { FHR_ATTACH } from '" + str(ROOT / 'subworkflows/attach/main') + "'\n"
+        strip = "include { FHR_STRIP } from '" + str(ROOT / 'modules/strip/main') + "'\n"
+        validate = "include { FHR_VALIDATE } from '" + str(ROOT / 'modules/validate/main') + "'\n"
+        verify = "include { FHR_VERIFY_LINKS } from '" + str(ROOT / 'modules/verify_links/main') + "'\n"
+
+        compose = work / 'fhp-compose.nf'
+        compose.write_text(create + convert + attach + strip + """process ASSERT_PROTEIN_BYTES {
+    input:
+    tuple val(meta), val(sequence)
+    output:
+    path "${meta.id}.ok"
+    exec:
+    assert java.util.Arrays.equals(sequence.bytes, file(meta.original).bytes)
+    task.workDir.resolve("${meta.id}.ok").text = 'OK\\n'
+}
+
+workflow {
+    def records = params.metadata.tokenize(',').collect { path ->
+        def source = file(path)
+        tuple([id: source.name.replaceFirst(/\\.fhp\\.json$/, '')], new groovy.json.JsonSlurper().parseText(source.text))
+    }
+    FHR_CREATE_JSON(Channel.fromList(records))
+    // A distinct ID keeps the header-only conversion from colliding with the
+    // attached file, which uses the same .fhr.faa name.
+    FHR_CONVERT(FHR_CREATE_JSON.out.json.map { meta, json -> tuple([id: meta.id + '-header'], json, 'faa') })
+    FHR_ATTACH(FHR_CREATE_JSON.out.json.map { meta, json -> tuple(meta, json, file(params.sequence, checkIfExists: true), 'faa') })
+    FHR_STRIP(FHR_ATTACH.out.sequence.map { meta, sequence -> tuple([id: meta.id, original: params.original], sequence, 'faa') })
+    ASSERT_PROTEIN_BYTES(FHR_STRIP.out.stripped)
+    FHR_CREATE_JSON.out.json.view { meta, json -> "CREATED ${meta.id} ${json.name}" }
+    FHR_CONVERT.out.converted.view { meta, converted -> "CONVERTED ${meta.id} ${converted.name}" }
+    FHR_ATTACH.out.sequence.view { meta, sequence -> "ATTACHED ${meta.id} ${sequence.name}" }
+    FHR_ATTACH.out.json.view { meta, json -> "EXTRACTED ${meta.id} ${json.name}" }
+    FHR_STRIP.out.stripped.view { meta, sequence -> "STRIPPED ${meta.id} ${sequence.name}" }
+}
+""")
+        sets = ','.join(str(fhp / f'{name}.fhp.json') for name in ['predicted', 'database', 'mixed'])
+        before_ok = len(list((work / 'work').glob('*/*/*.ok')))
+        output = run(compose, work, ['--metadata', sets, '--sequence', str(fhp / 'protein.faa'), '--original', str(fhp / 'protein.faa')])
+        for sample in ['predicted', 'database', 'mixed']:
+            for marker in [f'CREATED {sample} {sample}.fhr.json', f'CONVERTED {sample}-header {sample}-header.fhr.faa', f'ATTACHED {sample} {sample}.fhr.faa', f'EXTRACTED {sample} {sample}.fhr.json', f'STRIPPED {sample} {sample}.stripped.faa']:
+                check(marker in output, f'{sample}: missing {marker!r}:\n{output}')
+        check(len(list((work / 'work').glob('*/*/*.ok'))) == before_ok + 3, 'protein strip byte checks did not run')
+        for sample in ['predicted', 'database', 'mixed']:
+            records = [json.loads(path.read_text()) for path in (work / 'work').glob(f'*/*/{sample}.fhr.json')]
+            check(records and all(record['sourceType'] == sample for record in records), f'{sample}: metadata lost sourceType')
+            check(any(record['checksum'] != PLACEHOLDER for record in records), f'{sample}: attachment did not replace the placeholder checksum')
+        converted = next((work / 'work').glob('*/*/predicted-header.fhr.faa')).read_text()
+        check(converted.startswith(';~schema:') and '>' not in converted, f'FHP metadata-to-FAA conversion is not a header:\n{converted}')
+        # A supported compressed input is read by its magic bytes.
+        output = run(compose, work, ['--metadata', sets, '--sequence', str(fhp / 'protein.faa.gz'), '--original', str(fhp / 'protein.faa')])
+        check('ATTACHED predicted predicted.fhr.faa' in output, f'compressed protein input was not combined:\n{output}')
+
+        validate_script = work / 'faa-validate.nf'
+        validate_script.write_text(validate + """workflow {
+    FHR_VALIDATE(Channel.of(tuple([id: params.id ?: 'protein'], file(params.sequence, checkIfExists: true), params.kind ?: 'faa')))
+    FHR_VALIDATE.out.validated.view { meta, path -> "VALIDATED ${meta.id} ${path.name}" }
+}
+""")
+        output = run(validate_script, work, ['--sequence', str(chain / 'protein.fhp.faa')])
+        check('VALIDATED protein protein.fhp.faa' in output, f'FHP FASTA was not validated:\n{output}')
+        run(validate_script, work, ['--sequence', str(fhp / 'malformed-missing-proteome.fhp.faa')], failure='proteome')
+        run(validate_script, work, ['--sequence', str(fhp / 'malformed-duplicate-checksum.fhp.faa')], failure='duplicate key')
+        run(validate_script, work, ['--sequence', str(fhp / 'malformed-missing-proteome.fhp.faa'), '--kind', 'fasta'], failure='proteome')
+
+        # Invalid FHP metadata is rejected by the pinned schema, not by Nextflow.
+        for name, change, message in [
+            ('fhp-missing', lambda fields: fields.pop('proteome'), 'proteome'),
+            ('fhp-sourcetype', lambda fields: fields.update(sourceType='unknown'), 'sourceType'),
+            ('fhp-schema', lambda fields: fields.update(schema='https://w3id.org/fair-bioheaders/fhp/v9.9.9'), 'unsupported schema version'),
+        ]:
+            invalid = json.loads((fhp / 'predicted.fhp.json').read_text())
+            change(invalid)
+            source = work / f'{name}.fhp.json'
+            source.write_text(json.dumps(invalid))
+            run(ROOT / 'main.nf', work, ['--metadata', str(source), '--outdir', str(work / name)], failure=message)
+            check(not (work / name).exists(), f'{name}: outputs were published after a validation failure')
+
+        # FHP JSON-LD and HTML microdata stay unsupported until FAIR-bioHeaders-Tools#58.
+        fhp_html = work / 'fhp-html.nf'
+        fhp_html.write_text(convert + "workflow { FHR_CONVERT(Channel.of(tuple([id: 'fhp'], file(params.metadata, checkIfExists: true), 'html'))) }\n")
+        run(fhp_html, work, ['--metadata', str(fhp / 'predicted.fhp.json')], failure='not available for FHP')
+
+        # Toolkit 0.7.0+ selects FHR 2.0 for the raw-main URL, so a v1 record must
+        # cite a v1 release URL; the bundled example cites fhr/v0.3.1.
+        raw_main = json.loads((ROOT / 'examples/metadata.json').read_text())
+        raw_main['schema'] = 'https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Specification/main/fhr.json'
+        source = work / 'fhr-raw-main.json'
+        source.write_text(json.dumps(raw_main))
+        run(ROOT / 'main.nf', work, ['--metadata', str(source), '--outdir', str(work / 'fhr-raw-main')], failure='schemaVersion')
+
+        # Parent-link verification: match, unavailable and mismatching parents,
+        # require_all and fail_on_mismatch, plus the genome -> annotation -> protein chain.
+        verify_script = work / 'verify-links.nf'
+        verify_script.write_text(verify + """workflow {
+    def parents = params.parents ? params.parents.tokenize(',').collect { file(it, checkIfExists: true) } : []
+    FHR_VERIFY_LINKS(Channel.of(tuple([id: params.id ?: 'protein'], file(params.sequence, checkIfExists: true), parents)))
+    FHR_VERIFY_LINKS.out.report.view { meta, report -> "REPORT ${meta.id} ${report.name}" }
+    FHR_VERIFY_LINKS.out.verified.view { meta, path -> "VERIFIED ${meta.id} ${path.name}" }
+}
+""")
+        output = run(verify_script, work, ['--sequence', str(chain / 'protein.fhp.faa'), '--parents', str(chain / 'annotation.fhgff3.gff3')])
+        check('REPORT protein protein.verify-links.txt' in output and 'VERIFIED protein protein.fhp.faa' in output, f'matching parent was not verified:\n{output}')
+        report = next((work / 'work').glob('*/*/protein.verify-links.txt')).read_text()
+        check('matched' in report and 'file identity only' in report, f'unexpected verify-links report:\n{report}')
+        # Unavailable parents: the task succeeds, but "not checked" must never be
+        # emitted on verified (a missing parent is not a match).
+        output = run(verify_script, work, ['--id', 'unchecked', '--sequence', str(chain / 'protein.fhp.faa')])
+        check('REPORT unchecked unchecked.verify-links.txt' in output and 'VERIFIED' not in output, f'unchecked parents were emitted on verified:\n{output}')
+        report = next((work / 'work').glob('*/*/unchecked.verify-links.txt')).read_text()
+        check('not checked' in report, f'unavailable parents were not reported as unchecked:\n{report}')
+        run(verify_script, work, ['--sequence', str(chain / 'protein.fhp.faa'), '--parents', str(chain / 'other-annotation.fhgff3.gff3')], failure='Parent-link verification failed')
+        required = work / 'verify-required'
+        required.mkdir()
+        (required / 'nextflow.config').write_text('nextflow.enable.dsl = 2\nprocess { withName: FHR_VERIFY_LINKS { ext.require_all = true } }\n')
+        run(verify_script, required, ['--sequence', str(chain / 'protein.fhp.faa')], failure='Parent-link verification failed')
+        lenient = work / 'verify-lenient'
+        lenient.mkdir()
+        (lenient / 'nextflow.config').write_text('nextflow.enable.dsl = 2\nprocess { withName: FHR_VERIFY_LINKS { ext.fail_on_mismatch = false } }\n')
+        output = run(verify_script, lenient, ['--sequence', str(chain / 'protein.fhp.faa'), '--parents', str(chain / 'other-annotation.fhgff3.gff3')])
+        check('REPORT protein protein.verify-links.txt' in output and 'VERIFIED' not in output, f'mismatching link was verified:\n{output}')
+        output = run(verify_script, work, ['--id', 'annotation', '--sequence', str(chain / 'annotation.fhgff3.gff3'), '--parents', str(chain / 'genome.fhr.fasta')])
+        check('VERIFIED annotation annotation.fhgff3.gff3' in output, f'genome-annotation link did not match:\n{output}')
+        run(verify_script, work, ['--sequence', str(fhp / 'malformed-missing-proteome.fhp.faa')], failure='is incomplete')
+
+        # The runnable example accepts protein FASTA with --sequence_format faa.
+        output = work / 'protein-output'
+        run(ROOT / 'main.nf', work, ['--metadata', str(ROOT / 'examples/protein-metadata.json'), '--sequence', str(ROOT / 'examples/protein.faa'), '--sequence_format', 'faa', '--outdir', str(output)])
+        expected = ['protein-metadata/sequence/protein-metadata.fhr.faa', 'protein-metadata/sequence/protein-metadata.fhr.json', 'protein-metadata/sequence/protein-metadata.fhr.yaml']
+        check(published(output) == expected, f'unexpected protein example outputs: {published(output)}')
+        check((output / 'protein-metadata/sequence/protein-metadata.fhr.faa').read_bytes().startswith(b';~schema:'), 'protein example is not an FHP header')
+
+        # The runnable example also publishes verify-links reports per ID.
+        output = work / 'verify-output'
+        run(ROOT / 'main.nf', work, ['--verify_links', str(chain / 'protein.fhp.faa'), '--verify_parents', str(chain / 'annotation.fhgff3.gff3'), '--outdir', str(output)])
+        check((output / 'protein.fhp/verify-links/protein.fhp.verify-links.txt').exists(), 'main.nf did not publish the verify-links report')
+        run(ROOT / 'main.nf', work, ['--verify_links', str(chain / 'protein.fhp.faa'), '--verify_parents', str(chain / 'other-annotation.fhgff3.gff3'), '--outdir', str(work / 'verify-bad')], failure='Parent-link verification failed')
+        check(not (work / 'verify-bad/protein.fhp').exists(), 'verify-links reports were published after a mismatch')
+        # Omitting --verify_parents must reach the module as an empty list.
+        output = work / 'verify-no-parents'
+        run(ROOT / 'main.nf', work, ['--verify_links', str(chain / 'protein.fhp.faa'), '--outdir', str(output)])
+        report = (output / 'protein.fhp/verify-links/protein.fhp.verify-links.txt').read_text()
+        check('not checked' in report, f'omitted --verify_parents did not reach the module as an empty list:\n{report}')
+
         if args.converter_source:
             source = args.converter_source.resolve()
             before = snapshot(source)
@@ -226,10 +375,10 @@ def main():
             check('test_injected_failure' in (output / 'converter-tests/converter-tests.log').read_text(), 'failure missing from published log')
 
             pyproject = mutable / 'pyproject.toml'
-            pyproject.write_text(pyproject.read_text().replace('version = "0.5.0"', 'version = "0.6.0"', 1))
-            run(ROOT / 'main.nf', work, ['--converter_source', str(mutable), '--outdir', str(work / 'mismatch')], failure="converter source version is '0.6.0'")
+            pyproject.write_text(pyproject.read_text().replace('version = "0.8.0"', 'version = "0.9.0"', 1))
+            run(ROOT / 'main.nf', work, ['--converter_source', str(mutable), '--outdir', str(work / 'mismatch')], failure="converter source version is '0.9.0'")
             check(not (work / 'mismatch' / 'example').exists(), 'results published with a mismatched converter checkout')
-    print(f'PASS: {len(passed)} pipeline runs and rejection cases (round trips, exact bytes, JSON edge cases, per-file IDs, publication gates, GFF3 validation).')
+    print(f'PASS: {len(passed)} pipeline runs and rejection cases (round trips, exact bytes, JSON edge cases, per-file IDs, publication gates, GFF3 validation, protein FHP composition and parent-link verification).')
 
 
 if __name__ == '__main__':

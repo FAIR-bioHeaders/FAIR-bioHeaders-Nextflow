@@ -3,7 +3,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-include { fhrFormat; quote; sampleId; versionCheck; versionReport } from '../utils/main'
+include { fhrFormat; quote; sampleId; sequenceType; versionCheck; versionReport } from '../utils/main'
 
 process FHR_VALIDATE {
     tag "${meta.id}: ${kind}"
@@ -19,8 +19,8 @@ process FHR_VALIDATE {
 
     script:
     sampleId(meta)
-    def type = fhrFormat(kind, ['metadata', 'fasta', 'gfa'])
-    def command = type == 'metadata' ? 'fhr-validate' : "fhr-${type}-validate"
+    def type = fhrFormat(kind, ['metadata', 'fasta', 'faa', 'gfa'])
+    def command = type == 'metadata' ? 'fhr-validate' : "fhr-${sequenceType(type, ['fasta', 'faa', 'gfa'])}-validate"
     """
     ${versionCheck()}
     ${command} ${quote(metadata)} > validation.txt
