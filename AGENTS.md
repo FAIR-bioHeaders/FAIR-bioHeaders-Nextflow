@@ -62,7 +62,7 @@ Inspect module channel contracts and docs together. Native exec tasks write only
 
 ## Repository map and review
 
-`main.nf` is the runnable example; `modules/*/main.nf` contains reusable processes and the JSON workflow; `subworkflows/attach/main.nf` composes attachment, validation and JSON extraction. `nextflow.config` configures the example, not importing projects. `environment/` pins the converter runtime. `tests/integration.nf` checks native composition; `tests/run.py` drives positive and rejection cases from an external project.
+`main.nf` is the runnable example; `modules/*/main.nf` contains reusable processes and the JSON workflow — `create_json`, `validate`, `convert`, `combine`, `strip`, `converter_tests` and `utils`, plus `verify_links` (`FHR_VERIFY_LINKS`, wrapping `bioheaders verify-links` parent checks) and `gff3_validate` (`GFF3_VALIDATE`, wrapping the pinned gff3-validator 0.1.0); `subworkflows/attach/main.nf` composes attachment, validation and JSON extraction. Protein (`.faa`/FHP) coverage and the FHR→FHGFF3→FHP parent-chain fixtures are recorded in CHANGELOG.md. `nextflow.config` configures the example, not importing projects. `environment/` pins the converter runtime. `tests/integration.nf` checks native composition; `tests/run.py` drives positive and rejection cases from an external project.
 
 Read README, CONTRIBUTING, SECURITY and the pipeline guide before changing their contracts. Preserve CRLF fixture bytes and sample IDs. For documentation-only changes, check relative links and examples; rerun pipelines when executable behavior changes. Update CHANGELOG with relevant verification. Keep human-readable citations in Chicago style with DOI links and machine-readable citation metadata distinct from release identifiers.
 
@@ -97,3 +97,33 @@ Python runner option is `--converter-source`; the Nextflow workflow parameter is
 `--converter_source`. Keep these interfaces distinct. Record candidate-version
 checks separately from the pinned baseline so a passing old environment is not
 reported as support for a new header family or release.
+
+## Issue, project and code-review behavior
+
+### Issues and the connected project
+
+- Add every issue you work on to the connected project (project #9, "FAIR
+  BioHeaders — 2026 refresh") and set `Status` to `In Progress` when work starts.
+- Keep `Status` current as the work moves (`Todo`, `In Progress`, `Blocked`,
+  `Blocked - In Progress`, `Done`), and set `Outcome` when it closes.
+- Link every PR to its issue (`Closes #N` or `Refs #N`). Do not do unreported work.
+- After each work run (implementation, tests, review pass), post a status comment
+  on the issue or PR: what changed, checks run and results, commit/PR links,
+  blockers, and the next action. Do not rely on chat history.
+
+### Code review on a PR
+
+When a PR receives code review (human or Copilot):
+
+1. Read the overall review and every inline comment before changing anything.
+2. Make each fix in a **new commit**. Do not amend or force-push over reviewed
+   commits; if a rebase is required, cite the new head in the replies.
+3. Reply to each inline finding with the fix and the relevant commit hash.
+4. Resolve that inline comment/thread.
+5. After all findings are handled, post an overall reply to the review
+   summarizing each finding's disposition and the commits.
+6. Treat optional suggestions as required unless they are genuinely out of
+   scope; state why and link a follow-up issue.
+
+Do not push to a repository's main branch or merge a PR without maintainer
+approval.
