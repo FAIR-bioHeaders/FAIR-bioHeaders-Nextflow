@@ -33,7 +33,8 @@ the exact file bytes except the scalar root checksum line; do not hand-edit them
 | `chain/protein.fhp.json` | FHP metadata whose `derivedFrom` records the annotation (placeholder checksum) |
 | `chain/protein.fhp.faa` | Combined FHP protein FASTA (checksum `vW8Ur/Nkj7a/64LAfI5Qdy2O0CudSLCBD6WL/jmdA0Y=`) |
 
-Expected behaviour with fair-bioheaders 0.8.0:
+Expected behaviour with fair-bioheaders 0.8.0, unchanged with the pinned 0.8.1
+(the files pass its stricter checksum-line, YAML 1.1/1.2 and size checks):
 
 - `fhr-fasta-validate` accepts `chain/protein.fhp.faa` and rejects both
   `malformed-*` files (missing required property; duplicate YAML key).

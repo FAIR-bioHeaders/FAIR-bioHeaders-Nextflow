@@ -113,7 +113,7 @@ def directoryDigest(Path directory) {
 }
 
 def versionCheck() {
-    return 'fhr_version="$(fhr-convert --version || true)"; if [ "$fhr_version" != "0.8.0" ]; then echo "FHR-Nextflow requires fhr-convert 0.8.0; found \'${fhr_version:-none}\'" >&2; exit 1; fi'
+    return 'fhr_version="$(fhr-convert --version || true)"; if [ "$fhr_version" != "0.8.1" ]; then echo "FHR-Nextflow requires fhr-convert 0.8.1; found \'${fhr_version:-none}\'" >&2; exit 1; fi'
 }
 
 def versionReport() {
@@ -125,7 +125,7 @@ def versionReport() {
 def bioheadersVersionCheck() {
     // The bioheaders subcommands (verify-links) share the fhr-* entry points'
     // implementation but have their own program name.
-    return 'bioheaders_version="$(bioheaders --version || true)"; if [ "$bioheaders_version" != "0.8.0" ]; then echo "FHR-Nextflow requires bioheaders 0.8.0; found \'${bioheaders_version:-none}\'" >&2; exit 1; fi'
+    return 'bioheaders_version="$(bioheaders --version || true)"; if [ "$bioheaders_version" != "0.8.1" ]; then echo "FHR-Nextflow requires bioheaders 0.8.1; found \'${bioheaders_version:-none}\'" >&2; exit 1; fi'
 }
 
 def bioheadersVersionReport() {
