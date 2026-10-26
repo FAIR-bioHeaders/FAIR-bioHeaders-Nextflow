@@ -18,7 +18,7 @@ workflow {
     FHR_ATTACH(FHR_CREATE_JSON.out.json.map { meta, json ->
         tuple(meta, json, file(params.sequence, checkIfExists: true), 'fasta')
     })
-    // FHR_ATTACH.out.sequence contains checksum-validated FASTA files.
+    // FHR_ATTACH.out.sequence contains checksum-verified FASTA files (ID.fhr.fa).
     // FHR_ATTACH.out.json contains JSON with each attached file's checksum.
 }
 ```
@@ -42,7 +42,7 @@ workflow {
 }
 ```
 
-Provide a toolkit source directory containing `pyproject.toml`, `tests/` and `pytest.ini` that declares version 0.8.1, preferably the v0.8.1 checkout; other versions are rejected, and the installed toolkit version is checked separately. The workflow copies the checkout into its task directory (the input is never modified and no bytecode is written), runs its tests against the installed converter (tests that invoke the checkout's own scripts use the copy), and always emits JUnit XML plus a log so that they can be published. A separate check task then fails the run if pytest failed. An independent test branch does not gate other workflow outputs automatically: combine release or publication channels with `FHR_CONVERTER_TESTS.out.passed` if those steps must wait for passing tests, as the example `main.nf` does:
+Provide a toolkit source directory containing `pyproject.toml`, `tests/` and `pytest.ini` that declares the installed toolkit's version (0.8.2 in the supported baseline), preferably the matching release checkout; other versions are rejected. The workflow copies the checkout into its task directory (the input is never modified and no bytecode is written), runs its tests against the installed converter (tests that invoke the checkout's own scripts use the copy), and always emits JUnit XML plus a log so that they can be published. A separate check task then fails the run if pytest failed. An independent test branch does not gate other workflow outputs automatically: combine release or publication channels with `FHR_CONVERTER_TESTS.out.passed` if those steps must wait for passing tests, as the example `main.nf` does:
 
 ```nextflow
 gate = FHR_CONVERTER_TESTS.out.passed.first()
@@ -127,7 +127,7 @@ A match confirms **file identity only**, never biological translation or annotat
 
 ## Execution and publication
 
-Converter, GFF3-validation and parent-link verification processes have the label `fhr`. Configuration from this repository does not accompany imports into another project. With the supplied image built locally, a consumer can configure:
+Processes that run fair-bioheaders declare their BioContainers image (`quay.io/biocontainers/fair-bioheaders:0.8.2--pyhdfd78af_0`, or the Galaxy depot Singularity image) and a conda `environment.yml`, so a consumer only enables Docker, Singularity, Apptainer or conda. `GFF3_VALIDATE` (gff3-validator is not on Bioconda yet) and `FHR_RUN_CONVERTER_TESTS` (needs pytest) have the label `fhr` instead. Configuration from this repository does not accompany imports into another project. With the supplied image built locally, a consumer can configure:
 
 ```groovy
 nextflow.enable.dsl = 2
@@ -146,14 +146,38 @@ The native JSON writer executes in Nextflow's JVM. Command wrappers use the cons
 
 Modules leave files in their task work directories. The example workflow publishes with Nextflow workflow outputs (`publish:` and `output {}`), copying results into `params.outdir` per sample ID, and withholds them until converter tests pass when `--converter_source` is given; production consumers should define their own publication rules and retain logs and version reports appropriate to their provenance needs. Use unique sample IDs and keep Nextflow work directories while downstream tasks still require them. The supplied Docker profile runs containers as the invoking user, so work files are not root-owned.
 
+## nf-core-style modules
+
+`modules/nf-core/fairbioheaders/` holds three modules in nf-core/modules layout (`main.nf`, `meta.yml` with EDAM formats, `environment.yml`, `tests/main.nf.test` and snapshots). They moved here from FAIR-bioHeaders-Tools with their git history (#21).
+
+| Module | Input | Output |
+| --- | --- | --- |
+| `FAIRBIOHEADERS_COMBINE` | `(meta, metadata, sequence)` | `sequence`: the headed file, named by header type: `PREFIX.fhr.fa`, `PREFIX.fhr.gfa`, `PREFIX.fhp.faa` or `PREFIX.fhgff3.gff3`, with `.gz` when the input was compressed |
+| `FAIRBIOHEADERS_VERIFY` | `(meta, sequence)` | `report`: `PREFIX.verify.txt`; the task fails when the header is invalid or the checksum does not match |
+| `FAIRBIOHEADERS_VALIDATE` | `(meta, metadata)` | `report`: `PREFIX.validate.txt`; the task fails when standalone JSON/YAML metadata does not validate |
+
+`PREFIX` is `task.ext.prefix` or `meta.id`; `task.ext.args` is passed to `bioheaders`. COMBINE takes the sequence type from the extension (`.gfa`, `.gff3`/`.gff`, otherwise FASTA, so `.faa` is FASTA) and the header type from the metadata's `schema` URL, by the toolkit's own rule (`bioheaders.header_type`). Versions go to the `versions` topic. Run their tests with `nf-test test --profile docker` from the repository root (`nf-test.config`, `tests/config/nf-test.config`).
+
+```nextflow
+include { FAIRBIOHEADERS_COMBINE } from '/path/to/FHR-Nextflow/modules/nf-core/fairbioheaders/combine/main'
+include { FAIRBIOHEADERS_VERIFY } from '/path/to/FHR-Nextflow/modules/nf-core/fairbioheaders/verify/main'
+
+workflow {
+    FAIRBIOHEADERS_COMBINE(channel.of(tuple([id: 'proteins'], file(params.metadata), file(params.protein))))
+    FAIRBIOHEADERS_VERIFY(FAIRBIOHEADERS_COMBINE.out.sequence)  // proteins.fhp.faa with FHP metadata
+}
+```
+
+The minimal Dockstore workflow [workflows/fairbioheaders](../workflows/fairbioheaders/README.md) runs COMBINE then VERIFY over a samplesheet.
+
 ## Diagnosing failures
 
 - **Invalid metadata:** inspect the validator error and compare the map with the pinned specification. JSON serialization succeeds independently of schema validation; only validated JSON is emitted by `FHR_CREATE_JSON`.
-- **Converter version mismatch:** install the pinned distribution or use the supplied image. Upgrade the compatibility contract and tests together before accepting another version.
+- **Toolkit version:** the modules no longer stop on a version mismatch; each task reports the version it ran on the `versions` topic. Use the modules' BioContainers images (or the pinned environment) for the supported baseline, and upgrade the compatibility contract and tests together before claiming another version.
 - **Checksum mismatch:** verify that no program changed the header, whitespace, line endings or sequence bytes after attachment. Reattach when changing metadata.
 - **Unsafe ID or unsupported format:** use IDs and format values from the README contract. Paths are quoted; command formats are explicitly restricted.
 - **GFF3 validation failed:** read the findings in the task error or the JSON/HTML report in the task work directory; with `fail_on_errors = false` the reports are emitted instead. An "incomplete" failure means the GFF3 or genome could not be read.
-- **Failed converter tests:** inspect the published `converter-tests/converter-tests.log` and JUnit XML. A checkout that does not declare version 0.8.1 is rejected before tests run.
+- **Failed converter tests:** inspect the published `converter-tests/converter-tests.log` and JUnit XML. A checkout whose declared version differs from the installed toolkit is rejected before tests run.
 - **Parent-link verification failed:** read the report (and the task error) for the `derivedFrom` entry that did not match; supply the parent file the header records, recombine the parent if it changed, or set `ext.fail_on_mismatch = false` to survey a batch. An "incomplete" failure means the input or a parent could not be read or validated. A match proves file identity, not translation correctness.
 - **JSON serialization errors:** the message names the field location, for example `$.dateCreated`; convert dates to ISO 8601 strings and remove NaN, Infinity and `null` list items.
 
