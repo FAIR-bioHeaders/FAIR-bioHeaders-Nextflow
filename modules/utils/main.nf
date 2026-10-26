@@ -112,26 +112,6 @@ def directoryDigest(Path directory) {
     return digest.digest().encodeHex().toString()
 }
 
-def versionCheck() {
-    return 'fhr_version="$(fhr-convert --version || true)"; if [ "$fhr_version" != "0.8.1" ]; then echo "FHR-Nextflow requires fhr-convert 0.8.1; found \'${fhr_version:-none}\'" >&2; exit 1; fi'
-}
-
-def versionReport() {
-    // Escaped so that the shell, not Groovy, sees \n: a literal newline here
-    // would defeat Nextflow's script indentation stripping.
-    return 'printf "fhr: %s\\n" "$(fhr-convert --version)" > versions.yml'
-}
-
-def bioheadersVersionCheck() {
-    // The bioheaders subcommands (verify-links) share the fhr-* entry points'
-    // implementation but have their own program name.
-    return 'bioheaders_version="$(bioheaders --version || true)"; if [ "$bioheaders_version" != "0.8.1" ]; then echo "FHR-Nextflow requires bioheaders 0.8.1; found \'${bioheaders_version:-none}\'" >&2; exit 1; fi'
-}
-
-def bioheadersVersionReport() {
-    return 'printf "fair-bioheaders: %s\\n" "$(bioheaders --version)" > versions.yml'
-}
-
 def requireAllParents(Object ext) {
     def value = ext.require_all == null ? false : ext.require_all
     if (!(value instanceof Boolean))
@@ -144,14 +124,6 @@ def failOnMismatch(Object ext) {
     if (!(value instanceof Boolean))
         throw new IllegalArgumentException("ext.fail_on_mismatch must be true or false; found '${value}'")
     return value
-}
-
-def gff3VersionCheck() {
-    return 'gff3_version="$(gff3-validate --version || true)"; if [ "$gff3_version" != "0.1.0" ]; then echo "FHR-Nextflow requires gff3-validate 0.1.0; found \'${gff3_version:-none}\'" >&2; exit 1; fi'
-}
-
-def gff3VersionReport() {
-    return 'printf "gff3-validator: %s\\n" "$(gff3-validate --version)" > versions.yml'
 }
 
 def gff3Options(Object ext, Object genome) {

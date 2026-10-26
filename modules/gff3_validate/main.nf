@@ -3,18 +3,22 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-include { failOnErrors; gff3Options; gff3VersionCheck; gff3VersionReport; quote; sampleId } from '../utils/main'
+include { failOnErrors; gff3Options; quote; sampleId } from '../utils/main'
 
-// Validates a GFF3 file (plain, gzip or BGZF) with the pinned gff3-validate
-// 0.1.0 and writes JSON and HTML reports. Pass [] as the genome when there is
-// none; a genome FASTA enables the BIO-* sequence checks. Options come from
-// task.ext: header ('auto', 'require' or 'skip'), translation_table (needs a
-// genome), max_findings and fail_on_errors (default true).
+// Validates a GFF3 file (plain, gzip or BGZF) with gff3-validate and writes
+// JSON and HTML reports. Pass [] as the genome when there is none; a genome
+// FASTA enables the BIO-* sequence checks. Options come from task.ext: header
+// ('auto', 'require' or 'skip'), translation_table (needs a genome), max_findings
+// and fail_on_errors (default true).
 //
 // Exit status 1 (errors found) fails the task unless ext.fail_on_errors is
 // false; the reports are then emitted and the file is omitted from `valid`.
 // Exit status 2 (unreadable input or genome, incomplete validation) always
 // fails the task.
+//
+// gff3-validator is not on Bioconda yet (bioconda/bioconda-recipes#70098), so this
+// module runs in the repository's own image (label 'fhr', params.fhr_container,
+// built from environment/); move it to BioContainers when the recipe is merged.
 process GFF3_VALIDATE {
     tag "${meta.id}"
     label 'fhr'
@@ -27,7 +31,7 @@ process GFF3_VALIDATE {
     // A file with no errors is linked into valid/ by the script; only those
     // links are emitted, so an invalid file never reaches `valid`.
     tuple val(meta), path("valid/*"), emit: valid, optional: true
-    tuple val(meta), path('versions.yml'), emit: versions
+    tuple val("${task.process}"), val('gff3-validator'), eval('gff3-validate --version'), emit: versions_gff3validator, topic: versions
 
     script:
     def id = sampleId(meta)
@@ -38,7 +42,6 @@ process GFF3_VALIDATE {
     def html = quote("${id}.gff3-validate.html")
     def name = quote(gff3.toString().tokenize('/').last())
     """
-    ${gff3VersionCheck()}
     set +e
     gff3-validate --format json ${options} ${input} > ${json}
     status=\$?
@@ -59,6 +62,5 @@ process GFF3_VALIDATE {
         mkdir -p valid
         ln -s ../${input} valid/
     fi
-    ${gff3VersionReport()}
     """
 }

@@ -42,6 +42,6 @@ workflow {
             tuple([id: "attached-${kind}", original: original.toString()], json, original, kind)
         }
     })
-    FHR_STRIP(FHR_ATTACH.out.sequence.map { meta, sequence -> tuple(meta, sequence, sequence.name.endsWith('.fasta') ? 'fasta' : 'gfa') })
+    FHR_STRIP(FHR_ATTACH.out.sequence.map { meta, sequence -> tuple(meta, sequence, sequence.name.endsWith('.gfa') ? 'gfa' : 'fasta') })
     ASSERT_BYTES(FHR_STRIP.out.stripped)
 }

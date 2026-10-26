@@ -5,7 +5,7 @@
 
 include { metadataJson; sampleId } from '../utils/main'
 
-include { FHR_VALIDATE as VALIDATE_CREATED_JSON } from '../validate/main'
+include { FAIRBIOHEADERS_VALIDATE as VALIDATE_CREATED_JSON } from '../nf-core/fairbioheaders/validate/main'
 
 process FHR_WRITE_JSON {
     tag "${meta.id}"
@@ -29,10 +29,15 @@ workflow FHR_CREATE_JSON {
 
     main:
     FHR_WRITE_JSON(records)
-    VALIDATE_CREATED_JSON(FHR_WRITE_JSON.out.json.map { meta, json -> tuple(meta, json, 'metadata') })
+    VALIDATE_CREATED_JSON(FHR_WRITE_JSON.out.json)
+    // Only JSON that validated is emitted: the validation task fails otherwise, and
+    // the report carries the same meta, which is unique per record.
+    validated = FHR_WRITE_JSON.out.json
+        .join(VALIDATE_CREATED_JSON.out.report, failOnDuplicate: true, failOnMismatch: true)
+        .map { meta, json, _report -> tuple(meta, json) }
 
     emit:
-    json = VALIDATE_CREATED_JSON.out.validated
-    reports = VALIDATE_CREATED_JSON.out.reports
-    versions = VALIDATE_CREATED_JSON.out.versions
+    json = validated
+    reports = VALIDATE_CREATED_JSON.out.report
+    versions = VALIDATE_CREATED_JSON.out.versions_fairbioheaders
 }
