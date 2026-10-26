@@ -6,3 +6,7 @@ results/
 __pycache__/
 *.pyc
 results-*/
+
+# nf-test
+.nf-test/
+.nf-test.log
