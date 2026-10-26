@@ -1,0 +1,132 @@
+{
+    "fhr - yaml - stub": {
+        "content": [
+            {
+                "report": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.validate.txt:md5,d41d8cd98f00b204e9800998ecf8427e"
+                    ]
+                ],
+                "versions_fairbioheaders": [
+                    [
+                        "FAIRBIOHEADERS_VALIDATE",
+                        "fair-bioheaders",
+                        "0.8.2"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-26T10:24:25.867215717",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "fhr - json": {
+        "content": [
+            {
+                "report": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.validate.txt:md5,9298eedcb1e85414466aa1a989e8b29b"
+                    ]
+                ],
+                "versions_fairbioheaders": [
+                    [
+                        "FAIRBIOHEADERS_VALIDATE",
+                        "fair-bioheaders",
+                        "0.8.2"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-26T10:23:31.512620671",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "fhr - yaml": {
+        "content": [
+            {
+                "report": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.validate.txt:md5,45743913480fb070cfaee6f1ee047ede"
+                    ]
+                ],
+                "versions_fairbioheaders": [
+                    [
+                        "FAIRBIOHEADERS_VALIDATE",
+                        "fair-bioheaders",
+                        "0.8.2"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-26T10:23:19.0949253",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "fhp - yaml": {
+        "content": [
+            {
+                "report": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.validate.txt:md5,253be97114c2f3c8ef6d998f707073d6"
+                    ]
+                ],
+                "versions_fairbioheaders": [
+                    [
+                        "FAIRBIOHEADERS_VALIDATE",
+                        "fair-bioheaders",
+                        "0.8.2"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-26T10:23:45.142556501",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "fhgff3 - yaml": {
+        "content": [
+            {
+                "report": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.validate.txt:md5,15c974d15aab05331655ef9f10b1bb90"
+                    ]
+                ],
+                "versions_fairbioheaders": [
+                    [
+                        "FAIRBIOHEADERS_VALIDATE",
+                        "fair-bioheaders",
+                        "0.8.2"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-26T10:23:55.04436891",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}
