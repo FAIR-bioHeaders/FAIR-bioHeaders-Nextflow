@@ -4,9 +4,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 //
-// Adds FAIR-bioHeaders metadata to FASTA, GFA or GFF3 files and verifies the result:
-// FAIRBIOHEADERS_COMBINE writes the headed file with its checksum, then
-// FAIRBIOHEADERS_VERIFY checks the header against the schema and the checksum.
+// Adds FAIR-bioHeaders metadata to FASTA, protein FASTA, GFA or GFF3 files and
+// verifies the result: FAIRBIOHEADERS_COMBINE writes the headed file with its
+// checksum, then FAIRBIOHEADERS_VERIFY checks the header against the schema and
+// the checksum.
 // See README.md in this directory for the parameters.
 
 include { FAIRBIOHEADERS_COMBINE } from '../../modules/nf-core/fairbioheaders/combine/main'
@@ -42,7 +43,7 @@ workflow {
             }
     } else if (params.metadata && params.sequence) {
         def sequence = file(params.sequence, checkIfExists: true)
-        def id = params.id ?: sequence.name.replaceFirst(/(\.(fa|fasta|fna|gfa|gff3?))?(\.b?gz)?$/, '')
+        def id = params.id ?: sequence.name.replaceFirst(/(\.(fa|fasta|fna|faa|gfa|gff3?))?(\.b?gz)?$/, '')
         input = channel.of([[id: id], file(params.metadata, checkIfExists: true), sequence])
     } else {
         error("Give --input samplesheet.csv, or --metadata and --sequence (see README.md).")
