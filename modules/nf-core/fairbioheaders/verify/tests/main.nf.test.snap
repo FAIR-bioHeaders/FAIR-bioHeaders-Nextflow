@@ -51,6 +51,32 @@
             "nextflow": "26.04.6"
         }
     },
+    "sarscov2 - faa - fhp": {
+        "content": [
+            {
+                "report": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.verify.txt:md5,87c74968a4f43b77ae4e06b01108e9ce"
+                    ]
+                ],
+                "versions_fairbioheaders": [
+                    [
+                        "FAIRBIOHEADERS_VERIFY",
+                        "fair-bioheaders",
+                        "0.8.2"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-10-26T10:25:03.558674587",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
     "sarscov2 - fasta.gz": {
         "content": [
             {

@@ -50,6 +50,23 @@ derivedFrom:
 checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 '''
 
+    // Minimal FHP metadata for the test proteome; FHP rides on (protein) FASTA.
+    def fhpMetadata = '''\
+schema: https://w3id.org/fair-bioheaders/fhp/v0.4.0
+schemaVersion: '1.0'
+proteome: SARS-CoV-2 test proteome
+sourceType: database
+taxon:
+  name: Severe acute respiratory syndrome coronavirus 2
+  uri: https://identifiers.org/taxonomy:2697049
+version: '1'
+metadataAuthor:
+  - name: Josiah Carberry
+    uri: https://orcid.org/0000-0002-1825-0097
+dateCreated: '2020-01-01'
+checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+'''
+
     test("sarscov2 - fasta") {
 
         when {
@@ -156,6 +173,84 @@ checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 
     }
 
+    test("sarscov2 - faa - fhp") {
+
+        when {
+            process {
+                """
+                input[0] = Channel.of('''${fhpMetadata}''')
+                    .collectFile(name: 'test.fhp.yaml')
+                    .map { yaml -> [
+                        [ id:'test' ],
+                        yaml,
+                        file(params.modules_testdata_base_path + 'genomics/sarscov2/genome/proteome_test.faa', checkIfExists: true)
+                    ] }
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assertAll(
+                { assert process.out.sequence[0][1].endsWith('test.fhp.faa') },
+                { assert path(process.out.sequence[0][1]).readLines()[0] == ';~schema: https://w3id.org/fair-bioheaders/fhp/v0.4.0' },
+                { assert snapshot(sanitizeOutput(process.out)).match() }
+            )
+        }
+
+    }
+
+    test("sarscov2 - proteome fasta.gz - fhp") {
+
+        when {
+            process {
+                """
+                input[0] = Channel.of('''${fhpMetadata}''')
+                    .collectFile(name: 'test.fhp.yaml')
+                    .map { yaml -> [
+                        [ id:'test' ],
+                        yaml,
+                        file(params.modules_testdata_base_path + 'genomics/sarscov2/genome/proteome.fasta.gz', checkIfExists: true)
+                    ] }
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assertAll(
+                { assert process.out.sequence[0][1].endsWith('test.fhp.faa.gz') },
+                { assert path(process.out.sequence[0][1]).linesGzip[0] == ';~schema: https://w3id.org/fair-bioheaders/fhp/v0.4.0' },
+                { assert snapshot(sanitizeOutput(process.out)).match() }
+            )
+        }
+
+    }
+
+    test("sarscov2 - gfa - fhp - fails") {
+
+        when {
+            process {
+                """
+                input[0] = Channel.of('''${fhpMetadata}''')
+                    .collectFile(name: 'test.fhp.yaml')
+                    .map { yaml -> [
+                        [ id:'test' ],
+                        yaml,
+                        file(params.modules_testdata_base_path + 'genomics/sarscov2/illumina/gfa/assembly.gfa', checkIfExists: true)
+                    ] }
+                """
+            }
+        }
+
+        then {
+            assert process.failed
+            assert process.stdout.any { line -> line.contains('FHP metadata is incompatible with GFA') } ||
+                process.stderr.any { line -> line.contains('FHP metadata is incompatible with GFA') }
+        }
+
+    }
+
     test("sarscov2 - fasta - stub") {
 
         options "-stub"
@@ -169,6 +264,33 @@ checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
                         [ id:'test' ],
                         yaml,
                         file(params.modules_testdata_base_path + 'genomics/sarscov2/genome/genome.fasta', checkIfExists: true)
+                    ] }
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assertAll(
+                { assert snapshot(sanitizeOutput(process.out)).match() }
+            )
+        }
+
+    }
+
+    test("sarscov2 - faa - fhp - stub") {
+
+        options "-stub"
+
+        when {
+            process {
+                """
+                input[0] = Channel.of('''${fhpMetadata}''')
+                    .collectFile(name: 'test.fhp.yaml')
+                    .map { yaml -> [
+                        [ id:'test' ],
+                        yaml,
+                        file(params.modules_testdata_base_path + 'genomics/sarscov2/genome/proteome_test.faa', checkIfExists: true)
                     ] }
                 """
             }

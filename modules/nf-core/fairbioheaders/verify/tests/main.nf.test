@@ -50,6 +50,23 @@ derivedFrom:
 checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 '''
 
+    // Minimal FHP metadata for the test proteome (see fairbioheaders/combine).
+    def fhpMetadata = '''\
+schema: https://w3id.org/fair-bioheaders/fhp/v0.4.0
+schemaVersion: '1.0'
+proteome: SARS-CoV-2 test proteome
+sourceType: database
+taxon:
+  name: Severe acute respiratory syndrome coronavirus 2
+  uri: https://identifiers.org/taxonomy:2697049
+version: '1'
+metadataAuthor:
+  - name: Josiah Carberry
+    uri: https://orcid.org/0000-0002-1825-0097
+dateCreated: '2020-01-01'
+checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+'''
+
     test("sarscov2 - fasta.gz") {
 
         setup {
@@ -81,6 +98,43 @@ checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
             assert process.success
             assertAll(
                 { assert path(process.out.report[0][1]).readLines().contains('Checksum verified.') },
+                { assert snapshot(sanitizeOutput(process.out)).match() }
+            )
+        }
+
+    }
+
+    test("sarscov2 - faa - fhp") {
+
+        setup {
+            run("FAIRBIOHEADERS_COMBINE") {
+                script "../../combine/main.nf"
+                process {
+                    """
+                    input[0] = Channel.of('''${fhpMetadata}''')
+                        .collectFile(name: 'test.fhp.yaml')
+                        .map { yaml -> [
+                            [ id:'test' ],
+                            yaml,
+                            file(params.modules_testdata_base_path + 'genomics/sarscov2/genome/proteome_test.faa', checkIfExists: true)
+                        ] }
+                    """
+                }
+            }
+        }
+
+        when {
+            process {
+                """
+                input[0] = FAIRBIOHEADERS_COMBINE.out.sequence
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assertAll(
+                { assert path(process.out.report[0][1]).readLines() == ['file: test.fhp.faa', 'Checksum verified.'] },
                 { assert snapshot(sanitizeOutput(process.out)).match() }
             )
         }

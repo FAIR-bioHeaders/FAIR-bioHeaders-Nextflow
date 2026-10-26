@@ -1,10 +1,12 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/meta-schema.json
 name: "fairbioheaders_verify"
-description: Verify the FAIR-bioHeaders (FHR) header of a FASTA or GFA file, validating it
-  against the FHR schema and checking that its SHA-512/256 checksum matches the file
+description: Verify the FAIR-bioHeaders header (FHR, FHP or FHGFF3) of a FASTA, protein
+  FASTA, GFA or GFF3 file, validating it against its schema and checking that its
+  SHA-512/256 checksum matches the file
 keywords:
   - fasta
   - gfa
+  - gff3
   - metadata
   - provenance
   - fair
@@ -12,7 +14,7 @@ keywords:
 tools:
   - "fair-bioheaders":
       description: "FAIR-bioHeaders Tools: validate, convert, combine and strip FAIR-bioHeaders
-        (FHR) provenance metadata embedded in FASTA and GFA headers"
+        (FHR, FHP, FHGFF3) provenance metadata embedded in FASTA, GFA and GFF3 headers"
       homepage: "https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Tools"
       documentation: "https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Tools#readme"
       tool_dev_url: "https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Tools"
@@ -26,8 +28,9 @@ input:
         description: Groovy Map containing sample information. e.g. `[ id:'sample1' ]`
     - sequence:
         type: file
-        description: FASTA or GFA file with an FHR header, or GFF3 with an FHGFF3 header, plain or gzip/BGZF-compressed
-        pattern: "*.{fa,fasta,fna,fas,gfa,gff,gff3}{,.gz,.bgz}"
+        description: FASTA or GFA file with an FHR header, protein FASTA with an FHP
+          header, or GFF3 with an FHGFF3 header, plain or gzip/BGZF-compressed
+        pattern: "*.{fa,fasta,fna,fas,faa,gfa,gff,gff3}{,.gz,.bgz}"
         ontologies:
           - edam: http://edamontology.org/format_1929 # FASTA
           - edam: http://edamontology.org/format_3975 # GFA 1
