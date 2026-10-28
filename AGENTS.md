@@ -56,13 +56,13 @@ Keep orchestration and JSON creation native to Nextflow. `modules/utils/main.nf`
 
 The FHR paper (<https://doi.org/10.1093/bib/bbae122>) motivates provenance preservation, minimal required metadata and interoperable serializations. Interpreting those goals here: pass sample IDs through channels, never invent authors/software/accessions/SeqCol digests, preserve sequence bytes, and validate before exposing outputs downstream.
 
-Run `python tests/run.py` with Nextflow 26.04.6, Java 21 and the hash-locked environment in environment/requirements.txt (generated from requirements.in). Tests exercise module composition, both sequence formats, all conversions, malformed/missing metadata, metadata quoting and converter tests. Use `--converter-source ../FAIR-bioHeaders-Tools` to run its tests. Docker environment checks use `docker build -t fhr-nextflow:0.1.0 environment` and `-profile docker`.
+Run `python tests/run.py` with Nextflow 26.04.6, Java 21 and the hash-locked environment in environment/requirements.txt (generated from requirements.in); run `nf-test test --profile docker` for the nf-core-style modules and `nextflow run workflows/fairbioheaders/main.nf -profile test,docker` for the Dockstore workflow. Tests exercise module composition, both sequence formats, all conversions, malformed/missing metadata, metadata quoting and converter tests. Use `--converter-source ../FAIR-bioHeaders-Tools` to run its tests. Docker environment checks use `docker build -t fhr-nextflow:0.1.0 environment` and `-profile docker`.
 
 Inspect module channel contracts and docs together. Native exec tasks write only under task.workDir. Quote staged paths, whitelist command formats and constrain output IDs. Do not copy or change schema rules in this repository. No placeholder checksum is silently supplied: standalone JSON requires a checksum; combine calculates the attached file's checksum, and the example publishes only attached-file metadata when given a sequence. Exceptions thrown from helper functions reach users as an opaque InvocationTargetException outside tasks; return a problem message and throw from the closure instead. Record verification and compatibility changes in CHANGELOG.md.
 
 ## Repository map and review
 
-`main.nf` is the runnable example; `modules/*/main.nf` contains reusable processes and the JSON workflow — `create_json`, `validate`, `convert`, `combine`, `strip`, `converter_tests` and `utils`, plus `verify_links` (`FHR_VERIFY_LINKS`, wrapping `bioheaders verify-links` parent checks) and `gff3_validate` (`GFF3_VALIDATE`, wrapping the pinned gff3-validator 0.1.0); `subworkflows/attach/main.nf` composes attachment, validation and JSON extraction. Protein (`.faa`/FHP) coverage and the FHR→FHGFF3→FHP parent-chain fixtures are recorded in CHANGELOG.md. `nextflow.config` configures the example, not importing projects. `environment/` pins the converter runtime. `tests/integration.nf` checks native composition; `tests/run.py` drives positive and rejection cases from an external project.
+`main.nf` is the runnable example; `modules/*/main.nf` contains reusable processes and the JSON workflow — `create_json`, `convert`, `strip`, `converter_tests` and `utils`, plus `verify_links` (`FHR_VERIFY_LINKS`, wrapping `bioheaders verify-links` parent checks) and `gff3_validate` (`GFF3_VALIDATE`, wrapping the pinned gff3-validator 0.1.0). `modules/nf-core/fairbioheaders/{combine,verify,validate}` are the nf-core-style `FAIRBIOHEADERS_COMBINE`, `FAIRBIOHEADERS_VERIFY` (headed sequence files) and `FAIRBIOHEADERS_VALIDATE` (standalone metadata), with meta.yml, environment.yml and nf-test tests (`nf-test.config`, `tests/config/`); follow nf-core/modules conventions there and lint with `nf-core modules lint`. `subworkflows/attach/main.nf` composes combine, verify and JSON extraction. `workflows/fairbioheaders` is the minimal Dockstore workflow (`.dockstore.yml`). The nf-core modules, the Dockstore workflow and their CI moved from FAIR-bioHeaders-Tools `nextflow/` with history (#21). Protein (`.faa`/FHP) coverage and the FHR→FHGFF3→FHP parent-chain fixtures are recorded in CHANGELOG.md. `nextflow.config` configures the example, not importing projects. `environment/` pins the converter runtime. `tests/integration.nf` checks native composition; `tests/run.py` drives positive and rejection cases from an external project.
 
 Read README, CONTRIBUTING, SECURITY and the pipeline guide before changing their contracts. Preserve CRLF fixture bytes and sample IDs. For documentation-only changes, check relative links and examples; rerun pipelines when executable behavior changes. Update CHANGELOG with relevant verification. Keep human-readable citations in Chicago style with DOI links and machine-readable citation metadata distinct from release identifiers.
 
@@ -79,12 +79,15 @@ do not rewrite historical releases or silently relicense upstream material.
 
 ## Pin changes and the two Nextflow integration surfaces
 
-This repository owns the runnable demo, DSL2 composition and external-project
-integration tests. FAIR-bioHeaders-Tools separately owns nf-core-style modules
-under its `nextflow/` tree; a change here does not update or validate those modules.
-Keep cross-repository handoffs explicit and avoid creating another schema/parser.
+This repository owns the runnable demo, DSL2 composition, external-project
+integration tests, the nf-core-style modules and the Dockstore workflow (moved from
+FAIR-bioHeaders-Tools `nextflow/`, #21). FAIR-bioHeaders-Tools keeps the toolkit,
+Galaxy wrappers and its Docker image. Keep cross-repository handoffs explicit and
+avoid creating another schema/parser.
 
-For a compatibility upgrade, inspect `environment/requirements.in`, its generated
+For a compatibility upgrade, inspect every module's `environment.yml` and
+BioContainers/Galaxy depot image pair, the Dockstore workflow's `environment.yml`,
+the nf-test snapshots, `environment/requirements.in`, its generated
 hash-locked `requirements.txt`, `environment/Dockerfile`, CI's converter commit and
 Nextflow download/hash pins, README compatibility claims, examples and tests.
 Change only the pins needed for the intended support; regenerate locks by their
@@ -97,6 +100,35 @@ Python runner option is `--converter-source`; the Nextflow workflow parameter is
 `--converter_source`. Keep these interfaces distinct. Record candidate-version
 checks separately from the pinned baseline so a passing old environment is not
 reported as support for a new header family or release.
+
+## Consolidation decisions (#21, approved 2026-10-28)
+
+The maintainers approved these on #21 (recommendations of 2026-10-24, approved by
+David Molik on 2026-10-28). Follow them unless a later issue changes them.
+
+- **One implementation per job.** combine: `FAIRBIOHEADERS_COMBINE` (calls
+  `bioheaders combine`; FASTA, protein FASTA as `.fhp.faa`, GFA and GFF3/FHGFF3).
+  verify: `FAIRBIOHEADERS_VERIFY` for headed sequence files (schema plus checksum).
+  validate: `FAIRBIOHEADERS_VALIDATE` for standalone JSON/YAML metadata, kept separate
+  from verify. `create_json`, `convert`, `strip`, `gff3_validate`, `converter_tests`
+  and `verify_links` are unique to this repository and move to the same conventions
+  over time. Do not add a second module for a job that already has one.
+- **Conventions.** Containers come from Bioconda/BioContainers
+  (`bioconda::fair-bioheaders`, `quay.io/biocontainers/fair-bioheaders`, the Galaxy
+  depot Singularity image); pin only a version that exists in all three. Use
+  nf-core-style version reporting and nf-test, not exact-version gates. The
+  repository image in `environment/` stays only for what BioContainers cannot supply
+  (gff3-validator until bioconda/bioconda-recipes#70098 merges; pytest for the
+  converter tests), then goes.
+- **Name, demo status, Dockstore, in this order.** Rename the repository to
+  FAIR-bioHeaders-Nextflow before the first release and before Dockstore registration
+  (GitHub redirects the old name; renaming after registration means re-registering).
+  Then leave demo status with a v0.1.0 release once the migration is merged and CI is
+  green. Then install the Dockstore GitHub App here, register `.dockstore.yml`, and
+  mark the FAIR-bioHeaders-Tools Dockstore entry deprecated in favour of this one,
+  keeping its versions as history.
+- FAIR-bioHeaders-Tools removes its migrated `nextflow/` copies only after this
+  repository's CI passes with them, and keeps a pointer here.
 
 ## Issue, project and code-review behavior
 

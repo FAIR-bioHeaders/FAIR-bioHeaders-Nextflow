@@ -1,0 +1,4 @@
+{
+  "input": "https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Nextflow/main/workflows/fairbioheaders/assets/test/samplesheet.csv",
+  "outdir": "results"
+}

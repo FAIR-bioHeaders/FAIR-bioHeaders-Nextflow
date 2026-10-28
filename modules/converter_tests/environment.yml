@@ -1,0 +1,9 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/environment-schema.json
+# The converter tests need pytest, which the fair-bioheaders package does not include.
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bioconda::fair-bioheaders=0.8.2
+  - conda-forge::pytest=9.1.1

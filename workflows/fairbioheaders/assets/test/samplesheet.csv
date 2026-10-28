@@ -1,0 +1,6 @@
+id,metadata,sequence
+fasta,minimal.fhr.json,genome.fa
+gfa,minimal.fhr.json,genome.gfa
+gff3,annotation.fhgff3.yaml,no-header.gff3
+jsonld,minimal.fhr.expanded.jsonld,genome.fa
+protein,../../../../examples/protein-metadata.json,../../../../examples/protein.faa

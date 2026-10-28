@@ -8,6 +8,7 @@
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -107,11 +108,11 @@ def main():
         bad_format = work / 'bad-format.nf'
         bad_format.write_text("include { FHR_CONVERT } from '" + str(ROOT / 'modules/convert/main') + "'\nworkflow { FHR_CONVERT(Channel.of(tuple([id:'bad'], file(params.metadata), 'exe'))) }\n")
         run(bad_format, work, ['--metadata', str(fixture)], failure='Unsupported format')
-        attached = next((work / 'work').glob('*/*/attached-fasta.fhr.fasta'))
+        attached = next((work / 'work').glob('*/*/attached-fasta.fhr.fa'))
         tampered = work / 'tampered.fasta'
         tampered.write_bytes(attached.read_bytes().replace(b'AAAATCGATCGGCATA', b'TAAATCGATCGGCATA'))
         bad_checksum = work / 'bad-checksum.nf'
-        bad_checksum.write_text("include { FHR_VALIDATE } from '" + str(ROOT / 'modules/validate/main') + "'\nworkflow { FHR_VALIDATE(Channel.of(tuple([id:'tampered'], file(params.sequence), 'fasta'))) }\n")
+        bad_checksum.write_text("include { FAIRBIOHEADERS_VERIFY } from '" + str(ROOT / 'modules/nf-core/fairbioheaders/verify/main') + "'\nworkflow { FAIRBIOHEADERS_VERIFY(Channel.of(tuple([id:'tampered'], file(params.sequence)))) }\n")
         run(bad_checksum, work, ['--sequence', str(tampered)], failure='checksum')
         # FHR lines must form the leading header block (converter 0.3.1).
         late_header = work / 'late-header.fasta'
@@ -208,7 +209,8 @@ def main():
         convert = "include { FHR_CONVERT } from '" + str(ROOT / 'modules/convert/main') + "'\n"
         attach = "include { FHR_ATTACH } from '" + str(ROOT / 'subworkflows/attach/main') + "'\n"
         strip = "include { FHR_STRIP } from '" + str(ROOT / 'modules/strip/main') + "'\n"
-        validate = "include { FHR_VALIDATE } from '" + str(ROOT / 'modules/validate/main') + "'\n"
+        verify_header = "include { FAIRBIOHEADERS_VERIFY } from '" + str(ROOT / 'modules/nf-core/fairbioheaders/verify/main') + "'\n"
+        validate = "include { FAIRBIOHEADERS_VALIDATE } from '" + str(ROOT / 'modules/nf-core/fairbioheaders/validate/main') + "'\n"
         verify = "include { FHR_VERIFY_LINKS } from '" + str(ROOT / 'modules/verify_links/main') + "'\n"
 
         compose = work / 'fhp-compose.nf'
@@ -228,8 +230,8 @@ workflow {
         tuple([id: source.name.replaceFirst(/\\.fhp\\.json$/, '')], new groovy.json.JsonSlurper().parseText(source.text))
     }
     FHR_CREATE_JSON(Channel.fromList(records))
-    // A distinct ID keeps the header-only conversion from colliding with the
-    // attached file, which uses the same .fhr.faa name.
+    // A distinct ID keeps the header-only conversion (ID.fhr.faa) apart from the
+    // attached file (ID.fhp.faa) and its extracted JSON (ID.fhr.json).
     FHR_CONVERT(FHR_CREATE_JSON.out.json.map { meta, json -> tuple([id: meta.id + '-header'], json, 'faa') })
     FHR_ATTACH(FHR_CREATE_JSON.out.json.map { meta, json -> tuple(meta, json, file(params.sequence, checkIfExists: true), 'faa') })
     FHR_STRIP(FHR_ATTACH.out.sequence.map { meta, sequence -> tuple([id: meta.id, original: params.original], sequence, 'faa') })
@@ -245,7 +247,7 @@ workflow {
         before_ok = len(list((work / 'work').glob('*/*/*.ok')))
         output = run(compose, work, ['--metadata', sets, '--sequence', str(fhp / 'protein.faa'), '--original', str(fhp / 'protein.faa')])
         for sample in ['predicted', 'database', 'mixed']:
-            for marker in [f'CREATED {sample} {sample}.fhr.json', f'CONVERTED {sample}-header {sample}-header.fhr.faa', f'ATTACHED {sample} {sample}.fhr.faa', f'EXTRACTED {sample} {sample}.fhr.json', f'STRIPPED {sample} {sample}.stripped.faa']:
+            for marker in [f'CREATED {sample} {sample}.fhr.json', f'CONVERTED {sample}-header {sample}-header.fhr.faa', f'ATTACHED {sample} {sample}.fhp.faa', f'EXTRACTED {sample} {sample}.fhr.json', f'STRIPPED {sample} {sample}.stripped.faa']:
                 check(marker in output, f'{sample}: missing {marker!r}:\n{output}')
         check(len(list((work / 'work').glob('*/*/*.ok'))) == before_ok + 3, 'protein strip byte checks did not run')
         for sample in ['predicted', 'database', 'mixed']:
@@ -256,19 +258,34 @@ workflow {
         check(converted.startswith(';~schema:') and '>' not in converted, f'FHP metadata-to-FAA conversion is not a header:\n{converted}')
         # A supported compressed input is read by its magic bytes.
         output = run(compose, work, ['--metadata', sets, '--sequence', str(fhp / 'protein.faa.gz'), '--original', str(fhp / 'protein.faa')])
-        check('ATTACHED predicted predicted.fhr.faa' in output, f'compressed protein input was not combined:\n{output}')
+        # Combine keeps the input's compression: the attached file is BGZF.
+        check('ATTACHED predicted predicted.fhp.faa.gz' in output, f'compressed protein input was not combined:\n{output}')
 
-        validate_script = work / 'faa-validate.nf'
-        validate_script.write_text(validate + """workflow {
-    FHR_VALIDATE(Channel.of(tuple([id: params.id ?: 'protein'], file(params.sequence, checkIfExists: true), params.kind ?: 'faa')))
-    FHR_VALIDATE.out.validated.view { meta, path -> "VALIDATED ${meta.id} ${path.name}" }
+        faa_verify = work / 'faa-verify.nf'
+        faa_verify.write_text(verify_header + """workflow {
+    FAIRBIOHEADERS_VERIFY(Channel.of(tuple([id: params.id ?: 'protein'], file(params.sequence, checkIfExists: true))))
+    FAIRBIOHEADERS_VERIFY.out.report.view { meta, report -> "VERIFIED ${meta.id} ${report.name}" }
 }
 """)
-        output = run(validate_script, work, ['--sequence', str(chain / 'protein.fhp.faa')])
-        check('VALIDATED protein protein.fhp.faa' in output, f'FHP FASTA was not validated:\n{output}')
-        run(validate_script, work, ['--sequence', str(fhp / 'malformed-missing-proteome.fhp.faa')], failure='proteome')
-        run(validate_script, work, ['--sequence', str(fhp / 'malformed-duplicate-checksum.fhp.faa')], failure='duplicate key')
-        run(validate_script, work, ['--sequence', str(fhp / 'malformed-missing-proteome.fhp.faa'), '--kind', 'fasta'], failure='proteome')
+        output = run(faa_verify, work, ['--sequence', str(chain / 'protein.fhp.faa')])
+        check('VERIFIED protein protein.verify.txt' in output, f'FHP FASTA was not verified:\n{output}')
+        run(faa_verify, work, ['--sequence', str(fhp / 'malformed-missing-proteome.fhp.faa')], failure='proteome')
+        run(faa_verify, work, ['--sequence', str(fhp / 'malformed-duplicate-checksum.fhp.faa')], failure='duplicate key')
+
+        # Standalone FHP metadata: FAIRBIOHEADERS_VALIDATE (no sequence, no checksum check).
+        validate_script = work / 'fhp-validate.nf'
+        validate_script.write_text(validate + """workflow {
+    FAIRBIOHEADERS_VALIDATE(Channel.of(tuple([id: 'metadata'], file(params.metadata, checkIfExists: true))))
+    FAIRBIOHEADERS_VALIDATE.out.report.view { meta, report -> "VALIDATED ${meta.id} ${report.name}" }
+}
+""")
+        output = run(validate_script, work, ['--metadata', str(fhp / 'mixed.fhp.json')])
+        check('VALIDATED metadata metadata.validate.txt' in output, f'FHP metadata was not validated:\n{output}')
+        invalid = json.loads((fhp / 'predicted.fhp.json').read_text())
+        invalid.pop('sourceType')
+        source = work / 'fhp-no-sourcetype.fhp.json'
+        source.write_text(json.dumps(invalid))
+        run(validate_script, work, ['--metadata', str(source)], failure='sourceType')
 
         # Invalid FHP metadata is rejected by the pinned schema, not by Nextflow.
         for name, change, message in [
@@ -283,10 +300,18 @@ workflow {
             run(ROOT / 'main.nf', work, ['--metadata', str(source), '--outdir', str(work / name)], failure=message)
             check(not (work / name).exists(), f'{name}: outputs were published after a validation failure')
 
-        # FHP JSON-LD and HTML microdata stay unsupported until FAIR-bioHeaders-Tools#58.
+        # FHP HTML microdata is supported from toolkit 0.8.2 (FAIR-bioHeaders-Tools#98,
+        # which closed #58): FHP metadata round-trips through HTML.
         fhp_html = work / 'fhp-html.nf'
-        fhp_html.write_text(convert + "workflow { FHR_CONVERT(Channel.of(tuple([id: 'fhp'], file(params.metadata, checkIfExists: true), 'html'))) }\n")
-        run(fhp_html, work, ['--metadata', str(fhp / 'predicted.fhp.json')], failure='not available for FHP')
+        fhp_html.write_text(convert + "include { FHR_CONVERT as BACK_TO_JSON } from '" + str(ROOT / 'modules/convert/main') + "'\n" + """workflow {
+    FHR_CONVERT(Channel.of(tuple([id: 'fhp'], file(params.metadata, checkIfExists: true), 'html')))
+    BACK_TO_JSON(FHR_CONVERT.out.converted.map { meta, html -> tuple([id: 'fhp-back'], html, 'json') })
+    BACK_TO_JSON.out.converted.view { meta, json -> "ROUNDTRIP ${json}" }
+}
+""")
+        output = run(fhp_html, work, ['--metadata', str(fhp / 'predicted.fhp.json')])
+        back = Path(next(line for line in output.splitlines() if line.startswith('ROUNDTRIP ')).split(' ', 1)[1])
+        check(json.loads(back.read_text()) == json.loads((fhp / 'predicted.fhp.json').read_text()), 'FHP metadata did not round-trip through HTML')
 
         # Toolkit 0.7.0+ selects FHR 2.0 for the raw-main URL, so a v1 record must
         # cite a v1 release URL; the bundled example cites fhr/v0.3.1.
@@ -333,9 +358,9 @@ workflow {
         # The runnable example accepts protein FASTA with --sequence_format faa.
         output = work / 'protein-output'
         run(ROOT / 'main.nf', work, ['--metadata', str(ROOT / 'examples/protein-metadata.json'), '--sequence', str(ROOT / 'examples/protein.faa'), '--sequence_format', 'faa', '--outdir', str(output)])
-        expected = ['protein-metadata/sequence/protein-metadata.fhr.faa', 'protein-metadata/sequence/protein-metadata.fhr.json', 'protein-metadata/sequence/protein-metadata.fhr.yaml']
+        expected = ['protein-metadata/sequence/protein-metadata.fhp.faa', 'protein-metadata/sequence/protein-metadata.fhr.json', 'protein-metadata/sequence/protein-metadata.fhr.yaml']
         check(published(output) == expected, f'unexpected protein example outputs: {published(output)}')
-        check((output / 'protein-metadata/sequence/protein-metadata.fhr.faa').read_bytes().startswith(b';~schema:'), 'protein example is not an FHP header')
+        check((output / 'protein-metadata/sequence/protein-metadata.fhp.faa').read_bytes().startswith(b';~schema: https://w3id.org/fair-bioheaders/fhp/'), 'protein example is not an FHP header')
 
         # The runnable example also publishes verify-links reports per ID.
         output = work / 'verify-output'
@@ -375,7 +400,7 @@ workflow {
             check('test_injected_failure' in (output / 'converter-tests/converter-tests.log').read_text(), 'failure missing from published log')
 
             pyproject = mutable / 'pyproject.toml'
-            pyproject.write_text(pyproject.read_text().replace('version = "0.8.1"', 'version = "0.9.0"', 1))
+            pyproject.write_text(re.sub(r'(?m)^version = "[^"]+"', 'version = "0.9.0"', pyproject.read_text(), count=1))
             run(ROOT / 'main.nf', work, ['--converter_source', str(mutable), '--outdir', str(work / 'mismatch')], failure="converter source version is '0.9.0'")
             check(not (work / 'mismatch' / 'example').exists(), 'results published with a mismatched converter checkout')
     print(f'PASS: {len(passed)} pipeline runs and rejection cases (round trips, exact bytes, JSON edge cases, per-file IDs, publication gates, GFF3 validation, protein FHP composition and parent-link verification).')

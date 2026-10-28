@@ -3,7 +3,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-include { bioheadersVersionCheck; bioheadersVersionReport; failOnMismatch; quote; requireAllParents; sampleId; sequenceKindOf; sequenceType } from '../utils/main'
+include { failOnMismatch; quote; requireAllParents; sampleId; sequenceKindOf; sequenceType } from '../utils/main'
 
 // Checks the parent files a protein (FHP) or genome (FHR) header records in
 // derivedFrom against candidate files, using the pinned toolkit's
@@ -22,7 +22,12 @@ include { bioheadersVersionCheck; bioheadersVersionReport; failOnMismatch; quote
 // and the input is omitted from `verified`.
 process FHR_VERIFY_LINKS {
     tag "${meta.id}"
-    label 'fhr'
+    label 'process_single'
+
+    conda "${moduleDir}/environment.yml"
+    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/fair-bioheaders:0.8.2--pyhdfd78af_0':
+        'quay.io/biocontainers/fair-bioheaders:0.8.2--pyhdfd78af_0' }"
 
     input:
     tuple val(meta), path(sequence, stageAs: 'input/*'), path(parents, stageAs: 'parents/*')
@@ -33,7 +38,7 @@ process FHR_VERIFY_LINKS {
     // every recorded parent checked and matched is emitted, so a mismatch or an
     // unchecked parent never reaches `verified`.
     tuple val(meta), path("verified/*"), emit: verified, optional: true
-    tuple val(meta), path('versions.yml'), emit: versions
+    tuple val("${task.process}"), val('fair-bioheaders'), eval('bioheaders --version'), emit: versions_fairbioheaders, topic: versions
 
     script:
     def id = sampleId(meta)
@@ -48,7 +53,6 @@ process FHR_VERIFY_LINKS {
     def report = quote("${id}.verify-links.txt")
     def name = quote(sequence.name)
     """
-    ${bioheadersVersionCheck()}
     set +e
     bioheaders verify-links --type ${type} ${requireAll ? '--require-all' : ''} ${input} ${parentArgs} > ${report}
     status=\$?
@@ -72,6 +76,5 @@ process FHR_VERIFY_LINKS {
         mkdir -p verified
         ln -s ../${input} verified/
     fi
-    ${bioheadersVersionReport()}
     """
 }
