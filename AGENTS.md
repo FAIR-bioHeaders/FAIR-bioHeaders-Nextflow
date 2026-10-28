@@ -2,7 +2,7 @@
 
 ## Current repository context
 
-This is a Nextflow DSL2 development/demo suite, not the specification authority.
+This is the FAIR-bioHeaders Nextflow DSL2 suite (first release 0.1.0, pre-1.0), not the specification authority.
 Use the checkout's pinned toolkit/validator and documented compatibility matrix;
 new family releases do not silently upgrade the environment or modules. Route
 family workflow expansion through linked toolkit/type-contract work. Supporting

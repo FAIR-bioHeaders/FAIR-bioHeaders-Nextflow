@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.1.0 — 2026-10-28
+
+First release, leaving demo status as decided on #21. It covers the consolidation from FAIR-bioHeaders-Tools and the rename below. Tested baseline: Nextflow 26.04.6, Java 21, Python 3.13, fair-bioheaders 0.8.2 (Bioconda/BioContainers and the hash-locked wheel) and gff3-validator 0.1.0.
 
 - The repository is renamed FAIR-bioHeaders-Nextflow (was FHR-Nextflow; GitHub redirects the old name), as decided on #21, before the first release and the Dockstore registration. READMEs, CITATION.cff, the manifests, the Dockstore workflow's `params.json` and schema `$id`, and the include examples use the new name; changelog history keeps the old one.
 
