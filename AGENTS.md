@@ -101,6 +101,35 @@ Python runner option is `--converter-source`; the Nextflow workflow parameter is
 checks separately from the pinned baseline so a passing old environment is not
 reported as support for a new header family or release.
 
+## Consolidation decisions (#21, approved 2026-10-28)
+
+The maintainers approved these on #21 (recommendations of 2026-10-24, approved by
+David Molik on 2026-10-28). Follow them unless a later issue changes them.
+
+- **One implementation per job.** combine: `FAIRBIOHEADERS_COMBINE` (calls
+  `bioheaders combine`; FASTA, protein FASTA as `.fhp.faa`, GFA and GFF3/FHGFF3).
+  verify: `FAIRBIOHEADERS_VERIFY` for headed sequence files (schema plus checksum).
+  validate: `FAIRBIOHEADERS_VALIDATE` for standalone JSON/YAML metadata, kept separate
+  from verify. `create_json`, `convert`, `strip`, `gff3_validate`, `converter_tests`
+  and `verify_links` are unique to this repository and move to the same conventions
+  over time. Do not add a second module for a job that already has one.
+- **Conventions.** Containers come from Bioconda/BioContainers
+  (`bioconda::fair-bioheaders`, `quay.io/biocontainers/fair-bioheaders`, the Galaxy
+  depot Singularity image); pin only a version that exists in all three. Use
+  nf-core-style version reporting and nf-test, not exact-version gates. The
+  repository image in `environment/` stays only for what BioContainers cannot supply
+  (gff3-validator until bioconda/bioconda-recipes#70098 merges; pytest for the
+  converter tests), then goes.
+- **Name, demo status, Dockstore, in this order.** Rename the repository to
+  FAIR-bioHeaders-Nextflow before the first release and before Dockstore registration
+  (GitHub redirects the old name; renaming after registration means re-registering).
+  Then leave demo status with a v0.1.0 release once the migration is merged and CI is
+  green. Then install the Dockstore GitHub App here, register `.dockstore.yml`, and
+  mark the FAIR-bioHeaders-Tools Dockstore entry deprecated in favour of this one,
+  keeping its versions as history.
+- FAIR-bioHeaders-Tools removes its migrated `nextflow/` copies only after this
+  repository's CI passes with them, and keeps a pointer here.
+
 ## Issue, project and code-review behavior
 
 ### Issues and the connected project
