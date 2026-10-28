@@ -16,7 +16,7 @@ impact can use ordinary issues.
 
 ## Private reporting channel
 
-Email [molik@fhref.org](mailto:molik@fhref.org) for FHR-Nextflow and the companion FHR repositories. Identify the affected repository and version. This is the maintainer-confirmed reporting address; do not assume GitHub private vulnerability reporting is enabled.
+Email [molik@fhref.org](mailto:molik@fhref.org) for FAIR-bioHeaders-Nextflow and the companion FHR repositories. Identify the affected repository and version. This is the maintainer-confirmed reporting address; do not assume GitHub private vulnerability reporting is enabled.
 
 Coordinate disclosure privately with the maintainers. No guaranteed response deadline is stated. If a report involves David Molik, contact [Adam Wright](mailto:wright@fhref.org) at [wright@fhref.org](mailto:wright@fhref.org) directly. If it involves Adam Wright, use David’s address above. Do not copy a maintainer involved in the report; use an uninvolved reviewer for escalation.
 

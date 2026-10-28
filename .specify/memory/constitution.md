@@ -1,4 +1,4 @@
-# FHR-Nextflow Constitution
+# FAIR-bioHeaders-Nextflow Constitution
 
 > **Status: draft.** Proposed for Spec Kit planning gates. It restates existing
 > AGENTS.md, CONTRIBUTING.md, and docs/PIPELINES.md practice and adds no

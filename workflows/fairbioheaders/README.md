@@ -8,7 +8,7 @@ A minimal Nextflow DSL2 workflow around two of the
 2. `FAIRBIOHEADERS_VERIFY` checks the headed file against the schema and the checksum.
    The run fails if a file does not verify.
 
-It moved here from FAIR-bioHeaders-Tools (`nextflow/workflows/fairbioheaders`, FHR-Nextflow
+It moved here from FAIR-bioHeaders-Tools (`nextflow/workflows/fairbioheaders`, FAIR-bioHeaders-Nextflow
 #21) and is described for [Dockstore](https://dockstore.org) by
 [`.dockstore.yml`](../../.dockstore.yml) at the repository root. Until this repository is
 registered on Dockstore, the registered entry is the one in FAIR-bioHeaders-Tools.
@@ -30,7 +30,7 @@ annotation,annotation.fhgff3.yaml,annotation.gff3
 ```
 
 ```bash
-nextflow run FAIR-bioHeaders/FHR-Nextflow \
+nextflow run FAIR-bioHeaders/FAIR-bioHeaders-Nextflow \
     -main-script workflows/fairbioheaders/main.nf \
     -profile docker --input samplesheet.csv --outdir results
 ```
@@ -38,7 +38,7 @@ nextflow run FAIR-bioHeaders/FHR-Nextflow \
 or one file:
 
 ```bash
-nextflow run FAIR-bioHeaders/FHR-Nextflow \
+nextflow run FAIR-bioHeaders/FAIR-bioHeaders-Nextflow \
     -main-script workflows/fairbioheaders/main.nf \
     -profile docker --metadata genome.fhr.yaml --sequence genome.fa.gz --outdir results
 ```
