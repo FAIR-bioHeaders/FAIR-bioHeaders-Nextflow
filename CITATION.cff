@@ -59,7 +59,8 @@ preferred-citation:
   issue: '3'
   start: bbae122
   year: 2024
-version: 0.1.0-dev
+version: 0.1.0
+date-released: '2026-10-28'
 license: MPL-2.0
 repository-code: https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Nextflow
 url: https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Nextflow

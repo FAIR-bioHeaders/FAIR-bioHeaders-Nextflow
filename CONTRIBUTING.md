@@ -1,6 +1,6 @@
 # Contributing
 
-This is the development prototype for [FAIR-bioHeaders-Specification issue #15](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/issues/15). Development is hosted in [FAIR-bioHeaders-Nextflow](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Nextflow); there is no published release yet. Develop on a focused branch and submit a pull request for review, or commit directly to main when explicitly requested. Publishing releases or changing repository visibility requires an explicit request.
+This is the Nextflow suite for [FAIR-bioHeaders-Specification issue #15](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/issues/15). Development is hosted in [FAIR-bioHeaders-Nextflow](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Nextflow); releases are tagged `vX.Y.Z` (the first is v0.1.0). Develop on a focused branch and submit a pull request for review, or commit directly to main when explicitly requested. Publishing releases or changing repository visibility requires an explicit request.
 
 Start with a use case or reproducible failure. Keep changes focused and explain the resulting behavior, compatibility implications and relevant verification. Use synthetic fixtures (GFF3 fixtures are byte-exact copies from the gff3-validator conformance suite; see [their source note](tests/fixtures/gff3/README.md)); exclude private genome data, credentials and unrelated formatting. Follow the [code of conduct](CODE_OF_CONDUCT.md); report sensitive findings using [SECURITY.md](SECURITY.md).
 
@@ -56,7 +56,7 @@ Suite versions describe this module API independently of converter releases and 
 - **Minor:** additive modules, optional inputs or outputs, or newly tested compatibility combinations that preserve existing consumers.
 - **Major:** changes that break existing tuple contracts, remove modules or supported inputs, change output semantics, or drop a supported runtime combination. Document migration instructions.
 
-During the initial `0.x` development series, breaking changes increment the minor version and include migration notes; compatible fixes increment the patch version. `0.1.0-dev` is an unreleased development identifier, not an issued release. The first stable `1.0.0` release establishes the stable API policy above.
+During the initial `0.x` development series, breaking changes increment the minor version and include migration notes; compatible fixes increment the patch version. `0.1.0` is the first release; earlier `0.1.0-dev` was a development identifier, not an issued release. The first stable `1.0.0` release establishes the stable API policy above.
 
 A converter or schema upgrade is reviewed on its actual effect on consumers, rather than automatically matching the dependency's version number. Do not silently change checksum semantics. Record tested combinations in README and CHANGELOG, update `environment/requirements.in`, the regenerated hash-locked `environment/requirements.txt`, CI pins and version guards together, and run the integration harness plus converter tests and the container example. Pin the resulting container digest and record the converter source commit for release verification. Publish a version tag and release notes only when authorized. This project's release lifecycle is independent of the companion schema/converter release.
 
