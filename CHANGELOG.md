@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The repository is renamed FAIR-bioHeaders-Nextflow (was FHR-Nextflow; GitHub redirects the old name), as decided on #21, before the first release and the Dockstore registration. READMEs, CITATION.cff, the manifests, the Dockstore workflow's `params.json` and schema `$id`, and the include examples use the new name; changelog history keeps the old one.
+
 - Consolidate the Nextflow modules and Dockstore workflow from FAIR-bioHeaders-Tools (#21). The nf-core-style `FAIRBIOHEADERS_COMBINE` and `FAIRBIOHEADERS_VERIFY` modules, their nf-test tests and snapshots, the minimal Dockstore workflow (`workflows/fairbioheaders`, `.dockstore.yml`) and its test assets move here from Tools `nextflow/` with their git history (extracted with `git filter-repo` up to Tools `c1b985a`, the 0.8.2 modules of FAIR-bioHeaders-Tools#107; each imported commit carries a `Migrated-from` trailer). One implementation per job:
   - **combine:** `FAIRBIOHEADERS_COMBINE` replaces `FHR_COMBINE`. It now also takes protein FASTA: `.faa` is read as FASTA, and the output is named by the header type the toolkit takes from the metadata's `schema` URL (`ID.fhp.faa` for FHP, also on `.fa`/`.fasta` input; `ID.fhr.fa`, `ID.fhr.gfa` and `ID.fhgff3.gff3` as before; `.gz` when the input was compressed). New nf-test cases cover FHP on `.faa`, FHP on gzipped protein `.fasta`, FHP on GFA (rejected) and an FHP stub.
   - **verify:** `FAIRBIOHEADERS_VERIFY` replaces the sequence-file branch of `FHR_VALIDATE` (schema plus checksum of a headed FASTA, protein FASTA, GFA or GFF3 file).

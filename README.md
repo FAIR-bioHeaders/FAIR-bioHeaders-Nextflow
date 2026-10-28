@@ -1,8 +1,8 @@
 **This is a demo repository**, do not deploy. 
 
-# FHR-Nextflow
+# FAIR-bioHeaders-Nextflow
 
-Reusable Nextflow DSL2 modules for creating, converting, validating and attaching [FAIR bioHeaders](https://doi.org/10.1093/bib/bbae122), plus GFF3 validation, the nf-core-style `FAIRBIOHEADERS_COMBINE`, `FAIRBIOHEADERS_VERIFY` and `FAIRBIOHEADERS_VALIDATE` modules and a minimal Dockstore workflow ([workflows/fairbioheaders](workflows/fairbioheaders/README.md)), which moved here from FAIR-bioHeaders-Tools (#21). This development prototype implements [FAIR-bioHeaders-Specification issue #15](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/issues/15). The dedicated repository is [FHR-Nextflow](https://github.com/FAIR-bioHeaders/FHR-Nextflow); it has no published release.
+Reusable Nextflow DSL2 modules for creating, converting, validating and attaching [FAIR bioHeaders](https://doi.org/10.1093/bib/bbae122), plus GFF3 validation, the nf-core-style `FAIRBIOHEADERS_COMBINE`, `FAIRBIOHEADERS_VERIFY` and `FAIRBIOHEADERS_VALIDATE` modules and a minimal Dockstore workflow ([workflows/fairbioheaders](workflows/fairbioheaders/README.md)), which moved here from FAIR-bioHeaders-Tools (#21). This development prototype implements [FAIR-bioHeaders-Specification issue #15](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/issues/15). The dedicated repository is [FAIR-bioHeaders-Nextflow](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Nextflow); it has no published release.
 
 Compatibility: Nextflow **26.04.6**, Java **21**, [FAIR-bioHeaders-Tools](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Tools) **0.8.2**, [gff3-validator](https://github.com/FAIR-bioHeaders/gff3-validator) **0.1.0**, FHR schemaVersion **1** (cited through the `fhr/v0.3.1` release URL) and FHP schemaVersion **1.0** (the `fhp/v0.4.0` release URL). The suite version is **0.1.0-dev**. JSON creation and channel composition are native DSL2/Groovy; the toolkit owns schema selection and validation, format conversion, exact-byte checksums and parent-link verification.
 
@@ -64,7 +64,7 @@ See [Protein FASTA and parent links](#protein-fasta-and-parent-links-fhp) for th
 Import the module using its path in your local checkout:
 
 ```nextflow
-include { FHR_CREATE_JSON } from '/path/to/FHR-Nextflow/modules/create_json/main'
+include { FHR_CREATE_JSON } from '/path/to/FAIR-bioHeaders-Nextflow/modules/create_json/main'
 
 workflow {
     records = Channel.of(tuple([id: 'assembly1'], [
@@ -122,7 +122,7 @@ FHP metadata for protein FASTA is validated, converted, attached, verified and s
 `FHR_VERIFY_LINKS` wraps the toolkit's `bioheaders verify-links` command. It checks each `derivedFrom` entry against the candidate parent files by their FAIR-bioHeaders checksum, and any `genomeReference` against the supplied genomes. A match proves **file identity only**, never that a translation or annotation is biologically correct. It emits `report` when the task succeeds; on a hard failure the report stays in the task work directory and is not published. `verified` is emitted only when every recorded parent was checked and matched (or no parents were recorded): a successful run with an unavailable or unsupported parent reports `not checked` and omits the input from `verified`, so downstream steps cannot mistake an unchecked file for a verified one. Pass `[]` as `parents` when none are available. Exit status 1 (unreadable or invalid input, or an invalid parent) always fails. Exit status 3 (a recorded parent did not match, or with `ext.require_all` could not be checked) fails unless `ext.fail_on_mismatch` is `false`, which emits the report and omits the input from `verified`. Options come from `task.ext`, configured with `withName: FHR_VERIFY_LINKS`: `require_all` (default `false`) and `fail_on_mismatch` (default `true`).
 
 ```nextflow
-include { FHR_VERIFY_LINKS } from '/path/to/FHR-Nextflow/modules/verify_links/main'
+include { FHR_VERIFY_LINKS } from '/path/to/FAIR-bioHeaders-Nextflow/modules/verify_links/main'
 
 workflow {
     FHR_VERIFY_LINKS(Channel.of(

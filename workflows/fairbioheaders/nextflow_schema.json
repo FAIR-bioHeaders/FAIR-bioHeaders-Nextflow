@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Nextflow/main/workflows/fairbioheaders/nextflow_schema.json",
+  "$id": "https://raw.githubusercontent.com/FAIR-bioHeaders/FAIR-bioHeaders-Nextflow/main/workflows/fairbioheaders/nextflow_schema.json",
   "title": "FAIR-bioHeaders workflow parameters",
   "description": "Add FAIR-bioHeaders metadata headers to FASTA, protein FASTA, GFA or GFF3 files and verify them",
   "type": "object",

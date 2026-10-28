@@ -9,8 +9,8 @@ A record has two separate maps: `meta` carries the pipeline ID and any routing i
 The following composition consumes an existing `records` channel of `(meta, fields)` tuples and a single sequence file supplied as `params.sequence`:
 
 ```nextflow
-include { FHR_CREATE_JSON } from '/path/to/FHR-Nextflow/modules/create_json/main'
-include { FHR_ATTACH } from '/path/to/FHR-Nextflow/subworkflows/attach/main'
+include { FHR_CREATE_JSON } from '/path/to/FAIR-bioHeaders-Nextflow/modules/create_json/main'
+include { FHR_ATTACH } from '/path/to/FAIR-bioHeaders-Nextflow/subworkflows/attach/main'
 
 workflow {
     // Define records upstream: tuple([id: 'assembly1'], fields).
@@ -30,7 +30,7 @@ Standalone JSON requires an explicit schema-valid checksum. Attachment replaces 
 ## Run converter tests as part of a pipeline
 
 ```nextflow
-include { FHR_CONVERTER_TESTS } from '/path/to/FHR-Nextflow/modules/converter_tests/main'
+include { FHR_CONVERTER_TESTS } from '/path/to/FAIR-bioHeaders-Nextflow/modules/converter_tests/main'
 
 workflow {
     FHR_CONVERTER_TESTS(Channel.value(tuple(
@@ -52,7 +52,7 @@ gated = FHR_ATTACH.out.json.combine(gate).map { meta, json, _passed -> tuple(met
 ## Validate GFF3 annotations
 
 ```nextflow
-include { GFF3_VALIDATE } from '/path/to/FHR-Nextflow/modules/gff3_validate/main'
+include { GFF3_VALIDATE } from '/path/to/FAIR-bioHeaders-Nextflow/modules/gff3_validate/main'
 
 workflow {
     GFF3_VALIDATE(Channel.of(
@@ -95,9 +95,9 @@ The validator checks only the rules its catalogue marks as implemented; the JSON
 Protein FASTA uses the same composition with `kind` `faa`. The FHP metadata map must cite an FHP `schema` URL and carry the required FHP fields; the toolkit's bundled FHP schema validates it, so no FHP rule is repeated here.
 
 ```nextflow
-include { FHR_CREATE_JSON } from '/path/to/FHR-Nextflow/modules/create_json/main'
-include { FHR_ATTACH } from '/path/to/FHR-Nextflow/subworkflows/attach/main'
-include { FHR_VERIFY_LINKS } from '/path/to/FHR-Nextflow/modules/verify_links/main'
+include { FHR_CREATE_JSON } from '/path/to/FAIR-bioHeaders-Nextflow/modules/create_json/main'
+include { FHR_ATTACH } from '/path/to/FAIR-bioHeaders-Nextflow/subworkflows/attach/main'
+include { FHR_VERIFY_LINKS } from '/path/to/FAIR-bioHeaders-Nextflow/modules/verify_links/main'
 
 workflow {
     FHR_CREATE_JSON(records)  // records: tuple([id: 'proteome1'], fhp_fields)
@@ -159,8 +159,8 @@ Modules leave files in their task work directories. The example workflow publish
 `PREFIX` is `task.ext.prefix` or `meta.id`; `task.ext.args` is passed to `bioheaders`. COMBINE takes the sequence type from the extension (`.gfa`, `.gff3`/`.gff`, otherwise FASTA, so `.faa` is FASTA) and the header type from the metadata's `schema` URL, by the toolkit's own rule (`bioheaders.header_type`). Versions go to the `versions` topic. Run their tests with `nf-test test --profile docker` from the repository root (`nf-test.config`, `tests/config/nf-test.config`).
 
 ```nextflow
-include { FAIRBIOHEADERS_COMBINE } from '/path/to/FHR-Nextflow/modules/nf-core/fairbioheaders/combine/main'
-include { FAIRBIOHEADERS_VERIFY } from '/path/to/FHR-Nextflow/modules/nf-core/fairbioheaders/verify/main'
+include { FAIRBIOHEADERS_COMBINE } from '/path/to/FAIR-bioHeaders-Nextflow/modules/nf-core/fairbioheaders/combine/main'
+include { FAIRBIOHEADERS_VERIFY } from '/path/to/FAIR-bioHeaders-Nextflow/modules/nf-core/fairbioheaders/verify/main'
 
 workflow {
     FAIRBIOHEADERS_COMBINE(channel.of(tuple([id: 'proteins'], file(params.metadata), file(params.protein))))
