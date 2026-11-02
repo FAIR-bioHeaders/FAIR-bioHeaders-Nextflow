@@ -56,7 +56,12 @@ process FHR_RUN_CONVERTER_TESTS {
         cd checkout
         # -P keeps the checkout off sys.path: tests import the installed converter.
         python -P -c 'import fhr; print("converter under test:", fhr.__version__, fhr.__file__)'
-        python -P -m pytest -p no:cacheprovider --junitxml=../converter-tests.xml
+        # Deselected: in toolkit 0.8.4-0.8.5 this test calls git unconditionally, and
+        # the 'fhr' image has no git (the copy has no .git either). Fixed upstream in
+        # https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Tools/pull/128 (it skips);
+        # remove this once the pinned toolkit moves past 0.8.5.
+        python -P -m pytest -p no:cacheprovider --junitxml=../converter-tests.xml \\
+            --deselect tests/fhr1_compat_test.py::test_old_toolkit_examples_still_validate
     ) > converter-tests.log 2>&1
     FHR_TESTS_EXIT=\$?
     set -e

@@ -11,8 +11,8 @@ process FHR_STRIP {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/fair-bioheaders:0.8.2--pyhdfd78af_0':
-        'quay.io/biocontainers/fair-bioheaders:0.8.2--pyhdfd78af_0' }"
+        'https://depot.galaxyproject.org/singularity/fair-bioheaders:0.8.5--pyhdfd78af_0':
+        'quay.io/biocontainers/fair-bioheaders:0.8.5--pyhdfd78af_0' }"
 
     input:
     tuple val(meta), path(sequence, stageAs: 'input/*'), val(kind)
