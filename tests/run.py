@@ -313,13 +313,24 @@ workflow {
         back = Path(next(line for line in output.splitlines() if line.startswith('ROUNDTRIP ')).split(' ', 1)[1])
         check(json.loads(back.read_text()) == json.loads((fhp / 'predicted.fhp.json').read_text()), 'FHP metadata did not round-trip through HTML')
 
-        # Toolkit 0.7.0+ selects FHR 2.0 for the raw-main URL, so a v1 record must
-        # cite a v1 release URL; the bundled example cites fhr/v0.3.1.
+        # Toolkit 0.7.0+ selects FHR 2.0 for the raw-main URL. Since 0.8.4 (spec rule V6,
+        # FAIR-bioHeaders-Tools#114) a record citing raw-main with the number 1 as
+        # schemaVersion is read as FHR 1 (v0.3.1) with a deprecation warning; a string
+        # '1' still selects FHR 2.0 and is rejected. The bundled example cites fhr/v0.3.1.
         raw_main = json.loads((ROOT / 'examples/metadata.json').read_text())
         raw_main['schema'] = 'https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Specification/main/fhr.json'
         source = work / 'fhr-raw-main.json'
         source.write_text(json.dumps(raw_main))
-        run(ROOT / 'main.nf', work, ['--metadata', str(source), '--outdir', str(work / 'fhr-raw-main')], failure='schemaVersion')
+        output = run(ROOT / 'main.nf', work, ['--metadata', str(source), '--outdir', str(work / 'fhr-raw-main')])
+        check((work / 'fhr-raw-main/fhr-raw-main/metadata/fhr-raw-main.fhr.json').is_file(), 'raw-main FHR 1 record was not published')
+        workdir = Path(re.search(r'^\[WORKDIR\] (\S+)', output, re.M).group(1))
+        task_errors = ''.join(path.read_text() for task in re.findall(r'^\[PROCESS (\w+/\w+)\] .*\(fhr-raw-main', output, re.M) for path in workdir.glob(task + '*/.command.err'))
+        check('is read as FHR 1 (v0.3.1)' in task_errors, f'raw-main FHR 1 record did not warn:\n{task_errors}')
+        raw_main['schemaVersion'] = '1'
+        source = work / 'fhr-raw-main-string.json'
+        source.write_text(json.dumps(raw_main))
+        run(ROOT / 'main.nf', work, ['--metadata', str(source), '--outdir', str(work / 'fhr-raw-main-string')], failure='schemaVersion')
+        check(not (work / 'fhr-raw-main-string').exists(), 'fhr-raw-main-string: outputs were published after a validation failure')
 
         # Parent-link verification: match, unavailable and mismatching parents,
         # require_all and fail_on_mismatch, plus the genome -> annotation -> protein chain.

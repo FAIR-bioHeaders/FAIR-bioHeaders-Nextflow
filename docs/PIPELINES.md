@@ -42,7 +42,7 @@ workflow {
 }
 ```
 
-Provide a toolkit source directory containing `pyproject.toml`, `tests/` and `pytest.ini` that declares the installed toolkit's version (0.8.2 in the supported baseline), preferably the matching release checkout; other versions are rejected. The workflow copies the checkout into its task directory (the input is never modified and no bytecode is written), runs its tests against the installed converter (tests that invoke the checkout's own scripts use the copy), and always emits JUnit XML plus a log so that they can be published. A separate check task then fails the run if pytest failed. An independent test branch does not gate other workflow outputs automatically: combine release or publication channels with `FHR_CONVERTER_TESTS.out.passed` if those steps must wait for passing tests, as the example `main.nf` does:
+Provide a toolkit source directory containing `pyproject.toml`, `tests/` and `pytest.ini` that declares the installed toolkit's version (0.8.5 in the supported baseline), preferably the matching release checkout; other versions are rejected. The workflow copies the checkout into its task directory (the input is never modified and no bytecode is written), runs its tests against the installed converter (tests that invoke the checkout's own scripts use the copy), and always emits JUnit XML plus a log so that they can be published. A separate check task then fails the run if pytest failed. An independent test branch does not gate other workflow outputs automatically: combine release or publication channels with `FHR_CONVERTER_TESTS.out.passed` if those steps must wait for passing tests, as the example `main.nf` does:
 
 ```nextflow
 gate = FHR_CONVERTER_TESTS.out.passed.first()
@@ -127,7 +127,7 @@ A match confirms **file identity only**, never biological translation or annotat
 
 ## Execution and publication
 
-Processes that run fair-bioheaders declare their BioContainers image (`quay.io/biocontainers/fair-bioheaders:0.8.2--pyhdfd78af_0`, or the Galaxy depot Singularity image) and a conda `environment.yml`, so a consumer only enables Docker, Singularity, Apptainer or conda. `GFF3_VALIDATE` (gff3-validator is not on Bioconda yet) and `FHR_RUN_CONVERTER_TESTS` (needs pytest) have the label `fhr` instead. Configuration from this repository does not accompany imports into another project. With the supplied image built locally, a consumer can configure:
+Processes that run fair-bioheaders declare their BioContainers image (`quay.io/biocontainers/fair-bioheaders:0.8.5--pyhdfd78af_0`, or the Galaxy depot Singularity image) and a conda `environment.yml`, so a consumer only enables Docker, Singularity, Apptainer or conda. `GFF3_VALIDATE` (gff3-validator is not on Bioconda yet) and `FHR_RUN_CONVERTER_TESTS` (needs pytest) have the label `fhr` instead. Configuration from this repository does not accompany imports into another project. With the supplied image built locally, a consumer can configure:
 
 ```groovy
 nextflow.enable.dsl = 2
