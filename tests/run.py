@@ -321,10 +321,10 @@ workflow {
         raw_main['schema'] = 'https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Specification/main/fhr.json'
         source = work / 'fhr-raw-main.json'
         source.write_text(json.dumps(raw_main))
-        output = run(ROOT / 'main.nf', work, ['--metadata', str(source), '--outdir', str(work / 'fhr-raw-main')])
+        raw_main_work = work / 'fhr-raw-main-work'
+        run(ROOT / 'main.nf', work, ['-work-dir', str(raw_main_work), '--metadata', str(source), '--outdir', str(work / 'fhr-raw-main')])
         check((work / 'fhr-raw-main/fhr-raw-main/metadata/fhr-raw-main.fhr.json').is_file(), 'raw-main FHR 1 record was not published')
-        workdir = Path(re.search(r'^\[WORKDIR\] (\S+)', output, re.M).group(1))
-        task_errors = ''.join(path.read_text() for task in re.findall(r'^\[PROCESS (\w+/\w+)\] .*\(fhr-raw-main', output, re.M) for path in workdir.glob(task + '*/.command.err'))
+        task_errors = ''.join(path.read_text() for path in raw_main_work.glob('*/*/.command.err'))
         check('is read as FHR 1 (v0.3.1)' in task_errors, f'raw-main FHR 1 record did not warn:\n{task_errors}')
         raw_main['schemaVersion'] = '1'
         source = work / 'fhr-raw-main-string.json'
