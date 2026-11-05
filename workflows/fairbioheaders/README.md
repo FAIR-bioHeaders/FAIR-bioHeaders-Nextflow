@@ -66,9 +66,9 @@ header type comes from the metadata's `schema` URL. In a clone of the repository
 
 | Profile | Runs `bioheaders` from |
 | --- | --- |
-| `docker` | the modules' BioContainers image, `quay.io/biocontainers/fair-bioheaders:0.8.5--pyhdfd78af_0` |
+| `docker` | the modules' BioContainers image, `quay.io/biocontainers/fair-bioheaders:0.9.0--pyhdfd78af_0` |
 | `singularity`, `apptainer` | the modules' Galaxy depot Singularity image of the same build |
-| `conda` | [`environment.yml`](environment.yml): `bioconda::fair-bioheaders=0.8.5` |
+| `conda` | [`environment.yml`](environment.yml): `bioconda::fair-bioheaders=0.9.0` |
 | `test` | the samplesheet in [`assets/test`](assets/test): a FASTA, a GFA and a GFF3 example, the FASTA with expanded JSON-LD metadata, and the repository's FHP protein example |
 | none | `bioheaders` on the `PATH` (`pip install "fair-bioheaders[jsonld]"`) |
 
@@ -78,7 +78,7 @@ Combine `test` with one of the others, for example `-profile test,docker`.
 parameter file.
 
 **Container and conda environment.** Both processes run the modules' container, the
-BioContainers image of `fair-bioheaders` 0.8.5 (or the Galaxy depot's Singularity image of
+BioContainers image of `fair-bioheaders` 0.9.0 (or the Galaxy depot's Singularity image of
 it). The conda profile uses [`environment.yml`](environment.yml), which pins the same
 Bioconda package as the modules; keep the two pins equal. From 0.8.2 the Bioconda package,
 and so the image, includes `pyld`, the optional dependency (the `jsonld` extra) that

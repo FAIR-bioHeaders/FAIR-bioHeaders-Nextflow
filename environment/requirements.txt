@@ -14,8 +14,8 @@ colorama==0.4.6 ; sys_platform == 'win32' \
     --hash=sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44 \
     --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
     # via pytest
-fair-bioheaders @ https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Tools/releases/download/v0.8.5/fair_bioheaders-0.8.5-py3-none-any.whl#sha256=203d503b6a41ba34bbbdfdbcc42b3ee305eb4928320a9d77b51da7c81a89fcda \
-    --hash=sha256:203d503b6a41ba34bbbdfdbcc42b3ee305eb4928320a9d77b51da7c81a89fcda
+fair-bioheaders @ https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Tools/releases/download/v0.9.0/fair_bioheaders-0.9.0-py3-none-any.whl#sha256=296d9b01eb9949a19a845a77fbbe0bd53ad17405c5a87913204c48b246cd0d28 \
+    --hash=sha256:296d9b01eb9949a19a845a77fbbe0bd53ad17405c5a87913204c48b246cd0d28
     # via -r environment/requirements.in
 fqdn==1.6.0 \
     --hash=sha256:6c793c312ccfa29981e1135b3ef5e1277ebe639731a6b0f7350d90e96e63f0b4 \

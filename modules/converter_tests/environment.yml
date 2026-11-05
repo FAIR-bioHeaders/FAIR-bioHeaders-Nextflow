@@ -5,5 +5,5 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - bioconda::fair-bioheaders=0.8.5
+  - bioconda::fair-bioheaders=0.9.0
   - conda-forge::pytest=9.1.1

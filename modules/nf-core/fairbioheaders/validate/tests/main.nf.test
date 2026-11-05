@@ -95,6 +95,35 @@ derivedFrom:
 checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 '''
 
+    // FHR 2.1 (specification v0.5.0, toolkit 0.9.0+) accepts top-level x- extension fields.
+    def fhrExtension = '''\
+schema: https://w3id.org/fair-bioheaders/fhr/v0.5.0
+schemaVersion: '2.1'
+genome: SARS-CoV-2 test genome
+taxon:
+  name: Severe acute respiratory syndrome coronavirus 2
+  uri: https://identifiers.org/taxonomy:2697049
+version: '1'
+metadataAuthor:
+  - name: Josiah Carberry
+    uri: https://orcid.org/0000-0002-1825-0097
+assemblyAuthor:
+  - name: Josiah Carberry
+    uri: https://orcid.org/0000-0002-1825-0097
+dateCreated: '2020-01-01'
+masking: unknown
+checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+x-example-pipeline:
+  name: test-pipeline
+  steps:
+    - assemble
+'''
+
+    // The same x- field in an FHR 2.0 record is rejected.
+    def fhrExtensionV20 = fhrExtension
+        .replace('fhr/v0.5.0', 'fhr/v0.4.0')
+        .replace("schemaVersion: '2.1'", "schemaVersion: '2.0'")
+
     // FHR without the required genome field.
     def missingGenome = '''\
 schema: https://w3id.org/fair-bioheaders/fhr/v0.4.0
@@ -215,6 +244,47 @@ checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
                 { assert path(process.out.report[0][1]).readLines().contains('FHGFF3 metadata is valid.') },
                 { assert snapshot(sanitizeOutput(process.out)).match() }
             )
+        }
+
+    }
+
+    test("fhr 2.1 - extension field") {
+
+        when {
+            process {
+                """
+                input[0] = Channel.of('''${fhrExtension}''')
+                    .collectFile(name: 'test.fhr.yaml')
+                    .map { metadata -> [ [ id:'test' ], metadata ] }
+                """
+            }
+        }
+
+        then {
+            assert process.success
+            assertAll(
+                { assert path(process.out.report[0][1]).readLines().contains('FHR metadata is valid.') },
+                { assert snapshot(sanitizeOutput(process.out)).match() }
+            )
+        }
+
+    }
+
+    test("fhr 2.0 - extension field - fails") {
+
+        when {
+            process {
+                """
+                input[0] = Channel.of('''${fhrExtensionV20}''')
+                    .collectFile(name: 'test.fhr.yaml')
+                    .map { metadata -> [ [ id:'test' ], metadata ] }
+                """
+            }
+        }
+
+        then {
+            assert process.failed
+            assert (process.stdout + process.stderr).any { line -> line.contains('x-example-pipeline') }
         }
 
     }

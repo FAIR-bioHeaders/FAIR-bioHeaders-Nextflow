@@ -410,9 +410,11 @@ workflow {
             check(failures == 1, f'expected one failing converter test, found {failures}')
             check('test_injected_failure' in (output / 'converter-tests/converter-tests.log').read_text(), 'failure missing from published log')
 
+            # 0.0.0 is never the installed version (a fixed future version stops mismatching
+            # once the pin reaches it).
             pyproject = mutable / 'pyproject.toml'
-            pyproject.write_text(re.sub(r'(?m)^version = "[^"]+"', 'version = "0.9.0"', pyproject.read_text(), count=1))
-            run(ROOT / 'main.nf', work, ['--converter_source', str(mutable), '--outdir', str(work / 'mismatch')], failure="converter source version is '0.9.0'")
+            pyproject.write_text(re.sub(r'(?m)^version = "[^"]+"', 'version = "0.0.0"', pyproject.read_text(), count=1))
+            run(ROOT / 'main.nf', work, ['--converter_source', str(mutable), '--outdir', str(work / 'mismatch')], failure="converter source version is '0.0.0'")
             check(not (work / 'mismatch' / 'example').exists(), 'results published with a mismatched converter checkout')
     print(f'PASS: {len(passed)} pipeline runs and rejection cases (round trips, exact bytes, JSON edge cases, per-file IDs, publication gates, GFF3 validation, protein FHP composition and parent-link verification).')
 
