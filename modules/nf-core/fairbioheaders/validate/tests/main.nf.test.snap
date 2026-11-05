@@ -14,12 +14,38 @@
                     [
                         "FAIRBIOHEADERS_VALIDATE",
                         "fair-bioheaders",
-                        "0.8.5"
+                        "0.9.0"
                     ]
                 ]
             }
         ],
         "timestamp": "2026-10-26T10:24:25.867215717",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    },
+    "fhr 2.1 - extension field": {
+        "content": [
+            {
+                "report": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.validate.txt:md5,45743913480fb070cfaee6f1ee047ede"
+                    ]
+                ],
+                "versions_fairbioheaders": [
+                    [
+                        "FAIRBIOHEADERS_VALIDATE",
+                        "fair-bioheaders",
+                        "0.9.0"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-11-05T11:25:53.519765837",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
@@ -40,7 +66,7 @@
                     [
                         "FAIRBIOHEADERS_VALIDATE",
                         "fair-bioheaders",
-                        "0.8.5"
+                        "0.9.0"
                     ]
                 ]
             }
@@ -66,7 +92,7 @@
                     [
                         "FAIRBIOHEADERS_VALIDATE",
                         "fair-bioheaders",
-                        "0.8.5"
+                        "0.9.0"
                     ]
                 ]
             }
@@ -92,7 +118,7 @@
                     [
                         "FAIRBIOHEADERS_VALIDATE",
                         "fair-bioheaders",
-                        "0.8.5"
+                        "0.9.0"
                     ]
                 ]
             }
@@ -118,7 +144,7 @@
                     [
                         "FAIRBIOHEADERS_VALIDATE",
                         "fair-bioheaders",
-                        "0.8.5"
+                        "0.9.0"
                     ]
                 ]
             }
