@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-11-05
+
+Minor release: moves the pinned toolkit from fair-bioheaders 0.8.5 to 0.9.0, which bundles FAIR-bioHeaders-Specification v0.5.0 and so supports a new schema minor version: FHR 2.1 and FHP/FHGFF3 1.1, whose records may carry top-level `x-` extension fields (spec rule R15). The modules pass these fields through `combine`, `strip`, `verify` and JSON/YAML conversion; `FHR_CONVERT` to HTML leaves them out with a warning. The toolkit's full pytest suite runs again in `FHR_RUN_CONVERTER_TESTS` (no deselection). No module interface or output name changes. Tested baseline: Nextflow 26.04.6, Java 21, Python 3.13, fair-bioheaders 0.9.0 (Bioconda/BioContainers and the hash-locked wheel) and gff3-validator 0.1.0.
 
 - Bump the pinned toolkit to fair-bioheaders 0.9.0 (FAIR-bioHeaders-Tools tag `v0.9.0`, commit `c6d7454`; wheel `296d9b01…b246cd0d28`, the same digest as on PyPI). Every pin moves together: the modules' `conda` (`bioconda::fair-bioheaders=0.9.0`) and BioContainers/Galaxy depot `container` lines (`fair-bioheaders:0.9.0--pyhdfd78af_0`, both verified to exist), the Dockstore workflow's `environment.yml` and README, the nf-test snapshots (they capture the reported version), `environment/requirements.in`, CI's converter checkout and the docs, including the converter-checkout baseline. `requirements.txt` was regenerated with its recorded `uv pip compile` command and only the fair-bioheaders line changed (0.9.0 has the same dependency ranges as 0.8.5).
   `FHR_RUN_CONVERTER_TESTS` no longer deselects `fhr1_compat_test.py::test_old_toolkit_examples_still_validate`: since 0.8.6 (FAIR-bioHeaders-Tools#128) it skips when `git` or the `v0.3.1` tag is unavailable, so the whole toolkit suite runs again. The harness case for a mismatched converter checkout rewrote its version to `0.9.0`, which is now the installed version; it uses `0.0.0` instead.
