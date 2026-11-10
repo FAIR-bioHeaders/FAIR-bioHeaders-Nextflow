@@ -287,6 +287,20 @@ workflow {
         source.write_text(json.dumps(invalid))
         run(validate_script, work, ['--metadata', str(source)], failure='sourceType')
 
+        # FHR 2.1 x- extension fields through FAIRBIOHEADERS_VALIDATE (issue #29):
+        # these cases moved here when the module was pinned to the upstream
+        # nf-core/modules revision 86e852ef, whose tests do not cover the FHR 2.1
+        # x- rule; see docs/module-migration.md.
+        fhr21 = dict(fields, schema='https://w3id.org/fair-bioheaders/fhr/v0.5.0', schemaVersion='2.1', **{'x-example-pipeline': {'name': 'test-pipeline', 'steps': ['assemble']}})
+        source = work / 'fhr21-extension.fhr.json'
+        source.write_text(json.dumps(fhr21))
+        output = run(validate_script, work, ['--metadata', str(source)])
+        check('VALIDATED metadata metadata.validate.txt' in output, f'FHR 2.1 x- extension field was not validated:\n{output}')
+        fhr20 = dict(fhr21, schema='https://w3id.org/fair-bioheaders/fhr/v0.4.0', schemaVersion='2.0')
+        source = work / 'fhr20-extension.fhr.json'
+        source.write_text(json.dumps(fhr20))
+        run(validate_script, work, ['--metadata', str(source)], failure='x-example-pipeline')
+
         # Invalid FHP metadata is rejected by the pinned schema, not by Nextflow.
         for name, change, message in [
             ('fhp-missing', lambda fields: fields.pop('proteome'), 'proteome'),

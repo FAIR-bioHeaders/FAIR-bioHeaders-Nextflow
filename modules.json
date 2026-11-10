@@ -1,0 +1,29 @@
+{
+    "name": "https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Nextflow",
+    "homePage": "https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Nextflow",
+    "repos": {
+        "https://github.com/nf-core/modules": {
+            "master": {
+                "git": {
+                    "commit_sha": "8faff34023b16ecdc41b02bac42989834075e3f1"
+                },
+                "modules": {
+                    "fairbioheaders/combine": {
+                        "branch": "master",
+                        "git": {
+                            "commit_sha": "8faff34023b16ecdc41b02bac42989834075e3f1"
+                        },
+                        "installed_by": "modules"
+                    },
+                    "fairbioheaders/validate": {
+                        "branch": "master",
+                        "git": {
+                            "commit_sha": "86e852ef429e021d16f7279aaddb9b81eb067f8a"
+                        },
+                        "installed_by": "modules"
+                    }
+                }
+            }
+        }
+    }
+}

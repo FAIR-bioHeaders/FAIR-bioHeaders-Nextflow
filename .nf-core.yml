@@ -1,0 +1,4 @@
+# nf-core CLI configuration. combine and validate are installed upstream modules
+# (see modules.json and docs/module-migration.md); the remaining modules under
+# modules/ (and subworkflows/) are repository-owned and not managed by nf-core.
+repository_type: pipeline

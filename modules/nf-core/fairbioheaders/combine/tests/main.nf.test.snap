@@ -1,56 +1,4 @@
 {
-    "candidatus portiera - gff3": {
-        "content": [
-            {
-                "sequence": [
-                    [
-                        {
-                            "id": "test"
-                        },
-                        "test.fhgff3.gff3:md5,a0e6b6627e63b542d292520a9e0a0e7c"
-                    ]
-                ],
-                "versions_fairbioheaders": [
-                    [
-                        "FAIRBIOHEADERS_COMBINE",
-                        "fair-bioheaders",
-                        "0.9.0"
-                    ]
-                ]
-            }
-        ],
-        "timestamp": "2026-10-25T20:21:10.629962794",
-        "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.6"
-        }
-    },
-    "sarscov2 - fasta - stub": {
-        "content": [
-            {
-                "sequence": [
-                    [
-                        {
-                            "id": "test"
-                        },
-                        "test.fhr.fa:md5,d41d8cd98f00b204e9800998ecf8427e"
-                    ]
-                ],
-                "versions_fairbioheaders": [
-                    [
-                        "FAIRBIOHEADERS_COMBINE",
-                        "fair-bioheaders",
-                        "0.9.0"
-                    ]
-                ]
-            }
-        ],
-        "timestamp": "2026-10-25T20:21:17.120930785",
-        "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.6"
-        }
-    },
     "sarscov2 - faa - fhp": {
         "content": [
             {
@@ -59,7 +7,7 @@
                         {
                             "id": "test"
                         },
-                        "test.fhp.faa:md5,047f3b15d7cb53300342115182b40418"
+                        "test.faa:md5,047f3b15d7cb53300342115182b40418"
                     ]
                 ],
                 "versions_fairbioheaders": [
@@ -71,13 +19,13 @@
                 ]
             }
         ],
-        "timestamp": "2026-10-26T10:22:27.591912676",
+        "timestamp": "2026-11-05T12:34:25.621954589",
         "meta": {
             "nf-test": "0.9.5",
-            "nextflow": "26.04.6"
+            "nextflow": "26.10.4"
         }
     },
-    "sarscov2 - proteome fasta.gz - fhp": {
+    "sarscov2 - fasta - fhr - stub": {
         "content": [
             {
                 "sequence": [
@@ -85,7 +33,7 @@
                         {
                             "id": "test"
                         },
-                        "test.fhp.faa.gz:md5,e420471c60d6ec5f8fd2788dbd90038c"
+                        "test.fasta:md5,d41d8cd98f00b204e9800998ecf8427e"
                     ]
                 ],
                 "versions_fairbioheaders": [
@@ -97,13 +45,13 @@
                 ]
             }
         ],
-        "timestamp": "2026-10-26T10:22:37.569817061",
+        "timestamp": "2026-11-05T12:34:46.513987332",
         "meta": {
             "nf-test": "0.9.5",
-            "nextflow": "26.04.6"
+            "nextflow": "26.10.4"
         }
     },
-    "sarscov2 - faa - fhp - stub": {
+    "sarscov2 - fasta.gz - fhr - stub": {
         "content": [
             {
                 "sequence": [
@@ -111,7 +59,7 @@
                         {
                             "id": "test"
                         },
-                        "test.fhp.faa:md5,d41d8cd98f00b204e9800998ecf8427e"
+                        "test.fasta.gz:md5,68b329da9893e34099c7d8ad5cb9c940"
                     ]
                 ],
                 "versions_fairbioheaders": [
@@ -123,13 +71,13 @@
                 ]
             }
         ],
-        "timestamp": "2026-10-26T10:23:00.124791448",
+        "timestamp": "2026-11-05T12:34:53.172501678",
         "meta": {
             "nf-test": "0.9.5",
-            "nextflow": "26.04.6"
+            "nextflow": "26.10.4"
         }
     },
-    "sarscov2 - fasta": {
+    "candidatus_portiera_aleyrodidarum - gff3 - fhgff3": {
         "content": [
             {
                 "sequence": [
@@ -137,7 +85,7 @@
                         {
                             "id": "test"
                         },
-                        "test.fhr.fa:md5,77266878398bb897c2486239e24edb93"
+                        "test.gff:md5,a0e6b6627e63b542d292520a9e0a0e7c"
                     ]
                 ],
                 "versions_fairbioheaders": [
@@ -149,13 +97,13 @@
                 ]
             }
         ],
-        "timestamp": "2026-10-25T20:20:49.692062917",
+        "timestamp": "2026-11-05T12:34:33.216022252",
         "meta": {
             "nf-test": "0.9.5",
-            "nextflow": "26.04.6"
+            "nextflow": "26.10.4"
         }
     },
-    "sarscov2 - fasta.gz": {
+    "sarscov2 - fasta.gz - fhr": {
         "content": [
             {
                 "sequence": [
@@ -163,7 +111,7 @@
                         {
                             "id": "test"
                         },
-                        "test.fhr.fa.gz:md5,77266878398bb897c2486239e24edb93"
+                        "test.fasta.gz:md5,77266878398bb897c2486239e24edb93"
                     ]
                 ],
                 "versions_fairbioheaders": [
@@ -175,13 +123,13 @@
                 ]
             }
         ],
-        "timestamp": "2026-10-25T20:20:56.602091607",
+        "timestamp": "2026-11-05T12:34:11.285576235",
         "meta": {
             "nf-test": "0.9.5",
-            "nextflow": "26.04.6"
+            "nextflow": "26.10.4"
         }
     },
-    "sarscov2 - gfa": {
+    "sarscov2 - fasta - fhr": {
         "content": [
             {
                 "sequence": [
@@ -189,7 +137,7 @@
                         {
                             "id": "test"
                         },
-                        "test.fhr.gfa:md5,2150e812c8bc94a4327cbb6aa1b00395"
+                        "test.fasta:md5,77266878398bb897c2486239e24edb93"
                     ]
                 ],
                 "versions_fairbioheaders": [
@@ -201,10 +149,36 @@
                 ]
             }
         ],
-        "timestamp": "2026-10-25T20:21:03.500284817",
+        "timestamp": "2026-11-05T12:34:04.12625935",
         "meta": {
             "nf-test": "0.9.5",
-            "nextflow": "26.04.6"
+            "nextflow": "26.10.4"
+        }
+    },
+    "sarscov2 - gfa - fhr": {
+        "content": [
+            {
+                "sequence": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.gfa:md5,2150e812c8bc94a4327cbb6aa1b00395"
+                    ]
+                ],
+                "versions_fairbioheaders": [
+                    [
+                        "FAIRBIOHEADERS_COMBINE",
+                        "fair-bioheaders",
+                        "0.9.0"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-11-05T12:34:18.486313839",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.10.4"
         }
     }
 }

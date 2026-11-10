@@ -1,5 +1,57 @@
 {
-    "fhr - yaml - stub": {
+    "sarscov2 - fhr - json": {
+        "content": [
+            {
+                "report": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.validate.txt:md5,3c52c7e65aded108da779e0694da1e3f"
+                    ]
+                ],
+                "versions_fairbioheaders": [
+                    [
+                        "FAIRBIOHEADERS_VALIDATE",
+                        "fair-bioheaders",
+                        "0.9.0"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-11-05T12:38:06.247094296",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.10.4"
+        }
+    },
+    "candidatus_portiera_aleyrodidarum - fhgff3 - yaml": {
+        "content": [
+            {
+                "report": [
+                    [
+                        {
+                            "id": "test"
+                        },
+                        "test.validate.txt:md5,3d62aa37cd63070d945f66aa4db89aa0"
+                    ]
+                ],
+                "versions_fairbioheaders": [
+                    [
+                        "FAIRBIOHEADERS_VALIDATE",
+                        "fair-bioheaders",
+                        "0.9.0"
+                    ]
+                ]
+            }
+        ],
+        "timestamp": "2026-11-05T12:38:20.73256687",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.10.4"
+        }
+    },
+    "sarscov2 - fhr - yaml - stub": {
         "content": [
             {
                 "report": [
@@ -19,13 +71,13 @@
                 ]
             }
         ],
-        "timestamp": "2026-10-26T10:24:25.867215717",
+        "timestamp": "2026-11-05T12:38:39.656670035",
         "meta": {
             "nf-test": "0.9.5",
-            "nextflow": "26.04.6"
+            "nextflow": "26.10.4"
         }
     },
-    "fhr 2.1 - extension field": {
+    "sarscov2 - fhp - yaml": {
         "content": [
             {
                 "report": [
@@ -33,7 +85,7 @@
                         {
                             "id": "test"
                         },
-                        "test.validate.txt:md5,45743913480fb070cfaee6f1ee047ede"
+                        "test.validate.txt:md5,7e3864f8126176df5ea24cc7104804d5"
                     ]
                 ],
                 "versions_fairbioheaders": [
@@ -45,13 +97,13 @@
                 ]
             }
         ],
-        "timestamp": "2026-11-05T11:25:53.519765837",
+        "timestamp": "2026-11-05T12:38:13.410919593",
         "meta": {
             "nf-test": "0.9.5",
-            "nextflow": "26.04.6"
+            "nextflow": "26.10.4"
         }
     },
-    "fhr - json": {
+    "sarscov2 - fhr - yaml": {
         "content": [
             {
                 "report": [
@@ -59,7 +111,7 @@
                         {
                             "id": "test"
                         },
-                        "test.validate.txt:md5,9298eedcb1e85414466aa1a989e8b29b"
+                        "test.validate.txt:md5,d3b784b8f9803bc4e7b40af2afc44ce6"
                     ]
                 ],
                 "versions_fairbioheaders": [
@@ -71,88 +123,10 @@
                 ]
             }
         ],
-        "timestamp": "2026-10-26T10:23:31.512620671",
+        "timestamp": "2026-11-05T12:37:59.109728297",
         "meta": {
             "nf-test": "0.9.5",
-            "nextflow": "26.04.6"
-        }
-    },
-    "fhr - yaml": {
-        "content": [
-            {
-                "report": [
-                    [
-                        {
-                            "id": "test"
-                        },
-                        "test.validate.txt:md5,45743913480fb070cfaee6f1ee047ede"
-                    ]
-                ],
-                "versions_fairbioheaders": [
-                    [
-                        "FAIRBIOHEADERS_VALIDATE",
-                        "fair-bioheaders",
-                        "0.9.0"
-                    ]
-                ]
-            }
-        ],
-        "timestamp": "2026-10-26T10:23:19.0949253",
-        "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.6"
-        }
-    },
-    "fhp - yaml": {
-        "content": [
-            {
-                "report": [
-                    [
-                        {
-                            "id": "test"
-                        },
-                        "test.validate.txt:md5,253be97114c2f3c8ef6d998f707073d6"
-                    ]
-                ],
-                "versions_fairbioheaders": [
-                    [
-                        "FAIRBIOHEADERS_VALIDATE",
-                        "fair-bioheaders",
-                        "0.9.0"
-                    ]
-                ]
-            }
-        ],
-        "timestamp": "2026-10-26T10:23:45.142556501",
-        "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.6"
-        }
-    },
-    "fhgff3 - yaml": {
-        "content": [
-            {
-                "report": [
-                    [
-                        {
-                            "id": "test"
-                        },
-                        "test.validate.txt:md5,15c974d15aab05331655ef9f10b1bb90"
-                    ]
-                ],
-                "versions_fairbioheaders": [
-                    [
-                        "FAIRBIOHEADERS_VALIDATE",
-                        "fair-bioheaders",
-                        "0.9.0"
-                    ]
-                ]
-            }
-        ],
-        "timestamp": "2026-10-26T10:23:55.04436891",
-        "meta": {
-            "nf-test": "0.9.5",
-            "nextflow": "26.04.6"
+            "nextflow": "26.10.4"
         }
     }
 }
