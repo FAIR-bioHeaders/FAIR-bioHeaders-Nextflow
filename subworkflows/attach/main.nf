@@ -3,14 +3,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-include { FAIRBIOHEADERS_COMBINE } from '../../modules/nf-core/fairbioheaders/combine/main'
+include { FHR_COMBINE } from '../../modules/combine/main'
 include { FAIRBIOHEADERS_VERIFY as CHECK_COMBINED } from '../../modules/nf-core/fairbioheaders/verify/main'
 include { FHR_CONVERT as EXTRACT_JSON } from '../../modules/convert/main'
 include { sequenceKindOf; sequenceType } from '../../modules/utils/main'
 
 // Attaches metadata to a sequence file, verifies the result and extracts its JSON.
-// FAIRBIOHEADERS_COMBINE takes the sequence type from the file extension and names
-// the output by header type (ID.fhr.fa, ID.fhr.gfa, ID.fhp.faa); `kind` must agree
+// FHR_COMBINE is the repository-owned compatibility module behind this contract
+// (issue #29): it names the output by header type (ID.fhr.fa, ID.fhr.gfa, ID.fhp.faa,
+// ID.fhgff3.gff3), which the pinned upstream nf-core fairbioheaders/combine does not
+// (it keeps the input's extension); see docs/module-migration.md. `kind` must agree
 // with the extension ('fasta' and 'faa' are both FASTA, so FHP metadata may ride on
 // .fa/.fasta and FHR metadata on .faa).
 workflow FHR_ATTACH {
@@ -26,11 +28,11 @@ workflow FHR_ATTACH {
             throw new IllegalArgumentException("Sequence format '${kind}' does not match the extension of ${sequence.name} (${actual}); rename the file or change the format")
         tuple(meta, metadata, sequence)
     }
-    FAIRBIOHEADERS_COMBINE(combine_input)
-    CHECK_COMBINED(FAIRBIOHEADERS_COMBINE.out.sequence)
+    FHR_COMBINE(combine_input)
+    CHECK_COMBINED(FHR_COMBINE.out.sequence)
     // Only verified files continue: the verify task fails otherwise, and the
     // report carries the same meta, which is unique per record.
-    verified = FAIRBIOHEADERS_COMBINE.out.sequence
+    verified = FHR_COMBINE.out.sequence
         .join(CHECK_COMBINED.out.report, failOnDuplicate: true, failOnMismatch: true)
         .map { meta, sequence, _report -> tuple(meta, sequence) }
     EXTRACT_JSON(verified.map { meta, sequence -> tuple(meta, sequence, 'json') })
@@ -39,5 +41,5 @@ workflow FHR_ATTACH {
     sequence = verified
     json = EXTRACT_JSON.out.converted
     reports = CHECK_COMBINED.out.report
-    versions = FAIRBIOHEADERS_COMBINE.out.versions_fairbioheaders.mix(CHECK_COMBINED.out.versions_fairbioheaders, EXTRACT_JSON.out.versions_fairbioheaders)
+    versions = FHR_COMBINE.out.versions_fairbioheaders.mix(CHECK_COMBINED.out.versions_fairbioheaders, EXTRACT_JSON.out.versions_fairbioheaders)
 }

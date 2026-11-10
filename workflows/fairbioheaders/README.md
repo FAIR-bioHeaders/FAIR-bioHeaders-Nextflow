@@ -1,12 +1,15 @@
 # FAIR-bioHeaders Nextflow workflow
 
-A minimal Nextflow DSL2 workflow around two of the
-[nf-core-style modules](../../modules/nf-core/fairbioheaders) of this repository:
+A minimal Nextflow DSL2 workflow around two modules of this repository:
 
-1. `FAIRBIOHEADERS_COMBINE` adds FAIR-bioHeaders metadata (FHR for FASTA and GFA, FHP for
-   protein FASTA, FHGFF3 for GFF3) to each sequence file and calculates its checksum;
-2. `FAIRBIOHEADERS_VERIFY` checks the headed file against the schema and the checksum.
-   The run fails if a file does not verify.
+1. `FHR_COMBINE` (the repository-owned compatibility module `modules/combine`; issue #29
+   keeps this workflow on the header-family output names — the pinned upstream
+   `fairbioheaders/combine` names outputs after the input extension instead, see
+   [docs/module-migration.md](../../docs/module-migration.md)) adds FAIR-bioHeaders
+   metadata (FHR for FASTA and GFA, FHP for protein FASTA, FHGFF3 for GFF3) to each
+   sequence file and calculates its checksum;
+2. `FAIRBIOHEADERS_VERIFY` (repository module, pending its upstream review) checks the
+   headed file against the schema and the checksum. The run fails if a file does not verify.
 
 It moved here from FAIR-bioHeaders-Tools (`nextflow/workflows/fairbioheaders`, FAIR-bioHeaders-Nextflow
 #21) and is described for [Dockstore](https://dockstore.org) by
