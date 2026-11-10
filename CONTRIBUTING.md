@@ -16,7 +16,7 @@ nextflow run workflows/fairbioheaders/main.nf -profile test,docker --outdir resu
 git diff --check
 ```
 
-Lint changes to `modules/nf-core/` with `nf-core modules lint` from an nf-core modules-type checkout (the modules follow nf-core/modules conventions so they can be submitted later). When the toolkit version changes, update every module's `environment.yml` and container pair together; CI checks they agree. Use a toolkit v0.9.0 checkout for reproducible pytest inputs. To verify the container path:
+Lint changes to `modules/nf-core/` with `nf-core modules lint` from an nf-core modules-type checkout (the modules follow nf-core/modules conventions so they can be submitted later). `modules/nf-core/fairbioheaders/combine` and `modules/nf-core/fairbioheaders/validate` are now **pinned upstream copies** (`modules.json` records the revisions): never patch them in place; update them only through the recorded procedure in [docs/module-migration.md](docs/module-migration.md#how-the-upstream-modules-are-pinned) and keep repository behavior in `modules/*` or `subworkflows/*`. When the toolkit version changes, update every module's `environment.yml` and container pair together; CI checks they agree. Use a toolkit v0.9.0 checkout for reproducible pytest inputs. To verify the container path:
 
 ```sh
 docker build -t fhr-nextflow:0.1.0 environment

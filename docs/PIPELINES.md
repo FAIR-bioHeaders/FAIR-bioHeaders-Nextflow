@@ -148,15 +148,16 @@ Modules leave files in their task work directories. The example workflow publish
 
 ## nf-core-style modules
 
-`modules/nf-core/fairbioheaders/` holds three modules in nf-core/modules layout (`main.nf`, `meta.yml` with EDAM formats, `environment.yml`, `tests/main.nf.test` and snapshots). They moved here from FAIR-bioHeaders-Tools with their git history (#21).
+`modules/nf-core/fairbioheaders/` holds the FAIR-bioHeaders modules in nf-core/modules layout (`main.nf`, `meta.yml` with EDAM formats, `environment.yml`, `tests/main.nf.test` and snapshots). `combine` and `validate` are **pinned copies of the upstream nf-core/modules revisions** recorded in `modules.json` (combine `8faff340`, validate `86e852e`); never patch them locally — repository behavior belongs in repository-owned modules. `verify` remains the repository's own module, pending its upstream review (nf-core/modules#13635). The full comparison and the update procedure live in [docs/module-migration.md](module-migration.md).
 
 | Module | Input | Output |
 | --- | --- | --- |
-| `FAIRBIOHEADERS_COMBINE` | `(meta, metadata, sequence)` | `sequence`: the headed file, named by header type: `PREFIX.fhr.fa`, `PREFIX.fhr.gfa`, `PREFIX.fhp.faa` or `PREFIX.fhgff3.gff3`, with `.gz` when the input was compressed |
-| `FAIRBIOHEADERS_VERIFY` | `(meta, sequence)` | `report`: `PREFIX.verify.txt`; the task fails when the header is invalid or the checksum does not match |
-| `FAIRBIOHEADERS_VALIDATE` | `(meta, metadata)` | `report`: `PREFIX.validate.txt`; the task fails when standalone JSON/YAML metadata does not validate |
+| `FAIRBIOHEADERS_COMBINE` (upstream, pinned) | `(meta, metadata, sequence)` | `sequence`: the headed file, **named after the input's extension**: `PREFIX.<ext>` (`PREFIX.fasta`, `PREFIX.faa`, `PREFIX.gfa`, `PREFIX.gff3`), with `.gz` when the input was compressed. Fails when the output name would overwrite a staged input — set `ext.prefix` |
+| `FHR_COMBINE` (repository compatibility module, `modules/combine`) | `(meta, metadata, sequence)` | `sequence`: the headed file, named by header type: `PREFIX.fhr.fa`, `PREFIX.fhr.gfa`, `PREFIX.fhp.faa` or `PREFIX.fhgff3.gff3`, with `.gz` when the input was compressed. Used by `FHR_ATTACH`, the example and the Dockstore workflow; migration-pending on [issue #29](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Nextflow/issues/29) |
+| `FAIRBIOHEADERS_VERIFY` (repository module, pending upstream) | `(meta, sequence)` | `report`: `PREFIX.verify.txt`; the task fails when the header is invalid or the checksum does not match |
+| `FAIRBIOHEADERS_VALIDATE` (upstream, pinned) | `(meta, metadata)` | `report`: `PREFIX.validate.txt`; the task fails when standalone JSON/YAML/JSON-LD metadata does not validate |
 
-`PREFIX` is `task.ext.prefix` or `meta.id`; `task.ext.args` is passed to `bioheaders`. COMBINE takes the sequence type from the extension (`.gfa`, `.gff3`/`.gff`, otherwise FASTA, so `.faa` is FASTA) and the header type from the metadata's `schema` URL, by the toolkit's own rule (`bioheaders.header_type`). Versions go to the `versions` topic. Run their tests with `nf-test test --profile docker` from the repository root (`nf-test.config`, `tests/config/nf-test.config`).
+`PREFIX` is `task.ext.prefix` or `meta.id`; `task.ext.args` is passed to `bioheaders`. The upstream COMBINE takes the sequence type from the toolkit's extension inference; the repository `FHR_COMBINE` enforces the extension whitelist, derives the header type from the metadata's `schema` URL by the toolkit's own rule (`bioheaders.header_type`) for the output name, and shell-quotes staged paths and prefixes — the pinned upstream module relies on Nextflow's interpolation of staged paths, so constrain `meta.id`/`ext.prefix` yourself when importing it directly. Versions go to the `versions` topic. Run their tests with `nf-test test --profile docker` from the repository root (`nf-test.config`, `tests/config/nf-test.config`).
 
 ```nextflow
 include { FAIRBIOHEADERS_COMBINE } from '/path/to/FAIR-bioHeaders-Nextflow/modules/nf-core/fairbioheaders/combine/main'
@@ -164,9 +165,13 @@ include { FAIRBIOHEADERS_VERIFY } from '/path/to/FAIR-bioHeaders-Nextflow/module
 
 workflow {
     FAIRBIOHEADERS_COMBINE(channel.of(tuple([id: 'proteins'], file(params.metadata), file(params.protein))))
-    FAIRBIOHEADERS_VERIFY(FAIRBIOHEADERS_COMBINE.out.sequence)  // proteins.fhp.faa with FHP metadata
+    FAIRBIOHEADERS_VERIFY(FAIRBIOHEADERS_COMBINE.out.sequence)  // proteins.faa with FHP metadata
 }
 ```
+
+For the header-family output names (`proteins.fhp.faa`) use `modules/combine`'s
+`FHR_COMBINE` at the same call site, or compose `FHR_ATTACH`; see
+[module migration](module-migration.md#contract-comparison-upstream-vs-local-pre-migration).
 
 The minimal Dockstore workflow [workflows/fairbioheaders](../workflows/fairbioheaders/README.md) runs COMBINE then VERIFY over a samplesheet.
 
@@ -175,7 +180,7 @@ The minimal Dockstore workflow [workflows/fairbioheaders](../workflows/fairbiohe
 - **Invalid metadata:** inspect the validator error and compare the map with the pinned specification. JSON serialization succeeds independently of schema validation; only validated JSON is emitted by `FHR_CREATE_JSON`.
 - **Toolkit version:** the modules no longer stop on a version mismatch; each task reports the version it ran on the `versions` topic. Use the modules' BioContainers images (or the pinned environment) for the supported baseline, and upgrade the compatibility contract and tests together before claiming another version.
 - **Checksum mismatch:** verify that no program changed the header, whitespace, line endings or sequence bytes after attachment. Reattach when changing metadata.
-- **Unsafe ID or unsupported format:** use IDs and format values from the README contract. Paths are quoted; command formats are explicitly restricted.
+- **Unsafe ID or unsupported format:** use IDs and format values from the README contract. The repository modules quote staged paths and explicitly restrict command formats; the pinned upstream modules rely on Nextflow's interpolation of staged paths, so supply only ID-constrained names and controlled `ext.prefix` values to them.
 - **GFF3 validation failed:** read the findings in the task error or the JSON/HTML report in the task work directory; with `fail_on_errors = false` the reports are emitted instead. An "incomplete" failure means the GFF3 or genome could not be read.
 - **Failed converter tests:** inspect the published `converter-tests/converter-tests.log` and JUnit XML. A checkout whose declared version differs from the installed toolkit is rejected before tests run.
 - **Parent-link verification failed:** read the report (and the task error) for the `derivedFrom` entry that did not match; supply the parent file the header records, recombine the parent if it changed, or set `ext.fail_on_mismatch = false` to survey a batch. An "incomplete" failure means the input or a parent could not be read or validated. A match proves file identity, not translation correctness.
