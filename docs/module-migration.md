@@ -34,21 +34,29 @@ reviewed upstream, and adoption is gated on merge **plus** local parity checks
 ## How the upstream modules are pinned
 
 - `modules/nf-core/fairbioheaders/combine/` and `modules/nf-core/fairbioheaders/validate/`
-  (with `meta.yml`, `environment.yml`, `tests/main.nf.test` and the snapshot) are
+  (including `.conda-lock/`, `meta.yml`, `environment.yml`, tests and snapshots) are
   **byte-identical copies** of the upstream files at the recorded revisions.
   They must stay unpatched: repository behavior goes into repository-owned
   modules (`modules/*`) or subworkflows (`subworkflows/*`), never into the pinned
   copies.
-- `modules.json` records the nf-core/modules remote, the per-module
-  `git.commit_sha` and the branch, in the standard pipeline layout, so the
-  `nf-core` CLI can manage updates. `.nf-core.yml` declares
-  `repository_type: pipeline`.
-- CI (`nf-test` job) verifies byte-identity against `modules.json` by hashing the
-  files fetched from `raw.githubusercontent.com/nf-core/modules/<sha>/…`
-  (`git hash-object`); any local edit or stale pin fails the drift step.
+- `modules.json` uses the nf-core/tools manifest schema: remote
+  `https://github.com/nf-core/modules.git`, then `modules.nf-core`, then each
+  `fairbioheaders/<name>` entry with `branch`, `git_sha` and
+  `installed_by: ["modules"]`. `.nf-core.yml` declares `repository_type: pipeline`.
+- The repository still has a mixed module layout: repository-owned modules live
+  under `modules/*`, including local verify in the `nf-core` namespace. nf-core
+  4.2.2 rejects those untracked directories. A valid manifest alone does **not**
+  make `nf-core modules update`, `list local` or `lint` usable here. Use the
+  CLI-less procedure below until a separate layout migration moves local modules
+  to `modules/local/` and updates every importer. That migration remains #29 work.
+- CI runs `python3 scripts/check_upstream_modules.py`. It retrieves the complete
+  recursive GitHub tree at each pin with `curl --retry 3`, rejects truncated
+  responses, and compares all module-relative paths, blob hashes and file modes.
+  Hidden lock files, missing files and extra local files are included. Any drift
+  fails the job before nf-test runs.
 
-Provenance of the installed files (git blob digests of every installed file at its
-recorded revision, matching `git hash-object` of the checked-in copies):
+Provenance of the runtime/test files (the complete seven-file directory for each
+module also includes the two `.conda-lock/` platform locks, verified by CI):
 
 | Module @ revision | File | Upstream blob sha |
 | --- | --- | --- |
@@ -65,34 +73,56 @@ recorded revision, matching `git hash-object` of the checked-in copies):
 
 ### Updating a pinned module (recorded procedure)
 
-Preferred, with the `nf-core` CLI (>= 2.x / 3.x) from the repository root:
+Use the CLI-less procedure from this repository root. First review the diff
+between the recorded SHA and the proposed merged SHA, restricted to the module
+directory. Download **every blob**, including hidden files, from that revision:
 
 ```sh
-# 1. See what changed upstream since the recorded revision, and review it:
-#    https://github.com/nf-core/modules/compare/<recorded-sha>..<new-sha>
-#    restricted to modules/nf-core/fairbioheaders/<name>/
-nf-core modules info fairbioheaders/combine        # current pin and available version
-nf-core modules update fairbioheaders/combine --git_sha <new-sha>
-nf-core modules update fairbioheaders/validate --git_sha <new-sha>
-# 2. Re-run the suites listed in the "Testing status" section below.
-# 3. Keep the pins coherent: the module's environment.yml (bioconda) and its
-#    container tag must match the toolkit release this repository pins
-#    (currently fair-bioheaders 0.9.0). CI checks both directions.
-# 4. Commit the module files and the modules.json sha change together and
-#    reference #29; update this document's revision table.
+python3 - fairbioheaders/combine <reviewed-merge-sha> <<'PYUPDATE'
+import json
+from pathlib import Path
+import subprocess
+import sys
+
+name, sha = sys.argv[1:]
+prefix = f"modules/nf-core/{name}/"
+tree = json.loads(subprocess.check_output([
+    "gh", "api", f"repos/nf-core/modules/git/trees/{sha}?recursive=1"
+]))
+assert not tree.get("truncated"), "Incomplete upstream tree"
+files = [entry for entry in tree["tree"]
+         if entry["path"].startswith(prefix) and entry["type"] == "blob"]
+assert files, "Module absent at the proposed revision"
+for entry in files:
+    path = Path(entry["path"])
+    path.parent.mkdir(parents=True, exist_ok=True)
+    content = subprocess.check_output([
+        "curl", "--fail", "--silent", "--show-error", "--location", "--retry", "3",
+        f"https://raw.githubusercontent.com/nf-core/modules/{sha}/{path.as_posix()}"
+    ])
+    assert entry["mode"] in ("100644", "100755"), "Review special file manually"
+    path.write_bytes(content)
+    path.chmod(0o755 if entry["mode"] == "100755" else 0o644)
+    got = subprocess.check_output(["git", "hash-object", str(path)], text=True).strip()
+    assert got == entry["sha"], str(path)
+manifest = Path("modules.json")
+data = json.loads(manifest.read_text())
+data["repos"]["https://github.com/nf-core/modules.git"]["modules"]["nf-core"][name]["git_sha"] = sha
+manifest.write_text(json.dumps(data, indent=4) + "\n")
+PYUPDATE
+python3 scripts/check_upstream_modules.py
 ```
 
-Without the CLI (offline mirror — reproduces exactly what this slice did):
+Repeat for `fairbioheaders/validate` as needed. Review and remove any obsolete
+tracked files reported as `extra` by the guard; never leave stale files in a
+pinned directory. Keep the module's Conda/container pins coherent with this
+repository's toolkit baseline (currently 0.9.0). Run the suites below and commit
+the complete directory, manifest change and updated provenance table together.
 
-```sh
-sha=<new-sha>; mod=<combine|validate>
-for f in main.nf meta.yml environment.yml tests/main.nf.test tests/main.nf.test.snap; do
-  gh api "repos/nf-core/modules/contents/modules/nf-core/fairbioheaders/$mod/$f?ref=$sha" \
-    --jq .content | base64 -d > "modules/nf-core/fairbioheaders/$mod/$f"
-done
-# then update modules.json (per-module and repo-level git.commit_sha) and verify:
-git hash-object modules/nf-core/fairbioheaders/$mod/main.nf   # must equal the upstream blob sha
-```
+After the separate local-layout migration, the nf-core CLI update procedure can
+be enabled and tested with the then-supported nf-core/tools version. Until then,
+run module lint in a clean upstream nf-core/modules checkout at the recorded
+revision, rather than invoking it in this mixed-layout repository.
 
 ## Contract comparison, upstream vs local (pre-migration)
 
@@ -315,9 +345,11 @@ python tests/run.py --converter-source <fair-bioheaders-0.9.0-checkout>
 nextflow run workflows/fairbioheaders/main.nf -profile test,docker --outdir results   # family-named combine outputs + verify reports
 nextflow run main.nf -profile docker --sequence examples/assembly.gfa --sequence_format gfa   # and the FASTA/GFF3/protein examples as in ci.yml
 docker build -t fhr-nextflow:0.1.0 environment
-nf-core modules lint fairbioheaders/combine fairbioheaders/validate
 git diff --check
 ```
+
+Module lint requires a clean upstream nf-core/modules checkout at the recorded
+revision; see the layout limitation above.
 
 FHR → FHGFF3 → FHP parent-chain coverage was re-checked in the form this slice
 can verify locally: the chain fixtures (`tests/fixtures/fhp/chain/`), the

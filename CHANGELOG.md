@@ -15,7 +15,7 @@ procedure, the remaining blockers and the adoption steps for the later slices.
   byte-identical upstream module at `8faff34023b16ecdc41b02bac42989834075e3f1`
   (nf-core/modules#13492, merged 2026-11-09) and `modules/nf-core/fairbioheaders/validate`
   at `86e852ef429e021d16f7279aaddb9b81eb067f8a` (nf-core/modules#13509), each with the
-  upstream `meta.yml`, `environment.yml` (`bioconda::fair-bioheaders=0.9.0`, unchanged),
+  upstream `.conda-lock/` platform locks, `meta.yml`, `environment.yml` (`bioconda::fair-bioheaders=0.9.0`, unchanged),
   nf-test tests and snapshots; the tests use the shared fixtures merged in
   nf-core/test-datasets#2363. The revisions are recorded in `modules.json`
   (`.nf-core.yml`: `repository_type: pipeline`) and CI now (a) verifies the installed
@@ -24,8 +24,9 @@ procedure, the remaining blockers and the adoption steps for the later slices.
   (`community.wave.seqera.io/library/fair-bioheaders:0.9.0--71029206d3ce1119`, built
   from the same Bioconda package) against the toolkit pin, while the repository-owned
   modules keep the BioContainers/Galaxy-depot check. Update only via the recorded
-  procedure (`nf-core modules update <name> --git_sha <reviewed sha>`, or the
-  byte-identical fetch); never patch the pinned copies in place.
+  CLI-less complete-directory fetch procedure; the mixed local module layout
+  prevents nf-core CLI updates/list/lint here until a separate layout migration.
+  Never patch the pinned copies in place.
 - **combine: upstream module plus a compatibility module.** The upstream process names
   its output after the **input file's extension** (`PREFIX.fasta`, `PREFIX.faa`, …),
   leaves format inference to the toolkit and can fail when the derived name would
@@ -72,7 +73,7 @@ procedure, the remaining blockers and the adoption steps for the later slices.
   `Checksum verified.` reports (FHR FASTA/GFA, expanded JSON-LD, FHGFF3, FHP,
   and the FHR → FHGFF3 → FHP chain through the harness). CI's Docker jobs
   (`nf-test --profile docker`, the `-profile docker` examples, the
-  `environment/` image build, `nf-core modules lint`) still need to run on the
+  `environment/` image build) still need to run on the
   PR; `git diff --check` is clean.
 
 ## 0.2.0 — 2026-11-05
