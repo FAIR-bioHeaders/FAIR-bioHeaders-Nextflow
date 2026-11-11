@@ -385,8 +385,9 @@ local parity** — no adoption on review heads.
 5. Only after callers are migrated, delete the duplicate local implementations
    (`modules/convert` once #4 resolves; `modules/combine` once the naming blocker
    resolves; the local `verify` main.nf once step 3 passes).
-6. Re-evaluate container pins at each toolkit bump: `nf-core modules update`
-   maintains the Wave side; the repo-side Bioconda/BioContainers/depot trio and
+6. Re-evaluate container pins at each toolkit bump: the reviewed complete-tree
+   update procedure above maintains the Wave side (nf-core CLI updates require
+   the separate local-layout migration first); the repo-side Bioconda/BioContainers/depot trio and
    `environment/requirements.*` move by this repository's own pin procedure
    (AGENTS.md).
 

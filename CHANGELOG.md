@@ -166,3 +166,18 @@ Moved to FHR-File-Converter 0.3.2, which streams FASTA/GFA files with bounded me
 Moved to FHR-File-Converter 0.3.3, which adds gzip/bgzip input and output and stdin/stdout pipes; plain-file checksums are unchanged. Verification: `tests/run.py --converter-source` (converter v0.3.3 worktree; 21 runs, 116 converter tests), `docker build -t fhr-nextflow:0.1.0 environment` (image `sha256:7a9bd9b3…f5053f`) and the Docker GFA example.
 
 Moved to the converter's new name, fair-bioheaders 0.4.0, from the renamed FAIR-bioHeaders-Tools repository (formerly FHR-File-Converter). The modules still call the unchanged `fhr-*` commands. Verification: `tests/run.py --converter-source` (v0.4.0 worktree; 21 runs, 133 converter tests), `docker build -t fhr-nextflow:0.1.0 environment` (image `0a566862…`) and the Docker GFA example.
+
+### PR #30 review follow-up — 2026-11-11
+
+- Corrected `modules.json` to the nf-core per-module `git_sha` schema and recorded
+  why the mixed local module layout still requires CLI-less updates.
+- Restored both platforms' upstream `.conda-lock/` files for each pinned module.
+  The new CI guard checks the complete tree (paths, blob hashes and modes),
+  including extra local files, with retried GitHub requests.
+- Added a collision-safe `ext.prefix` to the importer example and labelled the
+  direct-importer combine naming and validate quoting changes as breaking.
+- Verification: both complete seven-file upstream trees match their recorded
+  revisions; drift-guard regression tests pass; manifest/YAML/Bash checks,
+  Ruff, Black, isort and `git diff --check` pass. No process implementation or
+  workflow wiring changed in this follow-up. Docker's daemon is unavailable
+  locally, so nf-test/container/integration reruns remain CI verification.
