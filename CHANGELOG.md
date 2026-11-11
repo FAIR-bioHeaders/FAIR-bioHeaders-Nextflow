@@ -37,18 +37,23 @@ procedure, the remaining blockers and the adoption steps for the later slices.
   MPL-2.0 source notice and a migration note); `FHR_ATTACH`, the example, the Dockstore
   workflow and the local verify module's test setups use it, and all published names
   (`ID.fhr.fa`, `ID.fhr.gfa`, `ID.fhp.faa`, `ID.fhgff3.gff3`, `.gz` when compressed) are
-  unchanged. **Migration note for direct importers of
+  unchanged. **Breaking change for the next 0.x minor release — direct importers of
   `modules/nf-core/fairbioheaders/combine`:** that path is now the upstream module with
   the upstream naming contract; import `modules/combine` (or compose `FHR_ATTACH`) to
   keep header-family names. Retiring `FHR_COMBINE` requires resolving the recorded
   naming/quoting blockers (#29).
 - **validate: migrated in place.** The pinned upstream `FAIRBIOHEADERS_VALIDATE` keeps
-  the exact input tuple, report name (`ID.validate.txt`) and content, and failure
-  semantics of the replaced local copy, and additionally accepts JSON-LD metadata;
+  input tuple, report name (`ID.validate.txt`) and content for this repository's
+  constrained callers, and additionally accepts JSON-LD metadata;
   `FHR_CREATE_JSON` and the external-project harness pass unchanged. The two local
   nf-test cases the upstream revision does not carry — an FHR 2.1 record with an `x-`
   extension field validates, the same field under `"2.0"`/`v0.4.0` is rejected — moved
   into `tests/run.py`, preserving the coverage against the pinned toolkit's R15 rule.
+  **Breaking change for direct validate importers:** upstream no longer shell-quotes
+  staged paths or the prefix as the local copy did. Spaces or shell metacharacters
+  in filenames, `meta.id` or `ext.prefix` can fail or change shell interpretation;
+  constrain and sanitize these inputs before importing the pinned module. The
+  full failure behavior is not identical for those direct callers.
 - **Containers.** Pinned upstream modules run the Wave image above; repository modules
   keep `quay.io/biocontainers/fair-bioheaders:0.9.0--pyhdfd78af_0` and the Galaxy depot
   pair. Both families carry the identical toolkit; a docker run can now pull from two
