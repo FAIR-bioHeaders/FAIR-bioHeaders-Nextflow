@@ -153,15 +153,8 @@ jobs:
           grep -q "fair_bioheaders-$version-py3-none-any.whl" environment/requirements.in
       - name: Check that the pinned upstream modules match their recorded revisions
         run: |
-          set -euo pipefail
-          for module in combine validate; do
-            sha="$(python3 -c "import json; print(json.load(open('modules.json'))['repos']['https://github.com/nf-core/modules.git']['modules']['nf-core']['fairbioheaders/$module']['git_sha'])")"
-            for file in main.nf meta.yml environment.yml tests/main.nf.test tests/main.nf.test.snap; do
-              want="$(curl -fsSL "https://raw.githubusercontent.com/nf-core/modules/$sha/modules/nf-core/fairbioheaders/$module/$file" | git hash-object --stdin)"
-              got="$(git hash-object "modules/nf-core/fairbioheaders/$module/$file")"
-              test "$got" = "$want" || { echo "drift: $module/$file is $got but revision $sha has $want (update via nf-core modules update; see docs/module-migration.md)"; exit 1; }
-            done
-          done
+          python3 -m unittest discover -s tests -p test_upstream_modules.py -v
+          python3 scripts/check_upstream_modules.py
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
