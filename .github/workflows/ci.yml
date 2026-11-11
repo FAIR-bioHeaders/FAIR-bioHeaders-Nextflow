@@ -121,9 +121,14 @@ jobs:
       - run: git diff --check HEAD
 
   nf-test:
-    # The modules pin bioconda::fair-bioheaders=X.Y.Z and its BioContainers image
-    # quay.io/biocontainers/fair-bioheaders:X.Y.Z--<build>; check that the two agree in
-    # every module that uses them, then run nf-test, which pulls the images.
+    # The modules pin bioconda::fair-bioheaders=X.Y.Z. The two pinned upstream modules
+    # (modules.json: combine and validate) run the Seqera Wave image built from that
+    # Bioconda package; the repository-owned modules (verify until #29 adopts it, plus
+    # combine's header-family compatibility module, convert, strip and verify_links) pin
+    # the BioContainers image quay.io/biocontainers/fair-bioheaders:X.Y.Z--<build> and its
+    # Galaxy depot pair. Check that all of them agree with the Bioconda pin, verify that
+    # the pinned files still match the recorded nf-core/modules revisions, then run
+    # nf-test, which pulls the images.
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -132,9 +137,13 @@ jobs:
           persist-credentials: false
       - name: Check that each module's container matches its Bioconda pin
         run: |
-          version="$(sed -n 's/.*bioconda::fair-bioheaders=\([0-9.]*\)$/\1/p' modules/nf-core/fairbioheaders/combine/environment.yml)"
+          version="$(sed -n 's/.*bioconda::fair-bioheaders=\([0-9][0-9.]*\)".*/\1/p' modules/nf-core/fairbioheaders/combine/environment.yml)"
           test -n "$version"
-          for module in modules/nf-core/fairbioheaders/*/ modules/convert/ modules/strip/ modules/verify_links/; do
+          for module in combine validate; do
+            grep -q "bioconda::fair-bioheaders=$version" "modules/nf-core/fairbioheaders/$module/environment.yml"
+            grep -q "community.wave.seqera.io/library/fair-bioheaders:$version--" "modules/nf-core/fairbioheaders/$module/main.nf"
+          done
+          for module in modules/nf-core/fairbioheaders/verify modules/combine modules/convert modules/strip modules/verify_links; do
             grep -q "^ *- bioconda::fair-bioheaders=$version$" "$module/environment.yml"
             grep -q "quay.io/biocontainers/fair-bioheaders:$version--" "$module/main.nf"
             grep -q "depot.galaxyproject.org/singularity/fair-bioheaders:$version--" "$module/main.nf"
@@ -142,6 +151,10 @@ jobs:
           # The converter tests' conda environment and the hash-locked image follow the same release.
           grep -q "^ *- bioconda::fair-bioheaders=$version$" modules/converter_tests/environment.yml
           grep -q "fair_bioheaders-$version-py3-none-any.whl" environment/requirements.in
+      - name: Check that the pinned upstream modules match their recorded revisions
+        run: |
+          python3 -m unittest discover -s tests -p test_upstream_modules.py -v
+          python3 scripts/check_upstream_modules.py
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
@@ -157,8 +170,10 @@ jobs:
 
   dockstore-workflow:
     # Runs workflows/fairbioheaders (described for Dockstore by .dockstore.yml) with
-    # -profile test,docker. The workflow uses the modules' BioContainers images and its
-    # conda profile pins the modules' Bioconda package; check both first.
+    # -profile test,docker. The workflow composes the repository-owned FHR_COMBINE
+    # (modules/combine, header-family naming; see docs/module-migration.md) and the
+    # local FAIRBIOHEADERS_VERIFY module, both on BioContainers images, and its conda
+    # profile pins the modules' Bioconda package; check both first.
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -168,11 +183,11 @@ jobs:
       - name: Check that the workflow uses the modules' containers and Bioconda pin
         run: |
           workflow=workflows/fairbioheaders
-          # No container override: both processes run the modules' BioContainers image.
+          # No container override: both processes run their module's BioContainers image.
           if grep -nE '^\s*container\s*=' "$workflow/nextflow.config"; then exit 1; fi
           version="$(sed -n 's/^ *- bioconda::fair-bioheaders=\([0-9.]*\)$/\1/p' "$workflow/environment.yml")"
           test -n "$version"
-          for module in modules/nf-core/fairbioheaders/*/; do
+          for module in modules/combine modules/nf-core/fairbioheaders/verify; do
             grep -q "^ *- bioconda::fair-bioheaders=$version$" "$module/environment.yml"
             grep -q "quay.io/biocontainers/fair-bioheaders:$version--" "$module/main.nf"
           done

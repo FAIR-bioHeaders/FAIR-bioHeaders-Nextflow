@@ -5,12 +5,15 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 //
 // Adds FAIR-bioHeaders metadata to FASTA, protein FASTA, GFA or GFF3 files and
-// verifies the result: FAIRBIOHEADERS_COMBINE writes the headed file with its
-// checksum, then FAIRBIOHEADERS_VERIFY checks the header against the schema and
-// the checksum.
+// verifies the result: FHR_COMBINE writes the headed file with its checksum,
+// named by header type, then FAIRBIOHEADERS_VERIFY checks the header against the
+// schema and the checksum. FHR_COMBINE is the repository-owned compatibility
+// module (issue #29): the pinned upstream nf-core fairbioheaders/combine keeps
+// the input's extension in the output name instead; this workflow keeps the
+// documented <id>.fhr.fa / <id>.fhp.faa naming. See docs/module-migration.md.
 // See README.md in this directory for the parameters.
 
-include { FAIRBIOHEADERS_COMBINE } from '../../modules/nf-core/fairbioheaders/combine/main'
+include { FHR_COMBINE } from '../../modules/combine/main'
 include { FAIRBIOHEADERS_VERIFY  } from '../../modules/nf-core/fairbioheaders/verify/main'
 
 // A samplesheet path: a URL or absolute path as is, otherwise relative to the sheet.
@@ -49,6 +52,6 @@ workflow {
         error("Give --input samplesheet.csv, or --metadata and --sequence (see README.md).")
     }
 
-    FAIRBIOHEADERS_COMBINE(input)
-    FAIRBIOHEADERS_VERIFY(FAIRBIOHEADERS_COMBINE.out.sequence)
+    FHR_COMBINE(input)
+    FAIRBIOHEADERS_VERIFY(FHR_COMBINE.out.sequence)
 }

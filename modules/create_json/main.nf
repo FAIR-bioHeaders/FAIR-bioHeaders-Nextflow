@@ -5,6 +5,8 @@
 
 include { metadataJson; sampleId } from '../utils/main'
 
+// FAIRBIOHEADERS_VALIDATE is the pinned upstream nf-core module (issue #29,
+// docs/module-migration.md); its channel contract matches the local predecessor's.
 include { FAIRBIOHEADERS_VALIDATE as VALIDATE_CREATED_JSON } from '../nf-core/fairbioheaders/validate/main'
 
 process FHR_WRITE_JSON {
