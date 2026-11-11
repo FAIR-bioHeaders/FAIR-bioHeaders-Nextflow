@@ -165,9 +165,23 @@ include { FAIRBIOHEADERS_VERIFY } from '/path/to/FAIR-bioHeaders-Nextflow/module
 
 workflow {
     FAIRBIOHEADERS_COMBINE(channel.of(tuple([id: 'proteins'], file(params.metadata), file(params.protein))))
-    FAIRBIOHEADERS_VERIFY(FAIRBIOHEADERS_COMBINE.out.sequence)  // proteins.faa with FHP metadata
+    FAIRBIOHEADERS_VERIFY(FAIRBIOHEADERS_COMBINE.out.sequence)  // proteins.headed.faa with the config below
 }
 ```
+
+Set the combine prefix in the importing project's `nextflow.config` so an input
+named `proteins.faa` is not overwritten by an output of the same name:
+
+```nextflow
+process {
+    withName: FAIRBIOHEADERS_COMBINE {
+        ext.prefix = { "${meta.id}.headed" }
+    }
+}
+```
+
+The example's headed output is `proteins.headed.faa`; keep the chosen prefix
+distinct from every staged input basename and constrain IDs to safe filenames.
 
 For the header-family output names (`proteins.fhp.faa`) use `modules/combine`'s
 `FHR_COMBINE` at the same call site, or compose `FHR_ATTACH`; see
