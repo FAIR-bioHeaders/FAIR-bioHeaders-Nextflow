@@ -155,7 +155,7 @@ jobs:
         run: |
           set -euo pipefail
           for module in combine validate; do
-            sha="$(python3 -c "import json; print(json.load(open('modules.json'))['repos']['https://github.com/nf-core/modules']['master']['modules']['fairbioheaders/$module']['git']['commit_sha'])")"
+            sha="$(python3 -c "import json; print(json.load(open('modules.json'))['repos']['https://github.com/nf-core/modules.git']['modules']['nf-core']['fairbioheaders/$module']['git_sha'])")"
             for file in main.nf meta.yml environment.yml tests/main.nf.test tests/main.nf.test.snap; do
               want="$(curl -fsSL "https://raw.githubusercontent.com/nf-core/modules/$sha/modules/nf-core/fairbioheaders/$module/$file" | git hash-object --stdin)"
               got="$(git hash-object "modules/nf-core/fairbioheaders/$module/$file")"
