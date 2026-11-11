@@ -1,5 +1,80 @@
 # Changelog
 
+## Unreleased
+
+Module migration toward the upstream nf-core `fairbioheaders` modules (issue #29,
+first slice): `combine` and `validate` are now pinned upstream modules, and the
+callers are aligned without dropping any documented output contract. The toolkit pin
+stays fair-bioheaders **0.9.0**; `verify` and `convert` stay repository-owned until
+their upstream interfaces (nf-core/modules#13635, nf-core/modules#13636) merge and
+pass local parity. [docs/module-migration.md](docs/module-migration.md) records the
+per-module upstream-vs-local contract tables, the pinned revisions, the update
+procedure, the remaining blockers and the adoption steps for the later slices.
+
+- **Pinned upstream modules.** `modules/nf-core/fairbioheaders/combine` is now the
+  byte-identical upstream module at `8faff34023b16ecdc41b02bac42989834075e3f1`
+  (nf-core/modules#13492, merged 2026-11-09) and `modules/nf-core/fairbioheaders/validate`
+  at `86e852ef429e021d16f7279aaddb9b81eb067f8a` (nf-core/modules#13509), each with the
+  upstream `meta.yml`, `environment.yml` (`bioconda::fair-bioheaders=0.9.0`, unchanged),
+  nf-test tests and snapshots; the tests use the shared fixtures merged in
+  nf-core/test-datasets#2363. The revisions are recorded in `modules.json`
+  (`.nf-core.yml`: `repository_type: pipeline`) and CI now (a) verifies the installed
+  files are byte-identical to the recorded revisions and (b) checks the upstream
+  modules' Seqera Wave container
+  (`community.wave.seqera.io/library/fair-bioheaders:0.9.0--71029206d3ce1119`, built
+  from the same Bioconda package) against the toolkit pin, while the repository-owned
+  modules keep the BioContainers/Galaxy-depot check. Update only via the recorded
+  procedure (`nf-core modules update <name> --git_sha <reviewed sha>`, or the
+  byte-identical fetch); never patch the pinned copies in place.
+- **combine: upstream module plus a compatibility module.** The upstream process names
+  its output after the **input file's extension** (`PREFIX.fasta`, `PREFIX.faa`, …),
+  leaves format inference to the toolkit and can fail when the derived name would
+  overwrite a staged input (`ext.prefix` resolves it), whereas the published contracts
+  of the example, `FHR_ATTACH` and the Dockstore workflow name outputs by header type.
+  The previous implementation therefore moved to the repository-owned
+  `modules/combine` as `FHR_COMBINE` (byte-identical except the process name, plus the
+  MPL-2.0 source notice and a migration note); `FHR_ATTACH`, the example, the Dockstore
+  workflow and the local verify module's test setups use it, and all published names
+  (`ID.fhr.fa`, `ID.fhr.gfa`, `ID.fhp.faa`, `ID.fhgff3.gff3`, `.gz` when compressed) are
+  unchanged. **Migration note for direct importers of
+  `modules/nf-core/fairbioheaders/combine`:** that path is now the upstream module with
+  the upstream naming contract; import `modules/combine` (or compose `FHR_ATTACH`) to
+  keep header-family names. Retiring `FHR_COMBINE` requires resolving the recorded
+  naming/quoting blockers (#29).
+- **validate: migrated in place.** The pinned upstream `FAIRBIOHEADERS_VALIDATE` keeps
+  the exact input tuple, report name (`ID.validate.txt`) and content, and failure
+  semantics of the replaced local copy, and additionally accepts JSON-LD metadata;
+  `FHR_CREATE_JSON` and the external-project harness pass unchanged. The two local
+  nf-test cases the upstream revision does not carry — an FHR 2.1 record with an `x-`
+  extension field validates, the same field under `"2.0"`/`v0.4.0` is rejected — moved
+  into `tests/run.py`, preserving the coverage against the pinned toolkit's R15 rule.
+- **Containers.** Pinned upstream modules run the Wave image above; repository modules
+  keep `quay.io/biocontainers/fair-bioheaders:0.9.0--pyhdfd78af_0` and the Galaxy depot
+  pair. Both families carry the identical toolkit; a docker run can now pull from two
+  registries, so offline mirrors must allow `community.wave.seqera.io`. Conda paths are
+  unaffected (`${moduleDir}/environment.yml`).
+- **Documentation.** New [docs/module-migration.md](docs/module-migration.md) with the
+  per-module upstream-vs-local contract tables, the pinned revisions and file digests,
+  the update procedure, the caller migration status and the verify/convert adoption
+  gates; README, the pipeline guide, the Dockstore workflow README, AGENTS.md and
+  CONTRIBUTING.md now state the pins (combine `8faff34023`, validate `86e852ef42`,
+  upstream tests, snapshots and shared test-datasets fixtures) and the compatibility
+  module.
+  Verification in this slice, run inside a
+  Nextflow 26.04.6 / Java 21 / Python 3.11 container with the pinned
+  fair-bioheaders 0.9.0 on the PATH (native execution; container pulls stay CI's
+  job): `nf-test test --ci` **29/29 passed** (8 pinned combine + 7 pinned
+  validate + 5 verify + 9 `FHR_COMBINE`, committed snapshots matched);
+  `python tests/run.py --converter-source <v0.9.0 checkout>` **57/57 passed**,
+  including the two new FHR 2.1 `x-` validate cases and 2410 toolkit tests
+  through the converter-test gate; the Dockstore workflow's `test` profile
+  passed with the five family-named combine outputs and five
+  `Checksum verified.` reports (FHR FASTA/GFA, expanded JSON-LD, FHGFF3, FHP,
+  and the FHR → FHGFF3 → FHP chain through the harness). CI's Docker jobs
+  (`nf-test --profile docker`, the `-profile docker` examples, the
+  `environment/` image build, `nf-core modules lint`) still need to run on the
+  PR; `git diff --check` is clean.
+
 ## 0.2.0 — 2026-11-05
 
 Minor release: moves the pinned toolkit from fair-bioheaders 0.8.5 to 0.9.0, which bundles FAIR-bioHeaders-Specification v0.5.0 and so supports a new schema minor version: FHR 2.1 and FHP/FHGFF3 1.1, whose records may carry top-level `x-` extension fields (spec rule R15). The modules pass these fields through `combine`, `strip`, `verify` and JSON/YAML conversion; `FHR_CONVERT` to HTML leaves them out with a warning. The toolkit's full pytest suite runs again in `FHR_RUN_CONVERTER_TESTS` (no deselection). No module interface or output name changes. Tested baseline: Nextflow 26.04.6, Java 21, Python 3.13, fair-bioheaders 0.9.0 (Bioconda/BioContainers and the hash-locked wheel) and gff3-validator 0.1.0.

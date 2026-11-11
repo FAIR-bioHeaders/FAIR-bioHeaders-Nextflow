@@ -272,21 +272,50 @@ compat module and needs no change.
 
 ## Testing status for this slice (2026-11-10) and commands CI/maintainers must run
 
-Environment on the development host: Docker 29.9.3 available; **no** host
-`nextflow`, `nf-test`, `nf-core` CLI or usable Java runtime (the `/usr/bin/java`
-stub reports no runtime), so Nextflow-version-gated suites could not be executed
-in this slice. Upstream state, pins, blob digests, fixture availability, channel
-signatures and every include/publish wiring were checked statically instead.
+Host environment: Docker 29.9.3 available; **no** host `nextflow`, `nf-test`, `nf-core`
+CLI or Java runtime. All Nextflow execution in this slice therefore ran inside a
+reproducible verification container (`FROM nextflow/nextflow:26.04.6`, Amazon Linux
+2023 with Java 21 — the CI baseline — plus a python3.11 venv with pytest,
+`fair-bioheaders==0.9.0`, `gff3-validator==0.1.0` and `pyld`, and nf-test 0.9.5),
+with the repository's processes executing **natively** against the pinned toolkit
+under linux/amd64 emulation. That verifies scripts, channel wiring, snapshots and
+toolkit semantics; it does NOT exercise container runtime pins, which the
+`-profile docker` CI jobs verify.
 
-Commands required to close the executable test matrix (the CI jobs run exactly
-these; the branch must be green there before merge):
+Executed here:
+
+- `nf-test test --ci` — **29/29 passed** in 788 s: the pinned upstream combine
+  suite (8 tests, fetching the merged nf-core/test-datasets#2363 fixtures at
+  runtime), the pinned upstream validate suite (7), the local
+  `FAIRBIOHEADERS_VERIFY` suite (5, setups retargeted to `FHR_COMBINE`) and the
+  moved `FHR_COMBINE` compatibility suite (9). Committed snapshots matched
+  (CI mode fails on any snapshot mismatch) under Nextflow 26.04.6 / nf-test 0.9.5
+  even though upstream recorded theirs under 26.10.4 (snapshot content is
+  version-agnostic apart from the reported toolkit version, 0.9.0).
+- `python tests/run.py --converter-source <v0.9.0 checkout>` — **57/57 harness
+  runs and rejection cases passed**, including the two new FHR 2.1 `x-` extension
+  validate cases against the pinned upstream module and the FHR genome → FHGFF3
+  annotation → FHP protein parent-chain cases; the converter-test gate ran the
+  toolkit's own pytest suite (**2410 tests**) and the injected-failure, `-resume`
+  and version-mismatch rejection cases behaved as documented.
+- `nextflow run workflows/fairbioheaders/main.nf -profile test` — **passed**: the
+  five samplesheet rows produced the family-named combine outputs
+  (`fasta.fhr.fa`, `gfa.fhr.gfa`, `gff3.fhgff3.gff3`, `jsonld.fhr.fa`,
+  `protein.fhp.faa`) and five `Checksum verified.` verify reports, covering FHR
+  FASTA/GFA, expanded JSON-LD metadata, FHGFF3 and FHP through the migrated
+  wiring.
+
+Commands still required from a maintainer/CI machine with Docker (the branch must
+be green there before merge; the native runs cannot exercise container image
+pulls):
 
 ```sh
-nf-test test --profile docker --ci            # pinned upstream combine/validate tests (test-datasets fixtures) + FHR_COMBINE compat tests
-python tests/run.py --converter-source <fair-bioheaders-0.9.0-checkout>   # incl. new FHR 2.1 x- validate cases; native mode, bioheaders on PATH
-nextflow run workflows/fairbioheaders/main.nf -profile test,docker --outdir results   # Dockstore entry: family-named combine outputs + verify reports
+nf-test test --profile docker --ci            # same suites with the Wave/BioContainers images pulled
+python tests/run.py --converter-source <fair-bioheaders-0.9.0-checkout>
+nextflow run workflows/fairbioheaders/main.nf -profile test,docker --outdir results   # family-named combine outputs + verify reports
 nextflow run main.nf -profile docker --sequence examples/assembly.gfa --sequence_format gfa   # and the FASTA/GFF3/protein examples as in ci.yml
-nf-core modules lint fairbioheaders/combine fairbioheaders/validate       # from a nf-core modules-type checkout (pipeline lint via modules.json is the alternative)
+docker build -t fhr-nextflow:0.1.0 environment
+nf-core modules lint fairbioheaders/combine fairbioheaders/validate
 git diff --check
 ```
 
