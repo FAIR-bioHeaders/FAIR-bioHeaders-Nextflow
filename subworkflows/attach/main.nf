@@ -14,7 +14,11 @@ include { sequenceKindOf; sequenceType } from '../../modules/utils/main'
 // ID.fhgff3.gff3), which the pinned upstream nf-core fairbioheaders/combine does not
 // (it keeps the input's extension); see docs/module-migration.md. `kind` must agree
 // with the extension ('fasta' and 'faa' are both FASTA, so FHP metadata may ride on
-// .fa/.fasta and FHR metadata on .faa).
+// .fa/.fasta and FHR metadata on .faa). The extraction step is likewise the repository's
+// FHR_CONVERT, not the pinned upstream fairbioheaders/convert: the extracted sidecar is
+// published as ID.fhr.json, the upstream module names outputs PREFIX.<format> and takes
+// the format as a second input row, and its --to set has no `faa` token; the recorded
+// blockers in docs/module-migration.md gate that switch.
 workflow FHR_ATTACH {
     take:
     records // tuple(meta, metadata, sequence, kind): kind is 'fasta', 'faa' or 'gfa'

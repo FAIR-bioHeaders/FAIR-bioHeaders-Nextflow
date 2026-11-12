@@ -148,16 +148,18 @@ Modules leave files in their task work directories. The example workflow publish
 
 ## nf-core-style modules
 
-`modules/nf-core/fairbioheaders/` holds the FAIR-bioHeaders modules in nf-core/modules layout (`main.nf`, `meta.yml` with EDAM formats, `environment.yml`, `tests/main.nf.test` and snapshots). `combine` and `validate` are **pinned copies of the upstream nf-core/modules revisions** recorded in `modules.json` (combine `8faff340`, validate `86e852e`); never patch them locally — repository behavior belongs in repository-owned modules. `verify` remains the repository's own module, pending its upstream review (nf-core/modules#13635). The full comparison and the update procedure live in [docs/module-migration.md](module-migration.md).
+`modules/nf-core/fairbioheaders/` holds the FAIR-bioHeaders modules in nf-core/modules layout (`main.nf`, `meta.yml` with EDAM formats, `environment.yml`, `tests/main.nf.test` and snapshots). `combine`, `validate` and `convert` are **pinned copies of the upstream nf-core/modules revisions** recorded in `modules.json` (combine `8faff340`, validate `86e852e`, convert `4dc3bc54`); never patch them locally — repository behavior belongs in repository-owned modules. `verify` remains the repository's own module, pending its upstream review (nf-core/modules#13635). The full comparison and the update procedure live in [docs/module-migration.md](module-migration.md).
 
 | Module | Input | Output |
 | --- | --- | --- |
 | `FAIRBIOHEADERS_COMBINE` (upstream, pinned) | `(meta, metadata, sequence)` | `sequence`: the headed file, **named after the input's extension**: `PREFIX.<ext>` (`PREFIX.fasta`, `PREFIX.faa`, `PREFIX.gfa`, `PREFIX.gff3`), with `.gz` when the input was compressed. Fails when the output name would overwrite a staged input — set `ext.prefix` |
 | `FHR_COMBINE` (repository compatibility module, `modules/combine`) | `(meta, metadata, sequence)` | `sequence`: the headed file, named by header type: `PREFIX.fhr.fa`, `PREFIX.fhr.gfa`, `PREFIX.fhp.faa` or `PREFIX.fhgff3.gff3`, with `.gz` when the input was compressed. Used by `FHR_ATTACH`, the example and the Dockstore workflow; migration-pending on [issue #29](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Nextflow/issues/29) |
+| `FAIRBIOHEADERS_CONVERT` (upstream, pinned) | **two rows**: `(meta, input)` and `format` | `metadata`: `PREFIX.<format>` (`PREFIX` defaults to `<meta.id>_converted`). Reads a standalone metadata file or extracts the header of a combined FASTA/GFA/GFF3; `<format>` is a toolkit `--to` token and also the output extension (`json`, `yaml`, `jsonld`, `html`, `fasta`, `gfa`, `gff3`; **no `faa`**). Fails when the output name would equal the input — set `ext.prefix` |
+| `FHR_CONVERT` (repository compatibility module, `modules/convert`) | `(meta, metadata, output_format)` | `converted`: `PREFIX.fhr.<output_format>` with `output_format` in `json`, `yaml`, `html`, `fasta`, `faa`, `gfa`, rejected before the task is submitted. Used by the example and as `FHR_ATTACH`'s extraction step; migration-pending on the same issue |
 | `FAIRBIOHEADERS_VERIFY` (repository module, pending upstream) | `(meta, sequence)` | `report`: `PREFIX.verify.txt`; the task fails when the header is invalid or the checksum does not match |
 | `FAIRBIOHEADERS_VALIDATE` (upstream, pinned) | `(meta, metadata)` | `report`: `PREFIX.validate.txt`; the task fails when standalone JSON/YAML/JSON-LD metadata does not validate |
 
-`PREFIX` is `task.ext.prefix` or `meta.id`; `task.ext.args` is passed to `bioheaders`. The upstream COMBINE takes the sequence type from the toolkit's extension inference; the repository `FHR_COMBINE` enforces the extension whitelist, derives the header type from the metadata's `schema` URL by the toolkit's own rule (`bioheaders.header_type`) for the output name, and shell-quotes staged paths and prefixes — the pinned upstream module relies on Nextflow's interpolation of staged paths, so constrain `meta.id`/`ext.prefix` yourself when importing it directly. Versions go to the `versions` topic. Run their tests with `nf-test test --profile docker` from the repository root (`nf-test.config`, `tests/config/nf-test.config`).
+`PREFIX` is `task.ext.prefix` or `meta.id`; `task.ext.args` is passed to `bioheaders`. The upstream COMBINE takes the sequence type from the toolkit's extension inference; the repository `FHR_COMBINE` enforces the extension whitelist, derives the header type from the metadata's `schema` URL by the toolkit's own rule (`bioheaders.header_type`) for the output name, and shell-quotes staged paths and prefixes — the pinned upstream modules rely on Nextflow's interpolation of staged paths, so constrain `meta.id`/`ext.prefix` yourself when importing them directly. Versions go to the `versions` topic. Run their tests with `nf-test test --profile docker` from the repository root (`nf-test.config`, `tests/config/nf-test.config`).
 
 ```nextflow
 include { FAIRBIOHEADERS_COMBINE } from '/path/to/FAIR-bioHeaders-Nextflow/modules/nf-core/fairbioheaders/combine/main'
@@ -186,6 +188,28 @@ distinct from every staged input basename and constrain IDs to safe filenames.
 For the header-family output names (`proteins.fhp.faa`) use `modules/combine`'s
 `FHR_COMBINE` at the same call site, or compose `FHR_ATTACH`; see
 [module migration](module-migration.md#contract-comparison-upstream-vs-local-pre-migration).
+
+The pinned CONVERT is called with **two rows** — the file channel and a channel of
+format values — and names its output after the format it is given:
+
+```nextflow
+include { FAIRBIOHEADERS_CONVERT } from '/path/to/FAIR-bioHeaders-Nextflow/modules/nf-core/fairbioheaders/convert/main'
+
+workflow {
+    def headed = Channel.of(tuple([id: 'proteins'], file(params.protein)))
+    FAIRBIOHEADERS_CONVERT(headed, Channel.value('json'))
+    // FAIRBIOHEADERS_CONVERT.out.metadata: proteins_converted.json — the header of
+    // params.protein as JSON. Add
+    //   process { withName: FAIRBIOHEADERS_CONVERT { ext.prefix = { "${meta.id}.fhr" } } }
+    // to get proteins.fhr.json, the name (and the identical bytes) FHR_CONVERT emits.
+}
+```
+
+`faa` is not one of its formats: the toolkit's `--to` accepts
+`json yaml jsonld html fasta gfa gff3`, and the module uses that token as the output
+extension, so a header-only protein file becomes `ID.fhr.fasta` there. Use
+`modules/convert` (`FHR_CONVERT`) when the `.faa` name, the single-tuple input or the
+pre-launch format rejection is part of your contract.
 
 The minimal Dockstore workflow [workflows/fairbioheaders](../workflows/fairbioheaders/README.md) runs COMBINE then VERIFY over a samplesheet.
 

@@ -18,6 +18,13 @@
                         "installed_by": [
                             "modules"
                         ]
+                    },
+                    "fairbioheaders/convert": {
+                        "branch": "master",
+                        "git_sha": "4dc3bc54779d6caf3a47d49f37811e651fa2700a",
+                        "installed_by": [
+                            "modules"
+                        ]
                     }
                 }
             }

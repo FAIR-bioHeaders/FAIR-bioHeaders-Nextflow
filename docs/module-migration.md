@@ -8,33 +8,39 @@ upstream modules and the repository modules intentionally diverged during
 development (#21 consolidation, then the upstream submissions) and must be
 reconciled without silently dropping documented behavior.
 
-Status date: **2026-11-10** (all upstream state below was re-verified against the
+Status date: **2026-11-12** (all upstream state below was re-verified against the
 GitHub API on this date; re-check before acting on it — checkouts and PRs move).
 
-## Upstream state (verified 2026-11-10)
+## Upstream state (verified 2026-11-12)
 
 | Upstream module | PR | State | Revision |
 | --- | --- | --- | --- |
 | `fairbioheaders/combine` | [nf-core/modules#13492](https://github.com/nf-core/modules/pull/13492) | merged 2026-11-09 | `8faff34023b16ecdc41b02bac42989834075e3f1` |
 | `fairbioheaders/validate` | [nf-core/modules#13509](https://github.com/nf-core/modules/pull/13509) | merged 2026-11-09 | `86e852ef429e021d16f7279aaddb9b81eb067f8a` (contained in `8faff340…`) |
-| `fairbioheaders/verify` | [nf-core/modules#13635](https://github.com/nf-core/modules/pull/13635) | **open, in review** | head at review time `bb6c49233b2f4ce467b7e332dcfc2c1608e35067` (a moving PR branch, not a merge revision) |
-| `fairbioheaders/convert` | [nf-core/modules#13636](https://github.com/nf-core/modules/pull/13636) | **open, in review** | head at review time `639dd3cc9944998ced3bb69efac57f8f99438ee5` (a moving PR branch, not a merge revision) |
+| `fairbioheaders/verify` | [nf-core/modules#13635](https://github.com/nf-core/modules/pull/13635) | **open, in review** (still open 2026-11-12, branch last updated 2026-11-12) | head at review time `bb6c49233b2f4ce467b7e332dcfc2c1608e35067`; head 2026-11-12 `bc5a8640cfbca366bfe9d967ad9e43f5dc292216` (a moving PR branch, not a merge revision) |
+| `fairbioheaders/convert` | [nf-core/modules#13636](https://github.com/nf-core/modules/pull/13636) | merged 2026-11-11T23:01Z | `4dc3bc54779d6caf3a47d49f37811e651fa2700a` (merge commit; PR head at merge `35dc28bd72563db7fb7192d9fcee7068b65984c4`, review head `639dd3cc…` was superseded — see the contract table) |
 
 Shared test fixtures landed in [nf-core/test-datasets#2363](https://github.com/nf-core/test-datasets/pull/2363);
 they resolve under `modules_testdata_base_path` at
 `genomics/sarscov2/genome/fairbioheaders/` and
 `genomics/prokaryotes/candidatus_portiera_aleyrodidarum/genome/fairbioheaders/`
-(verified present on the `modules` branch 2026-11-10).
+(verified present on the `modules` branch 2026-11-10; the convert suite fetched the
+same paths again on 2026-11-12).
 
-Per the issue, this slice adopts **combine** and **validate** only. **verify** and
-**convert** are documented here but NOT adopted: their interfaces are still
-reviewed upstream, and adoption is gated on merge **plus** local parity checks
+Slice 1 (merged as #30) adopted **combine** and **validate**. Slice 2a installs the
+newly merged **convert** module and runs its parity check: convert is now **pinned and
+tested**, but its callers are **not migrated** — the parity result is partial coverage
+(see the convert contract table), so `FHR_CONVERT` stays the callers' module and the
+naming/format questions are recorded as blockers with a maintainer decision ask.
+**verify** is unchanged and still not adopted: nf-core/modules#13635 remains open as of
+2026-11-12, and adoption of anything is gated on merge **plus** local parity checks
 (section "Adopting verify and convert after their merge").
 
 ## How the upstream modules are pinned
 
-- `modules/nf-core/fairbioheaders/combine/` and `modules/nf-core/fairbioheaders/validate/`
-  (including `.conda-lock/`, `meta.yml`, `environment.yml`, tests and snapshots) are
+- `modules/nf-core/fairbioheaders/combine/`, `modules/nf-core/fairbioheaders/validate/`
+  and `modules/nf-core/fairbioheaders/convert/` (including `.conda-lock/`, `meta.yml`,
+  `environment.yml`, tests and snapshots) are
   **byte-identical copies** of the upstream files at the recorded revisions.
   They must stay unpatched: repository behavior goes into repository-owned
   modules (`modules/*`) or subworkflows (`subworkflows/*`), never into the pinned
@@ -49,14 +55,19 @@ reviewed upstream, and adoption is gated on merge **plus** local parity checks
   make `nf-core modules update`, `list local` or `lint` usable here. Use the
   CLI-less procedure below until a separate layout migration moves local modules
   to `modules/local/` and updates every importer. That migration remains #29 work.
-- CI runs `python3 scripts/check_upstream_modules.py`. It retrieves the complete
-  recursive GitHub tree at each pin with `curl --retry 3`, rejects truncated
-  responses, and compares all module-relative paths, blob hashes and file modes.
-  Hidden lock files, missing files and extra local files are included. Any drift
-  fails the job before nf-test runs.
+- CI runs `python3 scripts/check_upstream_modules.py`. It iterates **every entry of
+  `modules.json`**, retrieves the complete recursive GitHub tree at each pin with
+  `curl --retry 3`, rejects truncated responses, and compares all module-relative
+  paths, blob hashes and file modes. Hidden lock files, missing files and extra local
+  files are included. Any drift fails the job before nf-test runs. Because the guard is
+  manifest-driven, installing a module adds it to the drift check automatically: it now
+  covers combine (7 files), validate (7) and convert (8 — convert also ships
+  `tests/nextflow.config` for its `ext.args`/`ext.prefix` cases).
 
-Provenance of the runtime/test files (the complete seven-file directory for each
-module also includes the two `.conda-lock/` platform locks, verified by CI):
+Provenance of the runtime/test files (the complete directory for each pinned module
+also includes the two `.conda-lock/` platform locks, verified by CI; combine and
+validate hold seven files each, convert eight because it also ships
+`tests/nextflow.config`):
 
 | Module @ revision | File | Upstream blob sha |
 | --- | --- | --- |
@@ -70,6 +81,14 @@ module also includes the two `.conda-lock/` platform locks, verified by CI):
 | validate @ `86e852ef…` | environment.yml | `d0c0735cb08e0a193ca197dc24ca046d2e6c2cc8` |
 | validate @ `86e852ef…` | tests/main.nf.test | `10a065dfaa3e2b87951bf477a1a1a2d6a628ad82` |
 | validate @ `86e852ef…` | tests/main.nf.test.snap | `00026dfbe88f2b86155ad17276d90bb92e16c8e1` |
+| convert @ `4dc3bc5477…` | main.nf | `cbf0d43c8552e4ecf231f171c1117fc8251c00f0` |
+| convert @ `4dc3bc5477…` | meta.yml | `357ef5e80a7ac9fd318827a8d0105b4e43c4924e` |
+| convert @ `4dc3bc5477…` | environment.yml | `d0c0735cb08e0a193ca197dc24ca046d2e6c2cc8` |
+| convert @ `4dc3bc5477…` | tests/main.nf.test | `708785efbfde32aa87884fd9a725dc9e0e0bb6cf` |
+| convert @ `4dc3bc5477…` | tests/main.nf.test.snap | `261014efe7e2c4c95c291a78917471a968cddb5b` |
+| convert @ `4dc3bc5477…` | tests/nextflow.config | `3bf6653083dee274273e4f72bbe61db2f5d4874d` |
+| convert @ `4dc3bc5477…` | `.conda-lock/linux_amd64-bd-71029206d3ce1119_1.txt` | `614f61ced8ebef6dc1a6e78742a2f0672b805031` |
+| convert @ `4dc3bc5477…` | `.conda-lock/linux_arm64-bd-1ff11621d7e9a7c8_1.txt` | `8cc63c8d8b1d37b467b2074e22af63c10a61a6fa` |
 
 ### Updating a pinned module (recorded procedure)
 
@@ -113,7 +132,10 @@ PYUPDATE
 python3 scripts/check_upstream_modules.py
 ```
 
-Repeat for `fairbioheaders/validate` as needed. Review and remove any obsolete
+Repeat for each module being installed or updated (`fairbioheaders/validate`,
+`fairbioheaders/convert`). For a first install the same script creates the
+`fairbioheaders/<name>` manifest entry (`branch`, `git_sha`, `installed_by`) shown
+above. Review and remove any obsolete
 tracked files reported as `extra` by the guard; never leave stale files in a
 pinned directory. Keep the module's Conda/container pins coherent with this
 repository's toolkit baseline (currently 0.9.0). Run the suites below and commit
@@ -209,9 +231,12 @@ test cases the upstream revision does not carry (FHR 2.1 `x-` fields) were
 
 ### `fairbioheaders/verify` — upstream PR #13635 (open) vs local `FAIRBIOHEADERS_VERIFY` (kept)
 
-Not adopted (gated on the open PR). Contract differences between the local module
-and the PR head reviewed on 2026-11-10 (`bb6c492`, a moving branch — re-diff at
-merge time):
+Not adopted (gated on the open PR). **Re-verified 2026-11-12: still open, and nothing
+about this module changed in slice 2a** — only the table's revision column above was
+refreshed (the head moved `bb6c492` → `bc5a8640`, so the comparison below still describes
+the 2026-11-10 review head and must be re-diffed at merge time). Contract differences
+between the local module and the PR head reviewed on 2026-11-10 (`bb6c492`, a moving
+branch — re-diff at merge time):
 
 | Aspect | Upstream PR head | Local | Notes for the later adoption |
 | --- | --- | --- | --- |
@@ -229,22 +254,79 @@ at `modules/nf-core/fairbioheaders/verify/` **migration-pending**; `FHR_VERIFY_L
 (parent links, `bioheaders verify-links`) stays repository-owned — upstream has no
 parent-link module.
 
-### `fairbioheaders/convert` — upstream PR #13636 (open) vs local `FHR_CONVERT` (kept)
+### `fairbioheaders/convert` (upstream `4dc3bc5477`, merged 2026-11-11) vs `FHR_CONVERT` (local)
 
-Not adopted. Differences between local `modules/convert/` and the PR head
-(`639dd3c`, moving branch — re-diff at merge time):
+**Installed and tested; callers NOT migrated.** Re-read at the merge commit, not at the
+review head this document described on 2026-11-10 (`639dd3c`). The merged revision moved
+against that head in four ways that matter here: the default prefix became
+`${meta.id}_converted` (it was `${meta.id}`); the output redirect is **no longer quoted**
+(`${prefix}.${format}` in both `script` and `stub`, where the head had
+`"${prefix}.${format}"` and the comment "Nextflow already shell-escapes staged inputs, so
+only the prefix is quoted"); an explicit `Input and output names are the same, set prefix
+in module configuration to disambiguate!` guard was added; and both *spaced names* tests
+were replaced by *same input and output names fails* tests (still 11 cases, 8 snapshot
+entries).
 
-| Aspect | Upstream PR head | Local | Notes |
+| Aspect | Upstream @ `4dc3bc5477` | Local `modules/convert` | Verdict |
 | --- | --- | --- | --- |
-| Input | two-row: `tuple val(meta), path(input)` **and** `val(format)` (pair with `Channel.combine`/`fromZip` style wiring) | single tuple `(meta, metadata, format)`, `stageAs: 'input/*'` | **channel-contract break** for external importers of `FHR_CONVERT` |
-| Output | `(meta, ${prefix}.${format})` | `(meta, ${meta.id}.fhr.${format})` — the `.fhr.` infix is part of the documented harness markers (`{sample}-header.fhr.faa`, `EXTRACTED {sample} {sample}.fhr.json`) | differs; adoption needs rename or contract change |
-| Command | `bioheaders convert --to <format>` with `--to` placed after `ext.args` so the input format wins | `fhr-convert` (the toolkit's legacy entry point) with a native format whitelist (`fhrFormat`) | upstream guards `ext.args` conflicts; local rejects unknown formats before launch (`Unsupported format 'exe'` harness case) |
-| Formats | json/yaml/html/jsonld (+ extract from FASTA/GFA/GFF3 — tests extract headers) | json/yaml/html/fasta/faa/gfa | overlapping but not equal sets |
-| Containers/quoting/version reporting | Wave; prefix double-quoted; same versions tuple | quay/depot; full quoting; same versions tuple | same pattern as above |
-| nf-tests | 11 cases incl. jsonld emit, `--to overridden`, spaced names, header extraction from FASTA | n/a (covered by `tests/run.py` round-trips) | adoption gate |
+| Input | two rows: `tuple val(meta), path(input)` **and** `val(format)`; call as `FAIRBIOHEADERS_CONVERT(pathChannel, formatChannel)`. Under the syntax parser this repository pins for the harness (`NXF_SYNTAX_PARSER=v2`), passing one flattened channel is rejected instead: `Incorrect number of call arguments, expected 2 but received 1` | single tuple `(meta, metadata, format)`, `stageAs: 'input/*'` | **differs — channel-contract break** for every `FHR_CONVERT` importer and call site |
+| Output name | `(meta, ${prefix}.${format})`, `prefix = task.ext.prefix ?: "${meta.id}_converted"` | `(meta, ${meta.id}.fhr.${format})` | differs by default; **closable** — with `ext.prefix = { "${meta.id}.fhr" }` the pinned module emitted `parity-json.fhr.json`, `parity-yaml.fhr.yaml`, `parity-html.fhr.html` and `parity-extract.fhr.json`, byte-identical to `FHR_CONVERT` (asserted in `tests/run.py`) |
+| Format tokens | `--to <format>`: the toolkit accepts `fasta gfa gff3 html json jsonld yaml`; meta.yml documents `json yaml jsonld html` | native whitelist `json yaml html fasta faa gfa` (`fhrFormat`) | **differs — the decisive gap.** The format token **is** the output extension and `--to faa` does not exist (`bioheaders convert --to faa` exits 2 with `invalid choice: 'faa'`), so a header-only **protein** output cannot be named `.faa`: the probe produced the same bytes as `FHR_CONVERT`'s `parity-faa.fhr.faa` under the name `parity-faa.fhr.fasta`. Upstream adds `jsonld` (and, undocumented, `gff3`); local keeps `faa` and has no `jsonld` |
+| Header extraction | documented use: read the sidecar header of a combined FASTA/GFA/GFF3 back to JSON/YAML | the same, as `FHR_ATTACH`'s JSON-extraction step | matches (probe `extract`: identical bytes, same name under `ext.prefix`) |
+| Unknown/unsupported format | fails **inside the task**: `bioheaders convert: error: argument --to: invalid choice: 'exe' …` (probe asserts the same for `faa`) | rejected **before submission**: `Unsupported format 'exe'; expected json, yaml, html, fasta, faa, gfa` (the harness case above) | differs — the failure surface moves; a direct importer loses the pre-launch whitelist |
+| Command | `bioheaders convert ${args} --to <format> <input> <output>`; `--to` last, so the format channel beats `ext.args` (upstream test `ext.args --to overridden`) | `fhr-convert <input> <output>` (legacy entry point, extension inference); no `--to`, no `ext.args` | differs (upstream is the current CLI plus `ext.args`; local relies on the output extension) |
+| Overwrite collision | `error` when `${input}` equals `${prefix}.${format}` (two upstream tests) | impossible by construction (`stageAs: 'input/*'` plus the `.fhr.` infix) | differs (guard vs structure); our `ext.prefix = "${meta.id}.fhr"` naming never collides |
+| Shell hardening | prefix **unquoted** in script and stub; staged path by Nextflow interpolation | single-quotes path, output name and `meta.id` (`quote`) | differs — the merged revision is weaker than the head reviewed on 2026-11-10. Probe: a `"metadata with ' quotes.json"` input reads correctly through the pinned module (Nextflow escapes staged paths), so the remaining exposure is a caller-supplied `ext.prefix`/unsafe `meta.id`, exactly the combine/validate caveat |
+| `when` | `task.ext.when == null \|\| task.ext.when` | none | differs (upstream adds the standard opt-out) |
+| Sample metadata | `meta` preserved, `meta.id` names outputs, `ext.prefix` overrides | same, with `sampleId(meta)` validation | matches (modulo ID validation) |
+| Conda | `bioconda::fair-bioheaders=0.9.0` | same pin | matches |
+| Container | Wave `community.wave.seqera.io/library/fair-bioheaders:0.9.0--71029206d3ce1119` (+ `community-cr-prod` blob URL for Singularity) | `quay.io/biocontainers/fair-bioheaders:0.9.0--pyhdfd78af_0` + Galaxy depot pair | differs — pins reconciled, registries not (same as combine/validate; see "Containers and conda") |
+| Version reporting | `(task.process, 'fair-bioheaders', bioheaders --version)` on topic `versions` + named emit | identical | matches |
+| Stub | `touch ${prefix}.${format}` plus the collision guard | family-named stub outputs | differs (mirrors the naming gap) |
+| nf-tests | 11 cases (fasta, fasta.gz, gfa→json, faa→jsonld, gff3→yaml, yaml→json, `--to` overridden, no-header fails, name-collision fails, 2 stubs); fixtures from nf-core/test-datasets; snapshots recorded under Nextflow 26.10.4 / nf-test 0.9.5 — all 11 passed here on 26.04.6 / 0.9.5 with `--ci` | no nf-test file; behavior is covered by the `tests/run.py` round trips and markers | upstream covers the tool, local covers the family contract; `tests/run.py` now also keeps the spaced/quoted-name case the merged revision dropped |
 
-`FHR_CONVERT` (used by the example and as `FHR_ATTACH`'s JSON-extraction step)
-stays in place and is **migration-pending**.
+**Verdict: partial coverage → pinned, tested, not migrated.** The convert serialization
+work itself is fully equivalent — same bytes for JSON, YAML, HTML and header extraction,
+and the `.fhr.` infix is reproducible from the importing project with one `ext.prefix`
+line. What is **not** reproducible inside the upstream contract is the
+header-family/extension convention this suite publishes, so migrating the example's YAML
+step, `FHR_ATTACH`'s extraction step and the external harness markers would be an
+observable contract change, not a retarget.
+`modules/convert` (`FHR_CONVERT`) therefore stays the callers' module — exactly slice 1's
+`FHR_COMBINE` treatment — and `modules/nf-core/fairbioheaders/convert/` is now purely the
+pinned upstream artifact with its own tests. Removing `modules/convert` requires these
+(blockers):
+
+1. **Family-name default (blocker, shared with combine blocker 1).** `ID.fhr.<format>` is
+   a documented external marker (`EXTRACTED {sample} {sample}.fhr.json`,
+   `example/sequence/example.fhr.json`, `{sample}-header.fhr.faa`, README's
+   `output_format` list), while upstream defaults to `<id>_converted.<format>`. Either the
+   suite adopts the upstream default and rewrites those markers in a documented minor
+   release, or the family-standard question recorded under "Open questions" gets settled
+   upstream (a family-signifying default or an `ext` hook) and both modules retire their
+   compat copies together. `ext.prefix = { "${meta.id}.fhr" }` is the interim recipe and
+   is now verified by the harness rather than asserted in prose.
+2. **Protein extension `faa` (blocker).** Because the upstream output extension is the
+   `--to` token and the toolkit has no `faa` choice, `fairbioheaders/convert` cannot name
+   a header-only protein output `ID.fhr.faa`. Options: (a) an upstream follow-up that
+   decouples the output extension from `--to` (or accepts `faa` as a FASTA alias), (b) the
+   suite renames protein header-only outputs to `.fhr.fasta`, which costs the
+   protein/genome distinction the suite's own `sequenceKindOf` reads from the extension,
+   or (c) `FHR_CONVERT` stays. **Maintainer decision needed** — this is convert-specific
+   and does not follow automatically from resolving combine's naming blocker.
+3. **Two-row input shape (blocker for a caller switch).** Mechanical at our two workflow
+   call sites (`main.nf`'s YAML step and `FHR_ATTACH`'s extraction step; the harness
+   scripts that include the module directly follow the same rewrite — pair a
+   `(meta, file)` channel with a channel of format values), but it breaks every external
+   importer's wiring, and README's contract table documents the three-element tuple. It
+   should move with blocker 1 in one documented release, not before it.
+4. **Quoting and rejection surface (note).** The merged module leaves the prefix unquoted
+   and reports an unusable format from inside the task instead of before submission; the
+   suite's own callers stage ID-constrained names, so nothing here breaks, but direct
+   importers must constrain `meta.id`/`ext.prefix` ([docs/PIPELINES.md](PIPELINES.md#nf-core-style-modules)
+   already says this for combine/validate, and the harness now pins the exact upstream
+   messages).
+
 
 ## Role separation (kept explicit)
 
@@ -255,18 +337,18 @@ stays in place and is **migration-pending**.
 | Validate **standalone metadata** (schema only, no checksum/sequence) | `FAIRBIOHEADERS_VALIDATE` (pinned upstream) | upstream |
 | Verify **parent links** (`derivedFrom`/`genomeReference` against candidate parents, `bioheaders verify-links`) | `FHR_VERIFY_LINKS` | repo-owned, no upstream counterpart |
 | GFF3 syntax/SO/biology rules | `GFF3_VALIDATE` (gff3-validator 0.1.0) | repo-owned, no upstream counterpart |
-| Metadata conversion / header extraction (`fhr-convert`) | `FHR_CONVERT` | repo, migration-pending |
+| Metadata conversion / header extraction (`fhr-convert`) | `FHR_CONVERT` (compat), `FAIRBIOHEADERS_CONVERT` (pinned upstream) | repo + upstream |
 | Native JSON creation, stripping, converter pytest gating | `FHR_CREATE_JSON`, `FHR_STRIP`, `FHR_CONVERTER_TESTS` | repo-owned |
 
 ## Caller migration status
 
 | Caller | Uses | Status |
 | --- | --- | --- |
-| Standalone example `main.nf` | `FHR_ATTACH` → `FHR_COMBINE` + local `FAIRBIOHEADERS_VERIFY`; `FHR_CREATE_JSON` → pinned `FAIRBIOHEADERS_VALIDATE` | combine/verify held on compat (naming gap); **validate migrated** |
-| `subworkflows/attach` (`FHR_ATTACH`) | `FHR_COMBINE` + `FAIRBIOHEADERS_VERIFY` + `FHR_CONVERT` | external channel contract and output names unchanged; internals retargeted to the compat combine |
-| Dockstore workflow `workflows/fairbioheaders` | `FHR_COMBINE` + `FAIRBIOHEADERS_VERIFY` | outputs (`combine/<id>.fhr.fa`, `combine/<id>.fhp.faa`, `verify/<id>.verify.txt`) unchanged; descriptor `.dockstore.yml` paths unchanged and still resolve |
+| Standalone example `main.nf` | `FHR_ATTACH` → `FHR_COMBINE` + local `FAIRBIOHEADERS_VERIFY`; `FHR_CREATE_JSON` → pinned `FAIRBIOHEADERS_VALIDATE`; `FHR_CONVERT` for the published YAML | combine/verify/convert held on compat (naming gaps); **validate migrated** |
+| `subworkflows/attach` (`FHR_ATTACH`) | `FHR_COMBINE` + `FAIRBIOHEADERS_VERIFY` + `FHR_CONVERT` | external channel contract and output names unchanged; internals retargeted to the compat combine; the JSON-extraction step stays on `FHR_CONVERT` (blockers 1–3 above) |
+| Dockstore workflow `workflows/fairbioheaders` | `FHR_COMBINE` + `FAIRBIOHEADERS_VERIFY` | outputs (`combine/<id>.fhr.fa`, `combine/<id>.fhp.faa`, `verify/<id>.verify.txt`) unchanged; descriptor `.dockstore.yml` paths unchanged and still resolve; the workflow does not call convert |
 | `modules/create_json` | pinned `FAIRBIOHEADERS_VALIDATE` | migrated in place |
-| External direct importers | `modules/nf-core/fairbioheaders/{combine,validate,verify}` | **combine's observable naming contract changes at the canonical path** — see the migration note below |
+| External direct importers | `modules/nf-core/fairbioheaders/{combine,convert,validate,verify}` | **combine's and convert's observable naming contracts differ from the repository modules at the canonical paths** — see the two migration notes below |
 
 **Migration note for direct importers of
 `modules/nf-core/fairbioheaders/combine`:** the module at this path is now the
@@ -278,6 +360,27 @@ output name would overwrite a staged input. Importers that depend on family
 names should either import `modules/combine` (`FHR_COMBINE`) or wrap the upstream
 module and rename from their own contract; `FHR_ATTACH` already composes the
 compat module and needs no change.
+
+**Migration note for direct importers of
+`modules/nf-core/fairbioheaders/convert`** (installed in slice 2a at
+`4dc3bc5477`): this is the upstream module, so it takes **two input rows**
+(`(meta, file)` plus a separate format value channel), names its output
+`<meta.id>_converted.<format>` unless `ext.prefix` says otherwise, and offers the
+toolkit's `--to` set (`json`, `yaml`, `jsonld`, `html`, plus `fasta`/`gfa`/`gff3`
+through the toolkit) with **no `faa` token**. Emitting this repository's documented
+names is a configuration step, not a code change —
+
+```nextflow
+process {
+    withName: FAIRBIOHEADERS_CONVERT { ext.prefix = { "${meta.id}.fhr" } }
+}
+```
+
+which the harness verifies produces byte-identical output to `FHR_CONVERT` for
+`json`/`yaml`/`html` and for header extraction. Protein header-only outputs
+(`ID.fhr.faa`) and the pre-launch format whitelist stay with
+`modules/convert` (`FHR_CONVERT`) until the blockers recorded in the convert
+contract table are resolved.
 
 ## Containers and conda pins (reconciled)
 
@@ -300,7 +403,7 @@ compat module and needs no change.
   `community.wave.seqera.io`. CI checks each family against the Bioconda pin
   in its own style.
 
-## Testing status for this slice (2026-11-10) and commands CI/maintainers must run
+## Testing status for slice 1 (2026-11-10) and commands CI/maintainers must run
 
 Host environment: Docker 29.9.3 available; **no** host `nextflow`, `nf-test`, `nf-core`
 CLI or Java runtime. All Nextflow execution in this slice therefore ran inside a
@@ -358,6 +461,70 @@ can verify locally: the chain fixtures (`tests/fixtures/fhp/chain/`), the
 through the compat module; the chain does not depend on the pinned validate module
 for parent checks.
 
+## Testing status for slice 2a (2026-11-12)
+
+Same host and method as slice 1 (Docker 29.9.3; no host `nextflow`, `nf-test`,
+`nf-core` or Java): the repository's processes ran **natively** inside a
+reproducible verification container built for this slice —
+`fhr-nf29-verify:26.04.6`, `FROM nextflow/nextflow:26.04.6` (Amazon Linux 2023,
+Java 21, the CI baseline), `python3.11` venv with `fair-bioheaders==0.9.0`,
+`gff3-validator==0.1.0`, `pytest` and `pyld`, plus nf-test 0.9.5, on the
+linux/amd64 emulation of an arm64 host. Its Dockerfile is a verification artifact,
+not repository content. As in slice 1 this exercises scripts, channel wiring,
+snapshots and toolkit semantics, not the container-image pulls.
+
+- **Merged-revision fetch:** all eight upstream files were downloaded at
+  `4dc3bc54779d6caf3a47d49f37811e651fa2700a` and each `git hash-object` matched the
+  blob sha in the (untruncated) recursive GitHub tree — the same check the recorded
+  update procedure performs. `python3 scripts/check_upstream_modules.py` then
+  reported `combine: all 7 files match 8faff340…`, `validate: all 7 files match
+  86e852ef…` and `convert: all 8 files match 4dc3bc54…`; `python3 -m unittest
+  discover -s tests -p test_upstream_modules.py` stays green (2 tests). CI's
+  Wave/BioContainers pin step was extended to `for module in combine validate
+  convert` and run locally: it passes.
+- **`nf-test test --ci` — 40/40 passed** in 1261 s: the 11 upstream convert tests
+  (5 conversion cases, `ext.args --to overridden`, no-header failure, two
+  name-collision failures, 2 stubs) joined the 29 slice-1 tests. Committed
+  snapshots — recorded upstream under Nextflow 26.10.4 / nf-test 0.9.5 — matched in
+  CI mode under Nextflow 26.04.6 / nf-test 0.9.5, as they did for combine and
+  validate.
+- **Contract probe (`tests/run.py`, four new cases):** `FHR_CONVERT` and the pinned
+  `FAIRBIOHEADERS_CONVERT` ran side by side over five records (JSON, YAML, HTML,
+  metadata→FASTA and header extraction from the chain fixture's combined FHP
+  `protein.fhp.faa`). With `ext.prefix = { "${meta.id}.fhr" }` set in the harness
+  project's config, all four family-named serializations came out with the **same
+  file name and identical bytes** as `FHR_CONVERT`; the protein record came out
+  byte-identical but named `parity-faa.fhr.fasta` upstream versus
+  `parity-faa.fhr.faa` locally, and `--to faa` fails in the task
+  (`invalid choice: 'faa'`), as does `--to exe`. A metadata file named
+  `metadata with ' quotes.json` converts correctly through the pinned module
+  (`spaced_converted.json`, JSON equal to the input), so the unquoted prefix remains
+  a caller-discipline caveat rather than a demonstrated break.
+- **`python tests/run.py --converter-source <v0.9.0 checkout>` — 61/61 passed** (slice
+  1's 57 plus the four cases above; the checkout is CI's `CONVERTER_COMMIT` `c6d7454`,
+  exported from the local Tools clone's `v0.9.0` tag). The converter-test gate ran the
+  toolkit's own **2410** pytest tests, and the injected-failure, `-resume` and
+  version-mismatch rejections behaved as documented. The FHR → FHGFF3 → FHP chain cases
+  and the `FHR_CONVERT`-backed example/protein runs are unchanged by this slice: no caller
+  moved, so their markers still pass. This pass was repeated once against the completed
+  tree (only documentation and module comments differed) and again reported
+  **61/61**.
+- **Not re-run here (unaffected, CI covers it):** the Dockstore workflow's `test` profile
+  (`workflows/fairbioheaders` composes `FHR_COMBINE` + `FAIRBIOHEADERS_VERIFY` and never
+  calls convert) and the `-profile docker` example runs.
+- Commands still required from a maintainer/CI machine with Docker (unchanged from
+  slice 1, now covering three pinned modules):
+
+```sh
+nf-test test --profile docker --ci            # pulls the Wave image for combine/validate/convert
+python tests/run.py --converter-source <fair-bioheaders-0.9.0-checkout>
+nextflow run workflows/fairbioheaders/main.nf -profile test,docker --outdir results   # unchanged by this slice
+nextflow run main.nf -profile docker --sequence examples/assembly.gfa --sequence_format gfa   # and the FASTA/GFF3/protein examples as in ci.yml
+docker build -t fhr-nextflow:0.1.0 environment
+git diff --check
+```
+
+
 ## Adopting verify and convert after their merge
 
 Gate (from #29): adopt only after the upstream interfaces **merge** and **pass
@@ -366,8 +533,16 @@ local parity** — no adoption on review heads.
 1. Re-read the merged revisions (do not reuse the PR-head SHAs above) and re-diff
    `modules/nf-core/fairbioheaders/verify|convert` against the merged upstream
    files at those SHAs, plus this document's tables (PR branches moved since).
+   **Convert: done 2026-11-12** at merge commit `4dc3bc5477` — the re-diff mattered:
+   the merged files differ from the `639dd3c` review head this document had recorded
+   (default prefix, output-redirect quoting, a new collision guard, and the two
+   spaced-names tests replaced by name-collision tests). **Verify: still gated**;
+   #13635 remains open and its head moved again (`bb6c492` → `bc5a8640`, 2026-11-12),
+   so its table above must be re-diffed at merge time, not reused.
 2. Install combine-style: byte-identical files at recorded SHAs in `modules.json`;
    run the drift step; run the upstream nf-tests (`nf-test test --profile docker`).
+   **Convert: done** — 8 files verified, drift step green, 11/11 upstream convert
+   tests passing (see "Testing status for slice 2a").
 3. **verify parity:** confirm `FHR_ATTACH`'s join and the Dockstore test profile
    behave identically without `--type` (odd-extension rejection), that the report
    names/content keep the `file:` header, and that the harness failure substrings
@@ -377,14 +552,21 @@ local parity** — no adoption on review heads.
    combine outputs still match verify's extension inference (they do: `.fhr.fa`,
    `.fhp.faa`, `.fhr.gfa`, `.fhgff3.gff3` all infer correctly) — document the
    switch.
-4. **convert parity:** decide the `.fhr.` infix question: either keep
-   `FHR_CONVERT` for the example/attach (its names are documented harness
-   markers) and adopt `fairbioheaders/convert` as the importer-facing module, or
-   migrate callers with an explicit rename step and a contract-change CHANGELOG
-   entry. The two-row input shape also needs channel rewiring at every call.
+4. **convert parity: run 2026-11-12; result is partial coverage.** The serializations
+   themselves match byte for byte (JSON, YAML, HTML, header extraction) and the
+   `.fhr.` infix is reachable by configuration, but the upstream contract cannot name a
+   protein header-only output `ID.fhr.faa` (`--to` has no `faa` token and the format is
+   the extension), it takes two input rows, and it reports an unusable format from
+   inside the task rather than before submission. The gate's either/or was therefore
+   resolved as **option (a)**: `FHR_CONVERT` stays the module the example and
+   `FHR_ATTACH` call, and `fairbioheaders/convert` is published as the importer-facing
+   module — pinned, tested, and documented with the rename recipe, rather than adopted
+   under a silent contract change. Blockers 1–3 in the convert contract table carry the
+   maintainer decision asks; nothing further may be switched here unilaterally.
 5. Only after callers are migrated, delete the duplicate local implementations
-   (`modules/convert` once #4 resolves; `modules/combine` once the naming blocker
-   resolves; the local `verify` main.nf once step 3 passes).
+   (`modules/convert` once its blockers 1–3 resolve; `modules/combine` once the naming
+   blocker resolves — the two naming blockers are one family decision and should close
+   together; the local `verify` main.nf once step 3 passes).
 6. Re-evaluate container pins at each toolkit bump: the reviewed complete-tree
    update procedure above maintains the Wave side (nf-core CLI updates require
    the separate local-layout migration first); the repo-side Bioconda/BioContainers/depot trio and
@@ -400,7 +582,13 @@ local parity** — no adoption on review heads.
 - Does the family want **header-family-signifying filenames** (`ID.fhp.faa`) or
   **input-faithful names** (`ID.faa`) as the shared upstream standard? #7 should
   settle this once, upstream, so this repository can retire `modules/combine`
-  (blocker 1 above).
+  (blocker 1 above) and `modules/convert` (its blocker 1) together.
+- The upstream convert output extension is the `--to` token, so the standard above has
+  a second consequence: whether **protein FASTA keeps a distinct extension** in the
+  shared modules (`faa` is a valid FASTA extension here and in the toolkit's own
+  naming, but not a `--to` choice). If the family wants `.faa`, upstream
+  `fairbioheaders/convert` needs either a `faa` alias or a way to set the extension
+  separately from `--to` (convert blocker 2).
 - Parent-link verification (`verify-links`) has no upstream module; if #7 wants
   family-wide workflows, a future `fairbioheaders/verify_links` submission should
   be considered (with the `require_all`/`fail_on_mismatch` ext semantics).
