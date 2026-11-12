@@ -121,11 +121,12 @@ jobs:
       - run: git diff --check HEAD
 
   nf-test:
-    # The modules pin bioconda::fair-bioheaders=X.Y.Z. The two pinned upstream modules
-    # (modules.json: combine and validate) run the Seqera Wave image built from that
-    # Bioconda package; the repository-owned modules (verify until #29 adopts it, plus
-    # combine's header-family compatibility module, convert, strip and verify_links) pin
-    # the BioContainers image quay.io/biocontainers/fair-bioheaders:X.Y.Z--<build> and its
+    # The modules pin bioconda::fair-bioheaders=X.Y.Z. The three pinned upstream modules
+    # (modules.json: combine, validate and convert) run the Seqera Wave image built from
+    # that Bioconda package; the repository-owned modules (verify until #29 adopts it,
+    # plus the header-family compatibility modules combine and convert, strip and
+    # verify_links) pin the BioContainers image
+    # quay.io/biocontainers/fair-bioheaders:X.Y.Z--<build> and its
     # Galaxy depot pair. Check that all of them agree with the Bioconda pin, verify that
     # the pinned files still match the recorded nf-core/modules revisions, then run
     # nf-test, which pulls the images.
@@ -139,7 +140,7 @@ jobs:
         run: |
           version="$(sed -n 's/.*bioconda::fair-bioheaders=\([0-9][0-9.]*\)".*/\1/p' modules/nf-core/fairbioheaders/combine/environment.yml)"
           test -n "$version"
-          for module in combine validate; do
+          for module in combine validate convert; do
             grep -q "bioconda::fair-bioheaders=$version" "modules/nf-core/fairbioheaders/$module/environment.yml"
             grep -q "community.wave.seqera.io/library/fair-bioheaders:$version--" "modules/nf-core/fairbioheaders/$module/main.nf"
           done
