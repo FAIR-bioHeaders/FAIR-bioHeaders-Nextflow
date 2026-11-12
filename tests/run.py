@@ -327,6 +327,85 @@ workflow {
         back = Path(next(line for line in output.splitlines() if line.startswith('ROUNDTRIP ')).split(' ', 1)[1])
         check(json.loads(back.read_text()) == json.loads((fhp / 'predicted.fhp.json').read_text()), 'FHP metadata did not round-trip through HTML')
 
+        # The pinned upstream fairbioheaders/convert compared with FHR_CONVERT on the
+        # same fixtures (issue #29, slice 2a). docs/module-migration.md records the
+        # contract table and why FHR_CONVERT stays the callers' module; these cases keep
+        # that record honest rather than trusting it: the module is the merged revision
+        # in modules.json (scripts/check_upstream_modules.py verifies byte identity), it
+        # runs on this repository's fixtures, its serializations match FHR_CONVERT byte
+        # for byte once ext.prefix supplies the `.fhr.` infix, and both gaps -- the
+        # missing `faa` format and the format rejection moving into the task -- are
+        # asserted here instead of being assumed from the upstream documentation.
+        pinned_convert = "include { FAIRBIOHEADERS_CONVERT } from '" + str(ROOT / 'modules/nf-core/fairbioheaders/convert/main') + "'\n"
+        parity_meta = work / 'parity-metadata.json'
+        parity_meta.write_text(json.dumps(fields))
+        parity = work / 'convert-parity.nf'
+        parity.write_text(pinned_convert + convert + """process ASSERT_CONVERT_PARITY {
+    // The two paths are taken as `val` on purpose: the task only reads them, so
+    // native staging (and the identical file names the parity result produces) is
+    // not involved; ASSERT_PROTEIN_BYTES above uses the same technique.
+    errorStrategy 'ignore'
+    input:
+    tuple val(id), val(expected), val(actual)
+    exec:
+    def identical = java.util.Arrays.equals(expected.bytes, actual.bytes)
+    println "PARITY ${id} local=${expected.name} upstream=${actual.name} bytes=${identical ? 'identical' : 'DIFFERENT'}"
+}
+
+workflow {
+    // Each record: (id suffix, input, FHR_CONVERT output_format, upstream format).
+    // 'faa' is a local format token only: the toolkit has no `--to faa` and the
+    // upstream module uses the format as the output extension, so `fasta` is the
+    // nearest it can name.
+    def plain = file(params.metadata, checkIfExists: true)
+    def records = [
+        tuple('json', plain, 'json', 'json'),
+        tuple('yaml', plain, 'yaml', 'yaml'),
+        tuple('html', plain, 'html', 'html'),
+        tuple('faa', plain, 'faa', 'fasta'),
+        tuple('extract', file(params.protein, checkIfExists: true), 'json', 'json')
+    ]
+    FHR_CONVERT(Channel.fromList(records.collect { key, path, local, upstream -> tuple([id: "parity-${key}".toString()], path, local) }))
+    FAIRBIOHEADERS_CONVERT(
+        Channel.fromList(records.collect { key, path, local, upstream -> tuple([id: "parity-${key}".toString()], path) }),
+        Channel.fromList(records.collect { key, path, local, upstream -> upstream })
+    )
+    ASSERT_CONVERT_PARITY(FHR_CONVERT.out.converted.join(FAIRBIOHEADERS_CONVERT.out.metadata).map { meta, expected, actual -> tuple(meta.id, expected, actual) })
+}
+""")
+        parity_dir = work / 'convert-parity'
+        parity_dir.mkdir()
+        parity_dir.joinpath('nextflow.config').write_text('nextflow.enable.dsl = 2\nprocess { withName: FAIRBIOHEADERS_CONVERT { ext.prefix = { "${meta.id}.fhr" } } }\n')
+        output = run(parity, parity_dir, ['--metadata', str(parity_meta), '--protein', str(chain / 'protein.fhp.faa')])
+        for key, name in [('json', 'parity-json.fhr.json'), ('yaml', 'parity-yaml.fhr.yaml'), ('html', 'parity-html.fhr.html'), ('extract', 'parity-extract.fhr.json')]:
+            check(f'PARITY parity-{key} local={name} upstream={name} bytes=identical' in output, f'{key}: the pinned upstream convert does not reproduce FHR_CONVERT:\n{output}')
+        check('PARITY parity-faa local=parity-faa.fhr.faa upstream=parity-faa.fhr.fasta bytes=identical' in output, f'the .faa output-extension gap changed:\n{output}')
+
+        # Upstream rejects an unknown or unsupported format inside the task (the toolkit
+        # reads --to), where FHR_CONVERT rejects it before the task is submitted (the
+        # Unsupported format case above).
+        for format, message in [('faa', "invalid choice: 'faa'"), ('exe', "invalid choice: 'exe'")]:
+            bad_upstream = work / f'convert-upstream-{format}.nf'
+            bad_upstream.write_text(pinned_convert + f"""workflow {{
+    FAIRBIOHEADERS_CONVERT(Channel.of(tuple([id: 'bad'], file(params.metadata, checkIfExists: true))), Channel.value('{format}'))
+}}
+""")
+            run(bad_upstream, work, ['--metadata', str(parity_meta)], failure=message)
+
+        # The merged upstream revision dropped the spaced-file-name test its review head
+        # carried, so this suite keeps that case: the fixture file name holds spaces and
+        # single quotes and the module interpolates the staged path unquoted.
+        spaced_upstream = work / 'convert-upstream-spaced.nf'
+        spaced_upstream.write_text(pinned_convert + """workflow {
+    FAIRBIOHEADERS_CONVERT(Channel.of(tuple([id: 'spaced'], file(params.metadata, checkIfExists: true))), Channel.value('json'))
+    FAIRBIOHEADERS_CONVERT.out.metadata.view { meta, path -> "SPACED ${path.name}" }
+}
+""")
+        output = run(spaced_upstream, work, ['--metadata', str(fixture)])
+        check('SPACED spaced_converted.json' in output, f'the pinned upstream convert did not read the spaced and quoted metadata name:\n{output}')
+        report = next((work / 'work').glob('*/*/spaced_converted.json'))
+        check(json.loads(report.read_text()) == fields, 'the pinned upstream convert did not reproduce the metadata')
+
         # Toolkit 0.7.0+ selects FHR 2.0 for the raw-main URL. Since 0.8.4 (spec rule V6,
         # FAIR-bioHeaders-Tools#114) a record citing raw-main with the number 1 as
         # schemaVersion is read as FHR 1 (v0.3.1) with a deprecation warning; a string
