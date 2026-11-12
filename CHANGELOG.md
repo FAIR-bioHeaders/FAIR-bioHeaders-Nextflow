@@ -2,12 +2,14 @@
 
 ## Unreleased
 
-Module migration toward the upstream nf-core `fairbioheaders` modules (issue #29,
-first slice): `combine` and `validate` are now pinned upstream modules, and the
-callers are aligned without dropping any documented output contract. The toolkit pin
-stays fair-bioheaders **0.9.0**; `verify` and `convert` stay repository-owned until
-their upstream interfaces (nf-core/modules#13635, nf-core/modules#13636) merge and
-pass local parity. [docs/module-migration.md](docs/module-migration.md) records the
+Module migration toward the upstream nf-core `fairbioheaders` modules (issue #29).
+Slice 1: `combine` and `validate` are now pinned upstream modules, and the
+callers are aligned without dropping any documented output contract. Slice 2a (2026-11-12):
+`convert` has merged upstream and is now pinned and tested here too, but its parity check
+came out **partial**, so its callers stay on `FHR_CONVERT` pending a maintainer decision.
+The toolkit pin stays fair-bioheaders **0.9.0**; `verify` stays repository-owned until its
+upstream interface (nf-core/modules#13635, still open as of 2026-11-12) merges and
+passes local parity. [docs/module-migration.md](docs/module-migration.md) records the
 per-module upstream-vs-local contract tables, the pinned revisions, the update
 procedure, the remaining blockers and the adoption steps for the later slices.
 
@@ -80,6 +82,59 @@ procedure, the remaining blockers and the adoption steps for the later slices.
   (`nf-test --profile docker`, the `-profile docker` examples, the
   `environment/` image build) still need to run on the
   PR; `git diff --check` is clean.
+
+- **Pinned upstream module: convert (slice 2a, 2026-11-12).**
+  `modules/nf-core/fairbioheaders/convert` is now the byte-identical upstream module at
+  `4dc3bc54779d6caf3a47d49f37811e651fa2700a` (nf-core/modules#13636, merged
+  2026-11-11T23:01Z): all eight files (including both `.conda-lock/` platform locks and
+  the new `tests/nextflow.config`) were downloaded at that revision and verified against
+  the GitHub tree blob hashes, with the digests recorded in
+  [docs/module-migration.md](docs/module-migration.md). `modules.json` carries the
+  revision; because the drift guard is manifest-driven, CI now verifies three pinned
+  modules (combine 7 files, validate 7, convert 8) and the nf-test job's Wave-image pin
+  check covers convert as well. The module was read at the **merge commit**, not at the
+  review head the migration document had recorded, and the re-diff mattered: the merged
+  revision changed the default prefix to `<meta.id>_converted`, dropped the quoting of
+  the output redirect that its review head had, added an input/output name-collision
+  guard, and replaced its two spaced-name tests with two name-collision tests.
+  Never patch the pinned copy; update it only through the recorded procedure.
+- **convert: pinned and tested, callers not migrated (partial parity).** The upstream
+  module and the repository's `FHR_CONVERT` were compared with real runs on this
+  repository's fixtures, and `tests/run.py` now asserts the result instead of documenting
+  it as prose: with `ext.prefix = { "${meta.id}.fhr" }` the pinned module produces
+  byte-identical JSON, YAML, HTML and header-extraction output to `FHR_CONVERT`, but
+  (1) the family-signifying `ID.fhr.<format>` name is only reachable by configuration and
+  is not the upstream default, (2) `faa` cannot be named at all because the upstream
+  output extension is the `--to` token and the toolkit has no `faa` choice (verified:
+  `bioheaders convert --to faa` exits 2 with `invalid choice: 'faa'`, and the probe gets
+  `parity-faa.fhr.fasta` with identical bytes where `FHR_CONVERT` writes
+  `parity-faa.fhr.faa`), (3) the input is two channel rows instead of one
+  `(meta, metadata, format)` tuple, and (4) an unusable format now fails **inside the
+  task** rather than before submission. `main.nf`, `FHR_ATTACH` and the published names
+  therefore stay on `FHR_CONVERT` (the same treatment as `FHR_COMBINE` in slice 1), and
+  `fairbioheaders/convert` is published as the importer-facing module with the rename
+  recipe and the exact gap recorded as blockers 1–4 for a maintainer decision.
+  **No output name, no module interface and no caller changed in this slice**; the only
+  new user-visible surface is the additional pinned module path plus the upstream tests.
+- **Regression coverage added for the pinned convert.** Four harness cases: the
+  `FHR_CONVERT`-vs-upstream byte/name parity probe (five records including header
+  extraction from a combined FHP FASTA), the two upstream format-rejection cases
+  (`faa`, `exe`), and the spaced-and-quoted metadata file name the merged upstream
+  revision no longer tests. `verify` is untouched: nf-core/modules#13635 is still open
+  (head moved `bb6c492` → `bc5a8640` on 2026-11-12) and its slice-1 notes stand.
+  Verification in this slice, in the same style as slice 1 (native execution of the
+  repository's processes inside a Nextflow 26.04.6 / Java 21 / Python 3.11 container
+  with the pinned fair-bioheaders 0.9.0 on the `PATH`; container pulls stay CI's job):
+  `nf-test test --ci` **40/40 passed** in 1261 s (the 11 upstream convert cases joined
+  slice 1's 29, committed snapshots matching);
+  `python tests/run.py --converter-source <v0.9.0 checkout>` **61/61 passed**, including
+  the four new convert cases and 2410 toolkit tests through the gate;
+  `python3 scripts/check_upstream_modules.py` green for all three pinned modules
+  (7 + 7 + 8 files) and `python3 -m unittest discover -s tests -p
+  test_upstream_modules.py` green; CI's container-pin step, extended to `combine validate
+  convert`, passes when run locally. CI's Docker jobs (`nf-test --profile docker`, the
+  `-profile docker` examples, the `environment/` image build) and the Dockstore
+  workflow's test profile still need to run on the PR; `git diff --check` is clean.
 
 ## 0.2.0 — 2026-11-05
 
