@@ -4,7 +4,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 include { FHR_CREATE_JSON } from './modules/create_json/main'
-include { FHR_CONVERT } from './modules/convert/main'
+include { FAIRBIOHEADERS_CONVERT as FHR_YAML } from './modules/nf-core/fairbioheaders/convert/main'
 include { FHR_ATTACH } from './subworkflows/attach/main'
 include { FHR_CONVERTER_TESTS } from './modules/converter_tests/main'
 include { GFF3_VALIDATE } from './modules/gff3_validate/main'
@@ -87,7 +87,12 @@ workflow {
         ? FHR_CREATE_JSON.out.json.map { meta, json -> tuple(meta, json, file(params.sequence, checkIfExists: true), params.sequence_format) }
         : channel.empty())
     final_json = params.sequence ? FHR_ATTACH.out.json : FHR_CREATE_JSON.out.json
-    FHR_CONVERT(final_json.map { meta, json -> tuple(meta, json, 'yaml') })
+    // Published YAML via the pinned upstream convert (two input rows: the
+    // (meta, file) channel and a --to format channel). nextflow.config sets
+    // ext.prefix = meta.id on this aliased process so it emits <id>.yaml
+    // (issue #29 option (a)); the alias keeps the config off the pinned
+    // module's own nf-test default naming.
+    FHR_YAML(final_json.map { meta, json -> tuple(meta, json) }, Channel.value('yaml'))
 
     // With --gff3, each file is validated (optionally against --gff3_genome); see
     // the gff3_* options in nextflow.config. Reports are published per ID.
@@ -125,7 +130,7 @@ workflow {
         ? channel.of(tuple([id: 'converter'], file(params.converter_source, checkIfExists: true)))
         : channel.empty())
     gate = params.converter_source ? FHR_CONVERTER_TESTS.out.passed.first() : channel.value([id: 'converter'])
-    results = final_json.mix(FHR_CONVERT.out.converted, FHR_ATTACH.out.sequence)
+    results = final_json.mix(FHR_YAML.out.metadata, FHR_ATTACH.out.sequence)
         .combine(gate)
         .map { meta, path, _passed -> tuple(meta, path) }
     gff3_reports = GFF3_VALIDATE.out.reports

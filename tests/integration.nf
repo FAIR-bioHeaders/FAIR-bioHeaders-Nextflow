@@ -4,8 +4,8 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 include { FHR_CREATE_JSON } from '../modules/create_json/main'
-include { FHR_CONVERT as TO_FORMAT } from '../modules/convert/main'
-include { FHR_CONVERT as BACK_JSON } from '../modules/convert/main'
+include { FAIRBIOHEADERS_CONVERT as TO_FORMAT } from '../modules/nf-core/fairbioheaders/convert/main'
+include { FAIRBIOHEADERS_CONVERT as BACK_JSON } from '../modules/nf-core/fairbioheaders/convert/main'
 include { FHR_ATTACH } from '../subworkflows/attach/main'
 include { FHR_STRIP } from '../modules/strip/main'
 
@@ -30,12 +30,21 @@ process ASSERT_BYTES {
 }
 workflow {
     def fields = new groovy.json.JsonSlurper().parseText(file(params.fixture).text)
+    def formats = ['json', 'yaml', 'html', 'fasta', 'gfa']
     FHR_CREATE_JSON(Channel.of(tuple([id: 'rich'], fields)))
-    TO_FORMAT(FHR_CREATE_JSON.out.json.flatMap { meta, json ->
-        ['json', 'yaml', 'html', 'fasta', 'gfa'].collect { fmt -> tuple([id: fmt, expected: fields], json, fmt) }
-    })
-    BACK_JSON(TO_FORMAT.out.converted.map { meta, metadata -> tuple(meta, metadata, 'json') })
-    ASSERT_ROUNDTRIP(BACK_JSON.out.converted)
+    // Upstream convert takes two input rows: the (meta, file) channel and a channel of
+    // --to format values, zipped positionally. Each format round-trips through JSON.
+    TO_FORMAT(
+        FHR_CREATE_JSON.out.json.flatMap { meta, json ->
+            formats.collect { fmt -> tuple([id: fmt, expected: fields], json) }
+        },
+        Channel.fromList(formats)
+    )
+    BACK_JSON(
+        TO_FORMAT.out.metadata.map { meta, converted -> tuple([id: "${meta.id}-back", expected: meta.expected], converted) },
+        Channel.fromList(formats.collect { 'json' })
+    )
+    ASSERT_ROUNDTRIP(BACK_JSON.out.metadata)
     FHR_ATTACH(FHR_CREATE_JSON.out.json.flatMap { meta, json ->
         ['fasta', 'gfa'].collect { kind ->
             def original = file("${params.fixtures}/${kind == 'fasta' ? 'genome.fasta' : 'assembly.gfa'}")

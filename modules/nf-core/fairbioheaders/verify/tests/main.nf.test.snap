@@ -7,7 +7,7 @@
                         {
                             "id": "test"
                         },
-                        "test.verify.txt:md5,b1ba010f9e484e7120a13394604bffe6"
+                        "test.verify.txt:md5,6c64078a20548815845e8e1650e8b47e"
                     ]
                 ],
                 "versions_fairbioheaders": [
@@ -19,7 +19,7 @@
                 ]
             }
         ],
-        "timestamp": "2026-10-25T20:21:34.493137546",
+        "timestamp": "2026-11-13T17:13:30.357005584",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
@@ -59,7 +59,7 @@
                         {
                             "id": "test"
                         },
-                        "test.verify.txt:md5,87c74968a4f43b77ae4e06b01108e9ce"
+                        "test.verify.txt:md5,c746b143a53ffa702038fd69c958f949"
                     ]
                 ],
                 "versions_fairbioheaders": [
@@ -71,7 +71,7 @@
                 ]
             }
         ],
-        "timestamp": "2026-10-26T10:25:03.558674587",
+        "timestamp": "2026-11-13T17:12:40.033994547",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
@@ -85,7 +85,7 @@
                         {
                             "id": "test"
                         },
-                        "test.verify.txt:md5,f3c7e71945950f7857afb151711f0621"
+                        "test.verify.txt:md5,921bffb3f785e93d9c13af42eb6f0a6c"
                     ]
                 ],
                 "versions_fairbioheaders": [
@@ -97,7 +97,7 @@
                 ]
             }
         ],
-        "timestamp": "2026-10-25T20:21:25.78300685",
+        "timestamp": "2026-11-13T17:11:48.992290885",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"

@@ -16,6 +16,15 @@ FHGFF3 release schema `https://w3id.org/fair-bioheaders/fhgff3/v0.4.0`
 files were written by **fair-bioheaders 0.8.0**, whose checksum algorithm covers
 the exact file bytes except the scalar root checksum line; do not hand-edit them.
 
+**Naming note (issue #29 option (a), 2026-11-13):** the family-style names below
+(`*.fhp.faa`, `chain/genome.fhr.fasta`, `*.fhr.json`, `*.fhgff3.gff3`, …) are **historical
+caller-supplied inputs**, not module outputs. #29 retired the header-family output
+convention, but these committed fixture files keep their existing names on purpose — they
+are read *into* the modules, and an input's name is the caller's choice (a FAIR-bioHeaders
+checksum covers the file bytes, not its name, so renaming would only churn history without
+contract benefit). New module **outputs** are named upstream-style (`<id>.<ext>`,
+`<id>.<format>`) and carry no family marker.
+
 | File | Purpose |
 | --- | --- |
 | `protein.faa` | Bare synthetic protein FASTA (two sequences) |

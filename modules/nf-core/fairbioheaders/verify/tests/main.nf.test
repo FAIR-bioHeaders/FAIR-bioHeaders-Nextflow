@@ -70,12 +70,12 @@ checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
     test("sarscov2 - fasta.gz") {
 
         setup {
-            run("FHR_COMBINE") {
-                // Setup combines through the repository compatibility module (issue #29):
-                // the assertions below rely on the header-family output names, which the
-                // pinned upstream combine at ../../combine/ does not produce. Retarget to
-                // ../../combine/main.nf when upstream verify is adopted (docs/module-migration.md).
-                script "../../../../combine/main.nf"
+            run("FAIRBIOHEADERS_COMBINE") {
+                // Setup combines through the pinned upstream nf-core combine (issue #29
+                // option (a)): it keeps the input's extension in the output name, so the
+                // verify report below records file: <id>.<ext> (test.faa / test.gff /
+                // test.fasta.gz), not a header-family name. See docs/module-migration.md.
+                script "../../combine/main.nf"
                 process {
                     """
                     input[0] = Channel.of('''${metadata}''')
@@ -93,7 +93,7 @@ checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
         when {
             process {
                 """
-                input[0] = FHR_COMBINE.out.sequence
+                input[0] = FAIRBIOHEADERS_COMBINE.out.sequence
                 """
             }
         }
@@ -111,12 +111,12 @@ checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
     test("sarscov2 - faa - fhp") {
 
         setup {
-            run("FHR_COMBINE") {
-                // Setup combines through the repository compatibility module (issue #29):
-                // the assertions below rely on the header-family output names, which the
-                // pinned upstream combine at ../../combine/ does not produce. Retarget to
-                // ../../combine/main.nf when upstream verify is adopted (docs/module-migration.md).
-                script "../../../../combine/main.nf"
+            run("FAIRBIOHEADERS_COMBINE") {
+                // Setup combines through the pinned upstream nf-core combine (issue #29
+                // option (a)): it keeps the input's extension in the output name, so the
+                // verify report below records file: <id>.<ext> (test.faa / test.gff /
+                // test.fasta.gz), not a header-family name. See docs/module-migration.md.
+                script "../../combine/main.nf"
                 process {
                     """
                     input[0] = Channel.of('''${fhpMetadata}''')
@@ -134,7 +134,7 @@ checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
         when {
             process {
                 """
-                input[0] = FHR_COMBINE.out.sequence
+                input[0] = FAIRBIOHEADERS_COMBINE.out.sequence
                 """
             }
         }
@@ -142,7 +142,7 @@ checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
         then {
             assert process.success
             assertAll(
-                { assert path(process.out.report[0][1]).readLines() == ['file: test.fhp.faa', 'Checksum verified.'] },
+                { assert path(process.out.report[0][1]).readLines() == ['file: test.faa', 'Checksum verified.'] },
                 { assert snapshot(sanitizeOutput(process.out)).match() }
             )
         }
@@ -152,12 +152,12 @@ checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
     test("candidatus portiera - gff3") {
 
         setup {
-            run("FHR_COMBINE") {
-                // Setup combines through the repository compatibility module (issue #29):
-                // the assertions below rely on the header-family output names, which the
-                // pinned upstream combine at ../../combine/ does not produce. Retarget to
-                // ../../combine/main.nf when upstream verify is adopted (docs/module-migration.md).
-                script "../../../../combine/main.nf"
+            run("FAIRBIOHEADERS_COMBINE") {
+                // Setup combines through the pinned upstream nf-core combine (issue #29
+                // option (a)): it keeps the input's extension in the output name, so the
+                // verify report below records file: <id>.<ext> (test.faa / test.gff /
+                // test.fasta.gz), not a header-family name. See docs/module-migration.md.
+                script "../../combine/main.nf"
                 process {
                     """
                     input[0] = Channel.of('''${gff3Metadata}''')
@@ -175,7 +175,7 @@ checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
         when {
             process {
                 """
-                input[0] = FHR_COMBINE.out.sequence
+                input[0] = FAIRBIOHEADERS_COMBINE.out.sequence
                 """
             }
         }
