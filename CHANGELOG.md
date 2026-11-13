@@ -2,6 +2,69 @@
 
 ## Unreleased
 
+### Naming decision — issue #29 option (a): adopt upstream naming (BREAKING / CHANGED, targets minor **0.3.0**)
+
+**This is the documented external-contract change requested by issue #29 and is the
+maintainer decision that #21/AGENTS.md said stood "until a maintainer decision changes it."
+It is BREAKING for any consumer that reads output file names.** The suite **adopts the
+upstream nf-core output-naming convention and retires the header-family filename contract**
+(`ID.fhr.fa`, `ID.fhp.faa`, `ID.fhgff3.gff3`, `ID.fhr.<format>`, …). The header family stays
+in each file's header and is carried on `meta`; it no longer appears in any output file name.
+Per the maintainers' ruling-interpretation this drops **all** file-name family markers for
+consistency — including the `.fhr.`/`.fhp.` infix on module-emitted **metadata** files
+(`ID.fhr.json` → `ID.json`) — not just the sequence/convert outputs. Because this repo is
+pre-1.0, a breaking change increments the **minor**: this lands as the next minor (e.g.
+**0.3.0**); the last *published* release stays v0.2.0 and tagging/publishing remains a
+maintainer action. The compatibility modules `modules/combine` (`FHR_COMBINE`) and
+`modules/convert` (`FHR_CONVERT`) are **deleted** after every caller, test and doc was
+migrated.
+
+Output-name migration lines (old → new):
+
+- combine: `ID.fhr.fa` → `ID.fasta` / `ID.fa` (input's extension); `ID.fhr.gfa` → `ID.gfa`;
+  `ID.fhp.faa` → `ID.faa`; `ID.fhgff3.gff3` → `ID.gff3`; `.gz`/`.bgz` suffix unchanged.
+- convert: `ID.fhr.json` → `ID.json`; `ID.fhr.yaml` → `ID.yaml`; `ID.fhr.html` → `ID.html`;
+  header-only protein `ID.fhr.faa` → `ID.fasta` (the toolkit has no `--to faa`); `ID.fhr.fasta`
+  → `ID.fasta`; `ID.fhr.gfa` → `ID.gfa`.
+- `FHR_CREATE_JSON` standalone JSON: `ID.fhr.json` → `ID.json`.
+- Unchanged (never family-named): `ID.verify.txt`, `ID.validate.txt`, `ID.verify-links.txt`,
+  `ID.gff3-validate.{json,html}`, `ID.stripped.<kind>`, `converter-tests/*`.
+
+Behavioral notes captured from the #29 slices and re-verified for this decision: the pinned
+upstream combine/convert stage inputs by their **original name** (no `input/*` staging — that
+was the retired compat module) and refuse to overwrite a staged input (combine: toolkit
+`FHR: Output must differ from the input files`; convert: `Input and output names are the same,
+set prefix...`), so callers constrain `meta.id`/`ext.prefix` (the example and `FHR_ATTACH`
+still gate IDs with `isSampleId`; the Dockstore workflow applies a `.combined` id
+disambiguator). `FAIRBIOHEADERS_CONVERT` defaults its output to `<id>_converted.<format>`, so
+`FHR_ATTACH` and the example publish `<id>.<format>` by setting
+`ext.prefix = { meta.id }` in project config. Direct importers of the retired
+`modules/combine`/`modules/convert` must move to the upstream modules and either accept the
+upstream names or wrap+rename from their own contract — see the migration lines in
+[docs/module-migration.md](docs/module-migration.md). The upstream `faa`-alias request is
+**staged, not filed** ("maintainer's call") in that same document.
+
+Changes in this decision:
+
+- **Callers migrated to the pinned upstream modules.** `FHR_ATTACH` composes
+  `FAIRBIOHEADERS_COMBINE` + `FAIRBIOHEADERS_VERIFY` + `FAIRBIOHEADERS_CONVERT` (two-row);
+  `main.nf` uses `FAIRBIOHEADERS_CONVERT` for the published YAML; the Dockstore workflow uses
+  `FAIRBIOHEADERS_COMBINE`; `modules/create_json` renames its JSON output. Sequence-kind logic
+  (`sequenceKindOf`) is confirmed to read **input** files only; the protein/genome
+  distinction is carried on `meta` (e.g. the harness's `-header` records and `meta.sequenceKind`).
+- **Compatibility modules retired.** `modules/combine` (`FHR_COMBINE`, family names) and
+  `modules/convert` (`FHR_CONVERT`) and the `FHR_COMBINE` nf-test suite are deleted; the
+  `FAIRBIOHEADERS_VERIFY` nf-test setups are retargeted to the pinned upstream combine
+  (reports now record `file: <id>.<ext>`; snapshots re-recorded for the changed names only).
+- **Every documented marker rewritten in the same change:** README output tables and
+  contract rows, `docs/PIPELINES.md` (module table + direct-importer break), the Dockstore
+  workflow README and test samplesheet, `tests/run.py` markers, the `FAIRBIOHEADERS_VERIFY`
+  snapshots, and the CI example/Dockstore assertions. See [docs/module-migration.md](docs/module-migration.md)
+  for the full OLD → NEW table and the resolution of the recorded blockers.
+
+### Prior #29 work (slices 1 and 2a), unchanged by the naming decision except that the
+compat modules the slices preserved are now retired
+
 Module migration toward the upstream nf-core `fairbioheaders` modules (issue #29).
 Slice 1: `combine` and `validate` are now pinned upstream modules, and the
 callers are aligned without dropping any documented output contract. Slice 2a (2026-11-12):

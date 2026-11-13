@@ -18,12 +18,14 @@ workflow {
     FHR_ATTACH(FHR_CREATE_JSON.out.json.map { meta, json ->
         tuple(meta, json, file(params.sequence, checkIfExists: true), 'fasta')
     })
-    // FHR_ATTACH.out.sequence contains checksum-verified FASTA files (ID.fhr.fa).
-    // FHR_ATTACH.out.json contains JSON with each attached file's checksum.
+    // FHR_ATTACH.out.sequence contains checksum-verified FASTA files (ID.fasta).
+    // FHR_ATTACH.out.json contains JSON with each attached file's checksum (ID.json).
 }
 ```
 
 This is a composition fragment: define `records` in the consuming workflow before using it. Set `nextflow.enable.dsl = 2` in that project's config. For several assemblies, pair each validated JSON with its corresponding sequence by a stable sample ID rather than relying on channel arrival order. Use `gfa` instead of `fasta` for GFA files.
+
+`FHR_ATTACH` composes the pinned upstream `FAIRBIOHEADERS_CONVERT` for its extraction step, which defaults its output to `<id>_converted.json`. To get the documented `ID.json`, the consuming project must set `ext.prefix`: `process { withName: FAIRBIOHEADERS_CONVERT { ext.prefix = { meta.id } } }` (the upstream module's own mechanism; `FAIRBIOHEADERS_COMBINE` already defaults its prefix to `meta.id`). The attached file is named `<id>.<input extension>` (`genome.fasta` → `ID.fasta`, `protein.faa` → `ID.faa`, …); the sequence kind is carried on `meta`, not the file name.
 
 Standalone JSON requires an explicit schema-valid checksum. Attachment replaces that value with the final file checksum; downstream consumers should use `FHR_ATTACH.out.json` when referring to the attached sequence. The algorithm is **SHA-512/256**, not a manually truncated SHA-512 digest. Encode its 32-byte digest using standard padded base64 (44 characters), without a prefix. It covers the exact file bytes except the scalar root checksum line and its terminator; preserve line endings, whitespace, comments and all other metadata. See the [specification checksum contract](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/blob/v0.3.0/docs/FORMAT.md#checksum-decision-for-v03). It is not a checksum of sequence letters alone. A supplied `seqcol_id` is preserved, not computed or verified against sequence content.
 
@@ -152,14 +154,28 @@ Modules leave files in their task work directories. The example workflow publish
 
 | Module | Input | Output |
 | --- | --- | --- |
-| `FAIRBIOHEADERS_COMBINE` (upstream, pinned) | `(meta, metadata, sequence)` | `sequence`: the headed file, **named after the input's extension**: `PREFIX.<ext>` (`PREFIX.fasta`, `PREFIX.faa`, `PREFIX.gfa`, `PREFIX.gff3`), with `.gz` when the input was compressed. Fails when the output name would overwrite a staged input — set `ext.prefix` |
-| `FHR_COMBINE` (repository compatibility module, `modules/combine`) | `(meta, metadata, sequence)` | `sequence`: the headed file, named by header type: `PREFIX.fhr.fa`, `PREFIX.fhr.gfa`, `PREFIX.fhp.faa` or `PREFIX.fhgff3.gff3`, with `.gz` when the input was compressed. Used by `FHR_ATTACH`, the example and the Dockstore workflow; migration-pending on [issue #29](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Nextflow/issues/29) |
-| `FAIRBIOHEADERS_CONVERT` (upstream, pinned) | **two rows**: `(meta, input)` and `format` | `metadata`: `PREFIX.<format>` (`PREFIX` defaults to `<meta.id>_converted`). Reads a standalone metadata file or extracts the header of a combined FASTA/GFA/GFF3; `<format>` is a toolkit `--to` token and also the output extension (`json`, `yaml`, `jsonld`, `html`, `fasta`, `gfa`, `gff3`; **no `faa`**). Fails when the output name would equal the input — set `ext.prefix` |
-| `FHR_CONVERT` (repository compatibility module, `modules/convert`) | `(meta, metadata, output_format)` | `converted`: `PREFIX.fhr.<output_format>` with `output_format` in `json`, `yaml`, `html`, `fasta`, `faa`, `gfa`, rejected before the task is submitted. Used by the example and as `FHR_ATTACH`'s extraction step; migration-pending on the same issue |
+| `FAIRBIOHEADERS_COMBINE` (upstream, pinned; used by `FHR_ATTACH`, the example and the Dockstore workflow) | `(meta, metadata, sequence)` | `sequence`: the headed file, **named after the input's extension**: `ID.<ext>` (`ID.fasta`, `ID.fa`, `ID.faa`, `ID.gfa`, `ID.gff3`), with `.gz` when the input was compressed; the header family lives in the file, not the name. Fails when the output name would overwrite a staged input — set `ext.prefix` or use a non-colliding id |
+| `FAIRBIOHEADERS_CONVERT` (upstream, pinned; the suite's convert) | **two rows**: `(meta, input)` and `format` | `metadata`: `ID.<format>` when the project sets `ext.prefix = { meta.id }` (otherwise the default `ID_converted.<format>`). Reads a standalone metadata file or extracts the header of a combined FASTA/GFA/GFF3; `<format>` is a toolkit `--to` token and also the output extension (`json`, `yaml`, `jsonld`, `html`, `fasta`, `gfa`, `gff3`; **no `faa`** — a header-only protein becomes `.fasta`). Fails when the output name would equal the input — set `ext.prefix` |
 | `FAIRBIOHEADERS_VERIFY` (repository module, pending upstream) | `(meta, sequence)` | `report`: `PREFIX.verify.txt`; the task fails when the header is invalid or the checksum does not match |
 | `FAIRBIOHEADERS_VALIDATE` (upstream, pinned) | `(meta, metadata)` | `report`: `PREFIX.validate.txt`; the task fails when standalone JSON/YAML/JSON-LD metadata does not validate |
 
-`PREFIX` is `task.ext.prefix` or `meta.id`; `task.ext.args` is passed to `bioheaders`. The upstream COMBINE takes the sequence type from the toolkit's extension inference; the repository `FHR_COMBINE` enforces the extension whitelist, derives the header type from the metadata's `schema` URL by the toolkit's own rule (`bioheaders.header_type`) for the output name, and shell-quotes staged paths and prefixes — the pinned upstream modules rely on Nextflow's interpolation of staged paths, so constrain `meta.id`/`ext.prefix` yourself when importing them directly. Versions go to the `versions` topic. Run their tests with `nf-test test --profile docker` from the repository root (`nf-test.config`, `tests/config/nf-test.config`).
+`PREFIX` is `task.ext.prefix` or `meta.id`; `task.ext.args` is passed to `bioheaders`.
+Issue #29 option (a) (2026-11-13) retired the repository's header-family compatibility
+modules `FHR_COMBINE` (`modules/combine`) and `FHR_CONVERT` (`modules/convert`): every
+caller now composes the pinned upstream `FAIRBIOHEADERS_COMBINE`/`FAIRBIOHEADERS_CONVERT`
+directly and publishes their input-faithful names, so **no output file name carries an
+`fhr`/`fhp`/`fhgff3` marker any more**. Two consequences for direct importers: (1) the
+upstream modules do not shell-quote `ext.prefix`/`meta.id`, so **you must constrain
+`meta.id` to safe filenames yourself** (`FHR_ATTACH`/the example already do via
+`isSampleId`); (2) `bioheaders combine`/`convert` refuse to overwrite a staged input
+(`FHR: Output must differ from the input files` / `Input and output names are the same,
+set prefix...`), so pick ids where `<id>.<extension>` cannot equal the sequence file's
+own name, or set `ext.prefix`. The upstream COMBINE leaves format inference to the
+toolkit and keeps the input extension; `FHR_STRIP`/`FHR_VERIFY_LINKS` (repository
+modules) still read the kind from a supplied **input** file's extension via
+`sequenceKindOf`. Versions go to the `versions` topic. Run their tests with
+`nf-test test --profile docker` from the repository root (`nf-test.config`,
+`tests/config/nf-test.config`).
 
 ```nextflow
 include { FAIRBIOHEADERS_COMBINE } from '/path/to/FAIR-bioHeaders-Nextflow/modules/nf-core/fairbioheaders/combine/main'
@@ -171,8 +187,10 @@ workflow {
 }
 ```
 
-Set the combine prefix in the importing project's `nextflow.config` so an input
-named `proteins.faa` is not overwritten by an output of the same name:
+The combine output is `proteins.faa` (prefix `meta.id`, extension from the input). If a
+sequence file could be named exactly `<id>.<extension>` — e.g. an input `proteins.faa` with
+id `proteins` — the toolkit refuses to overwrite it; set the documented `ext.prefix`
+disambiguator:
 
 ```nextflow
 process {
@@ -182,15 +200,15 @@ process {
 }
 ```
 
-The example's headed output is `proteins.headed.faa`; keep the chosen prefix
-distinct from every staged input basename and constrain IDs to safe filenames.
-
-For the header-family output names (`proteins.fhp.faa`) use `modules/combine`'s
-`FHR_COMBINE` at the same call site, or compose `FHR_ATTACH`; see
-[module migration](module-migration.md#contract-comparison-upstream-vs-local-pre-migration).
+The example's headed output is then `proteins.headed.faa`; keep the chosen prefix
+distinct from every staged input basename and constrain IDs to safe filenames. There is
+**no header-family option any more**: the retired `modules/combine` (`FHR_COMBINE`) used to
+emit `proteins.fhp.faa`; the family now lives in the file header and on `meta`, and
+`FHR_ATTACH` composes the upstream module directly.
 
 The pinned CONVERT is called with **two rows** — the file channel and a channel of
-format values — and names its output after the format it is given:
+format values — and names its output after the format it is given (`ID_converted.<format>`
+by default). The suite publishes the plain id by setting `ext.prefix = { meta.id }`:
 
 ```nextflow
 include { FAIRBIOHEADERS_CONVERT } from '/path/to/FAIR-bioHeaders-Nextflow/modules/nf-core/fairbioheaders/convert/main'
@@ -198,18 +216,19 @@ include { FAIRBIOHEADERS_CONVERT } from '/path/to/FAIR-bioHeaders-Nextflow/modul
 workflow {
     def headed = Channel.of(tuple([id: 'proteins'], file(params.protein)))
     FAIRBIOHEADERS_CONVERT(headed, Channel.value('json'))
-    // FAIRBIOHEADERS_CONVERT.out.metadata: proteins_converted.json — the header of
-    // params.protein as JSON. Add
-    //   process { withName: FAIRBIOHEADERS_CONVERT { ext.prefix = { "${meta.id}.fhr" } } }
-    // to get proteins.fhr.json, the name (and the identical bytes) FHR_CONVERT emits.
+    // Without config: proteins_converted.json (the header of params.protein as JSON).
+    // Add
+    //   process { withName: FAIRBIOHEADERS_CONVERT { ext.prefix = { meta.id } } }
+    // to get proteins.json — the name FHR_ATTACH and the example publish (issue #29 (a)).
 }
 ```
 
 `faa` is not one of its formats: the toolkit's `--to` accepts
 `json yaml jsonld html fasta gfa gff3`, and the module uses that token as the output
-extension, so a header-only protein file becomes `ID.fhr.fasta` there. Use
-`modules/convert` (`FHR_CONVERT`) when the `.faa` name, the single-tuple input or the
-pre-launch format rejection is part of your contract.
+extension, so a header-only protein file becomes `proteins.fasta`. The retired
+`modules/convert` (`FHR_CONVERT`) used to offer `.faa` and a pre-launch format whitelist;
+callers that need those can wrap the upstream module and rename from their own contract,
+but this suite no longer ships them.
 
 The minimal Dockstore workflow [workflows/fairbioheaders](../workflows/fairbioheaders/README.md) runs COMBINE then VERIFY over a samplesheet.
 

@@ -2,10 +2,11 @@
 
 A minimal Nextflow DSL2 workflow around two modules of this repository:
 
-1. `FHR_COMBINE` (the repository-owned compatibility module `modules/combine`; issue #29
-   keeps this workflow on the header-family output names — the pinned upstream
-   `fairbioheaders/combine` names outputs after the input extension instead, see
-   [docs/module-migration.md](../../docs/module-migration.md)) adds FAIR-bioHeaders
+1. `FAIRBIOHEADERS_COMBINE` (the pinned upstream nf-core module
+   `modules/nf-core/fairbioheaders/combine`; issue #29 option (a) moved this workflow off
+   the repository's retired header-family compatibility module onto it directly — it names
+   each output after the **input's extension**, keeping the family only in the file header,
+   see [docs/module-migration.md](../../docs/module-migration.md)) adds FAIR-bioHeaders
    metadata (FHR for FASTA and GFA, FHP for protein FASTA, FHGFF3 for GFF3) to each
    sequence file and calculates its checksum;
 2. `FAIRBIOHEADERS_VERIFY` (repository module, pending its upstream review) checks the
@@ -26,11 +27,17 @@ Either a samplesheet, a CSV file with the columns `id,metadata,sequence`:
 
 ```csv
 id,metadata,sequence
-genome,genome.fhr.yaml,genome.fa.gz
-graph,genome.fhr.json,graph.gfa
-proteins,proteins.fhp.yaml,proteins.faa
-annotation,annotation.fhgff3.yaml,annotation.gff3
+genome-a,genome.fhr.yaml,genome.fa.gz
+graph-b,genome.fhr.json,graph.gfa
+proteome-c,proteins.fhp.yaml,proteins.faa
+annotation-d,annotation.fhgff3.yaml,annotation.gff3
 ```
+
+Relative paths resolve against the samplesheet directory. Because the combine output is
+`<id>.<input extension>`, choose an `id` whose `<id>.<extension>` is not the sequence file's
+own name (the four ids above — `genome-a`, `graph-b`, `proteome-c`, `annotation-d` — keep the
+output distinct from the input); when they would collide the workflow falls back to
+`<id>.combined.<extension>` so the run still completes.
 
 ```bash
 nextflow run FAIR-bioHeaders/FAIR-bioHeaders-Nextflow \
@@ -50,7 +57,7 @@ nextflow run FAIR-bioHeaders/FAIR-bioHeaders-Nextflow \
 | --- | --- |
 | `--input` | Samplesheet (CSV: `id,metadata,sequence`). Relative paths are relative to the samplesheet, which may be a URL. |
 | `--metadata`, `--sequence` | Metadata (JSON, YAML, JSON-LD or HTML microdata) and one FASTA, protein FASTA, GFA or GFF3 file, plain or gzip/BGZF, in place of `--input`. |
-| `--id` | Output name for `--sequence` (default: its file name without the extension). |
+| `--id` | Output name for `--sequence` (default: its file name without the extension; if that would make the combine output equal the input, `.combined` is appended). |
 | `--outdir` | Output directory (default `results`). |
 
 The file type comes from the sequence file's extension: `.gfa` is GFA, `.gff3` or `.gff`
@@ -60,9 +67,14 @@ header type comes from the metadata's `schema` URL. In a clone of the repository
 
 ## Output
 
-- `<outdir>/combine/<id>.fhr.fa` or `<id>.fhr.gfa` for FHR, `<id>.fhp.faa` for FHP, or
-  `<id>.fhgff3.gff3` for FHGFF3: the sequence file with its metadata header (`.gz` when
-  the input was compressed);
+- `<outdir>/combine/<id>.<input extension>`: the sequence file with its metadata header
+  (`.gz`/`.bgz` when the input was compressed) — e.g. `ID.fasta` / `ID.fa` for a FASTA
+  genome, `ID.faa` for a protein FASTA, `ID.gfa` for a GFA, `ID.gff3` for a GFF3. The
+  header family (FHR/FHP/FHGFF3) is recorded inside the file's header, not in the name
+  (issue #29 option (a)). The upstream combine refuses to overwrite the staged input, so
+  an id whose `<id>.<extension>` equals the sequence file's own name (which is exactly
+  what the default id derived from a single `--sequence` produces) is given the `.combined`
+  disambiguator described below;
 - `<outdir>/verify/<id>.verify.txt`: the verification report.
 
 ## Profiles
