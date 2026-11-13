@@ -16,13 +16,13 @@ process FHR_WRITE_JSON {
     tuple val(meta), val(fields)
 
     output:
-    tuple val(meta), path("${meta.id}.fhr.json"), emit: json
+    tuple val(meta), path("${meta.id}.json"), emit: json
 
     exec:
     def id = sampleId(meta)
     if (!(fields instanceof Map))
         throw new IllegalArgumentException('FHR fields must be a map')
-    task.workDir.resolve("${id}.fhr.json").text = metadataJson(fields)
+    task.workDir.resolve("${id}.json").text = metadataJson(fields)
 }
 
 workflow FHR_CREATE_JSON {

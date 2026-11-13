@@ -67,7 +67,7 @@ def snapshot(directory):
 def main():
     with tempfile.TemporaryDirectory(prefix='fhr-nextflow-tests-') as tmp:
         work = Path(tmp)
-        (work / 'nextflow.config').write_text('nextflow.enable.dsl = 2\n')
+        (work / 'nextflow.config').write_text('nextflow.enable.dsl = 2\nprocess { withName: FAIRBIOHEADERS_CONVERT { ext.prefix = { meta.id } } }\n')
         fields = json.loads((ROOT / 'examples/metadata.json').read_text())
         fields['documentation'] = "Unicode β; quotes ' and \\" + '"; $(touch SHOULD_NOT_EXIST)'
         fixture = work / "metadata with ' quotes.json"
@@ -79,7 +79,7 @@ def main():
         run(integration, work, ['--fixture', str(fixture), '--fixtures', str(ROOT / 'examples')])
         check(len(list((work / 'work').glob('*/*/*.ok'))) == 7, 'expected seven round-trip markers')
         check(not list(work.rglob('SHOULD_NOT_EXIST')), 'shell metacharacters in metadata were executed')
-        created = next((work / 'work').glob('*/*/rich.fhr.json')).read_text(encoding='utf-8')
+        created = next((work / 'work').glob('*/*/rich.json')).read_text(encoding='utf-8')
         check('Unicode β' in created and '\\u03b2' not in created, 'non-ASCII metadata was escaped')
 
         # Serializer edge cases: Unicode, nulls, sets, Date/NaN/Infinity rejection.
@@ -103,12 +103,15 @@ def main():
         run(ROOT / 'main.nf', work, ['--metadata', str(malformed)], failure='Cannot parse metadata JSON')
         run(ROOT / 'main.nf', work, ['--id', '../unsafe'], failure='meta.id')
         run(ROOT / 'main.nf', work, ['--id', '123', '--outdir', str(work / 'numeric-id')])
-        check((work / 'numeric-id/123/metadata/123.fhr.json').exists(), 'numeric --id was not accepted as a sample ID')
+        check((work / 'numeric-id/123/metadata/123.json').exists(), 'numeric --id was not accepted as a sample ID')
         run(ROOT / 'main.nf', work, ['--metadata', str(fixture)], failure='rename the file or use --id')
         bad_format = work / 'bad-format.nf'
-        bad_format.write_text("include { FHR_CONVERT } from '" + str(ROOT / 'modules/convert/main') + "'\nworkflow { FHR_CONVERT(Channel.of(tuple([id:'bad'], file(params.metadata), 'exe'))) }\n")
-        run(bad_format, work, ['--metadata', str(fixture)], failure='Unsupported format')
-        attached = next((work / 'work').glob('*/*/attached-fasta.fhr.fa'))
+        bad_format.write_text("include { FAIRBIOHEADERS_CONVERT } from '" + str(ROOT / 'modules/nf-core/fairbioheaders/convert/main') + "'\nworkflow { FAIRBIOHEADERS_CONVERT(Channel.of(tuple([id:'bad'], file(params.metadata))), Channel.value('exe')) }\n")
+        # Upstream convert has no pre-launch format whitelist: an unusable --to token
+        # fails inside the task (the toolkit's argparse), where FHR_CONVERT used to
+        # reject it before submission. #29 option (a) adopts the upstream surface.
+        run(bad_format, work, ['--metadata', str(fixture)], failure="invalid choice: 'exe'")
+        attached = next((work / 'work').glob('*/*/attached-fasta.fasta'))
         tampered = work / 'tampered.fasta'
         tampered.write_bytes(attached.read_bytes().replace(b'AAAATCGATCGGCATA', b'TAAATCGATCGGCATA'))
         bad_checksum = work / 'bad-checksum.nf'
@@ -129,10 +132,10 @@ def main():
             (batch / directory / name).write_text(json.dumps(dict(fields, genome=genome)))
         output = work / 'batch-output'
         run(ROOT / 'main.nf', work, ['--metadata', str(batch / 'one/*.json'), '--outdir', str(output)])
-        expected = ['alpha/metadata/alpha.fhr.json', 'alpha/metadata/alpha.fhr.yaml', 'beta/metadata/beta.fhr.json', 'beta/metadata/beta.fhr.yaml']
+        expected = ['alpha/metadata/alpha.json', 'alpha/metadata/alpha.yaml', 'beta/metadata/beta.json', 'beta/metadata/beta.yaml']
         check(published(output) == expected, f'unexpected batch outputs: {published(output)}')
         for sample, genome in [('alpha', 'Alpha'), ('beta', 'Beta')]:
-            check(json.loads((output / sample / 'metadata' / f'{sample}.fhr.json').read_text())['genome'] == genome, f'{sample}: output belongs to another input')
+            check(json.loads((output / sample / 'metadata' / f'{sample}.json').read_text())['genome'] == genome, f'{sample}: output belongs to another input')
         run(ROOT / 'main.nf', work, ['--metadata', str(batch / '*/alpha.json'), '--outdir', str(work / 'duplicate')], failure='Duplicate meta.id')
         run(ROOT / 'main.nf', work, ['--metadata', str(batch / 'one/*.json'), '--id', 'shared', '--outdir', str(work / 'shared')], failure='--id names a single output')
         check(not (work / 'duplicate').exists() and not (work / 'shared').exists(), 'outputs were published for ambiguous IDs')
@@ -140,7 +143,7 @@ def main():
         # With a sequence, only the attached file and metadata carrying its computed checksum are published.
         output = work / 'sequence-output'
         run(ROOT / 'main.nf', work, ['--sequence', str(ROOT / 'examples/assembly.gfa'), '--sequence_format', 'gfa', '--outdir', str(output)])
-        expected = ['example/sequence/example.fhr.gfa', 'example/sequence/example.fhr.json', 'example/sequence/example.fhr.yaml']
+        expected = ['example/sequence/example.gfa', 'example/sequence/example.json', 'example/sequence/example.yaml']
         check(published(output) == expected, f'unexpected sequence outputs: {published(output)}')
         for name in published(output):
             check(PLACEHOLDER.encode() not in (output / name).read_bytes(), f'{name} contains the placeholder checksum')
@@ -206,7 +209,7 @@ def main():
         fhp = ROOT / 'tests/fixtures/fhp'
         chain = fhp / 'chain'
         create = "include { FHR_CREATE_JSON } from '" + str(ROOT / 'modules/create_json/main') + "'\n"
-        convert = "include { FHR_CONVERT } from '" + str(ROOT / 'modules/convert/main') + "'\n"
+        convert = "include { FAIRBIOHEADERS_CONVERT } from '" + str(ROOT / 'modules/nf-core/fairbioheaders/convert/main') + "'\n"
         attach = "include { FHR_ATTACH } from '" + str(ROOT / 'subworkflows/attach/main') + "'\n"
         strip = "include { FHR_STRIP } from '" + str(ROOT / 'modules/strip/main') + "'\n"
         verify_header = "include { FAIRBIOHEADERS_VERIFY } from '" + str(ROOT / 'modules/nf-core/fairbioheaders/verify/main') + "'\n"
@@ -230,14 +233,19 @@ workflow {
         tuple([id: source.name.replaceFirst(/\\.fhp\\.json$/, '')], new groovy.json.JsonSlurper().parseText(source.text))
     }
     FHR_CREATE_JSON(Channel.fromList(records))
-    // A distinct ID keeps the header-only conversion (ID.fhr.faa) apart from the
-    // attached file (ID.fhp.faa) and its extracted JSON (ID.fhr.json).
-    FHR_CONVERT(FHR_CREATE_JSON.out.json.map { meta, json -> tuple([id: meta.id + '-header'], json, 'faa') })
+    // Issue #29 option (a): the header-only protein conversion uses the upstream
+    // convert, whose extension is the --to token, so a protein header serialises to
+    // <id>.fasta (there is no --to faa). The protein/genome distinction is NOT in the
+    // file name any more; it rides on meta.sequenceKind and on the FHP header inside
+    // the file. A distinct id keeps the header-only conversion (<id>-header.fasta)
+    // apart from the attached file (<id>.faa) and its extracted JSON (<id>.json).
+    def header = FHR_CREATE_JSON.out.json.map { meta, json -> tuple([id: meta.id + '-header', sequenceKind: 'faa'], json) }
+    FAIRBIOHEADERS_CONVERT(header, Channel.value('fasta'))
     FHR_ATTACH(FHR_CREATE_JSON.out.json.map { meta, json -> tuple(meta, json, file(params.sequence, checkIfExists: true), 'faa') })
     FHR_STRIP(FHR_ATTACH.out.sequence.map { meta, sequence -> tuple([id: meta.id, original: params.original], sequence, 'faa') })
     ASSERT_PROTEIN_BYTES(FHR_STRIP.out.stripped)
     FHR_CREATE_JSON.out.json.view { meta, json -> "CREATED ${meta.id} ${json.name}" }
-    FHR_CONVERT.out.converted.view { meta, converted -> "CONVERTED ${meta.id} ${converted.name}" }
+    FAIRBIOHEADERS_CONVERT.out.metadata.view { meta, converted -> "CONVERTED ${meta.id} kind=${meta.sequenceKind} ${converted.name}" }
     FHR_ATTACH.out.sequence.view { meta, sequence -> "ATTACHED ${meta.id} ${sequence.name}" }
     FHR_ATTACH.out.json.view { meta, json -> "EXTRACTED ${meta.id} ${json.name}" }
     FHR_STRIP.out.stripped.view { meta, sequence -> "STRIPPED ${meta.id} ${sequence.name}" }
@@ -247,19 +255,21 @@ workflow {
         before_ok = len(list((work / 'work').glob('*/*/*.ok')))
         output = run(compose, work, ['--metadata', sets, '--sequence', str(fhp / 'protein.faa'), '--original', str(fhp / 'protein.faa')])
         for sample in ['predicted', 'database', 'mixed']:
-            for marker in [f'CREATED {sample} {sample}.fhr.json', f'CONVERTED {sample}-header {sample}-header.fhr.faa', f'ATTACHED {sample} {sample}.fhp.faa', f'EXTRACTED {sample} {sample}.fhr.json', f'STRIPPED {sample} {sample}.stripped.faa']:
+            for marker in [f'CREATED {sample} {sample}.json', f'CONVERTED {sample}-header kind=faa {sample}-header.fasta', f'ATTACHED {sample} {sample}.faa', f'EXTRACTED {sample} {sample}.json', f'STRIPPED {sample} {sample}.stripped.faa']:
                 check(marker in output, f'{sample}: missing {marker!r}:\n{output}')
         check(len(list((work / 'work').glob('*/*/*.ok'))) == before_ok + 3, 'protein strip byte checks did not run')
         for sample in ['predicted', 'database', 'mixed']:
-            records = [json.loads(path.read_text()) for path in (work / 'work').glob(f'*/*/{sample}.fhr.json')]
+            records = [json.loads(path.read_text()) for path in (work / 'work').glob(f'*/*/{sample}.json')]
             check(records and all(record['sourceType'] == sample for record in records), f'{sample}: metadata lost sourceType')
             check(any(record['checksum'] != PLACEHOLDER for record in records), f'{sample}: attachment did not replace the placeholder checksum')
-        converted = next((work / 'work').glob('*/*/predicted-header.fhr.faa')).read_text()
-        check(converted.startswith(';~schema:') and '>' not in converted, f'FHP metadata-to-FAA conversion is not a header:\n{converted}')
+        # The header-only protein file is a .fasta (extension is the --to token), yet its
+        # bytes are an FHP header: the family is proven by content and meta, not by .faa.
+        converted = next((work / 'work').glob('*/*/predicted-header.fasta')).read_text()
+        check(converted.startswith(';~schema: https://w3id.org/fair-bioheaders/fhp/') and '>' not in converted, f'FHP metadata-to-fasta conversion is not an FHP header:\n{converted}')
         # A supported compressed input is read by its magic bytes.
         output = run(compose, work, ['--metadata', sets, '--sequence', str(fhp / 'protein.faa.gz'), '--original', str(fhp / 'protein.faa')])
         # Combine keeps the input's compression: the attached file is BGZF.
-        check('ATTACHED predicted predicted.fhp.faa.gz' in output, f'compressed protein input was not combined:\n{output}')
+        check('ATTACHED predicted predicted.faa.gz' in output, f'compressed protein input was not combined:\n{output}')
 
         faa_verify = work / 'faa-verify.nf'
         faa_verify.write_text(verify_header + """workflow {
@@ -317,73 +327,51 @@ workflow {
         # FHP HTML microdata is supported from toolkit 0.8.2 (FAIR-bioHeaders-Tools#98,
         # which closed #58): FHP metadata round-trips through HTML.
         fhp_html = work / 'fhp-html.nf'
-        fhp_html.write_text(convert + "include { FHR_CONVERT as BACK_TO_JSON } from '" + str(ROOT / 'modules/convert/main') + "'\n" + """workflow {
-    FHR_CONVERT(Channel.of(tuple([id: 'fhp'], file(params.metadata, checkIfExists: true), 'html')))
-    BACK_TO_JSON(FHR_CONVERT.out.converted.map { meta, html -> tuple([id: 'fhp-back'], html, 'json') })
-    BACK_TO_JSON.out.converted.view { meta, json -> "ROUNDTRIP ${json}" }
+        fhp_html.write_text(convert + "include { FAIRBIOHEADERS_CONVERT as BACK_TO_JSON } from '" + str(ROOT / 'modules/nf-core/fairbioheaders/convert/main') + "'\n" + """workflow {
+    FAIRBIOHEADERS_CONVERT(Channel.of(tuple([id: 'fhp'], file(params.metadata, checkIfExists: true))), Channel.value('html'))
+    BACK_TO_JSON(FAIRBIOHEADERS_CONVERT.out.metadata.map { meta, html -> tuple([id: 'fhp-back'], html) }, Channel.value('json'))
+    BACK_TO_JSON.out.metadata.view { meta, json -> "ROUNDTRIP ${json}" }
 }
 """)
         output = run(fhp_html, work, ['--metadata', str(fhp / 'predicted.fhp.json')])
         back = Path(next(line for line in output.splitlines() if line.startswith('ROUNDTRIP ')).split(' ', 1)[1])
         check(json.loads(back.read_text()) == json.loads((fhp / 'predicted.fhp.json').read_text()), 'FHP metadata did not round-trip through HTML')
 
-        # The pinned upstream fairbioheaders/convert compared with FHR_CONVERT on the
-        # same fixtures (issue #29, slice 2a). docs/module-migration.md records the
-        # contract table and why FHR_CONVERT stays the callers' module; these cases keep
-        # that record honest rather than trusting it: the module is the merged revision
-        # in modules.json (scripts/check_upstream_modules.py verifies byte identity), it
-        # runs on this repository's fixtures, its serializations match FHR_CONVERT byte
-        # for byte once ext.prefix supplies the `.fhr.` infix, and both gaps -- the
-        # missing `faa` format and the format rejection moving into the task -- are
-        # asserted here instead of being assumed from the upstream documentation.
+        # The suite's convert is now the pinned upstream fairbioheaders/convert
+        # (FHR_CONVERT is retired). This runs it on this repository's fixtures and
+        # asserts the observable contract of issue #29 option (a): plain <id>.<format>
+        # output names via ext.prefix = meta.id (set in the harness project's
+        # nextflow.config), header extraction from a combined FHP file, and the two
+        # upstream failure surfaces -- an unusable --to token fails inside the task,
+        # and an output name that would overwrite a staged input is refused.
         pinned_convert = "include { FAIRBIOHEADERS_CONVERT } from '" + str(ROOT / 'modules/nf-core/fairbioheaders/convert/main') + "'\n"
         parity_meta = work / 'parity-metadata.json'
         parity_meta.write_text(json.dumps(fields))
-        parity = work / 'convert-parity.nf'
-        parity.write_text(pinned_convert + convert + """process ASSERT_CONVERT_PARITY {
-    // The two paths are taken as `val` on purpose: the task only reads them, so
-    // native staging (and the identical file names the parity result produces) is
-    // not involved; ASSERT_PROTEIN_BYTES above uses the same technique.
-    errorStrategy 'ignore'
-    input:
-    tuple val(id), val(expected), val(actual)
-    exec:
-    def identical = java.util.Arrays.equals(expected.bytes, actual.bytes)
-    println "PARITY ${id} local=${expected.name} upstream=${actual.name} bytes=${identical ? 'identical' : 'DIFFERENT'}"
-}
-
-workflow {
-    // Each record: (id suffix, input, FHR_CONVERT output_format, upstream format).
-    // 'faa' is a local format token only: the toolkit has no `--to faa` and the
-    // upstream module uses the format as the output extension, so `fasta` is the
-    // nearest it can name.
+        conv = work / 'convert-upstream.nf'
+        conv.write_text(pinned_convert + """workflow {
     def plain = file(params.metadata, checkIfExists: true)
     def records = [
-        tuple('json', plain, 'json', 'json'),
-        tuple('yaml', plain, 'yaml', 'yaml'),
-        tuple('html', plain, 'html', 'html'),
-        tuple('faa', plain, 'faa', 'fasta'),
-        tuple('extract', file(params.protein, checkIfExists: true), 'json', 'json')
+        tuple('json', plain, 'json'),
+        tuple('yaml', plain, 'yaml'),
+        tuple('html', plain, 'html'),
+        tuple('extract', file(params.protein, checkIfExists: true), 'json')
     ]
-    FHR_CONVERT(Channel.fromList(records.collect { key, path, local, upstream -> tuple([id: "parity-${key}".toString()], path, local) }))
     FAIRBIOHEADERS_CONVERT(
-        Channel.fromList(records.collect { key, path, local, upstream -> tuple([id: "parity-${key}".toString()], path) }),
-        Channel.fromList(records.collect { key, path, local, upstream -> upstream })
+        Channel.fromList(records.collect { key, path, fmt -> tuple([id: "cvt-${key}".toString()], path) }),
+        Channel.fromList(records.collect { key, path, fmt -> fmt })
     )
-    ASSERT_CONVERT_PARITY(FHR_CONVERT.out.converted.join(FAIRBIOHEADERS_CONVERT.out.metadata).map { meta, expected, actual -> tuple(meta.id, expected, actual) })
+    FAIRBIOHEADERS_CONVERT.out.metadata.view { meta, path -> "CONVERTED ${meta.id} ${path.name}" }
 }
 """)
-        parity_dir = work / 'convert-parity'
-        parity_dir.mkdir()
-        parity_dir.joinpath('nextflow.config').write_text('nextflow.enable.dsl = 2\nprocess { withName: FAIRBIOHEADERS_CONVERT { ext.prefix = { "${meta.id}.fhr" } } }\n')
-        output = run(parity, parity_dir, ['--metadata', str(parity_meta), '--protein', str(chain / 'protein.fhp.faa')])
-        for key, name in [('json', 'parity-json.fhr.json'), ('yaml', 'parity-yaml.fhr.yaml'), ('html', 'parity-html.fhr.html'), ('extract', 'parity-extract.fhr.json')]:
-            check(f'PARITY parity-{key} local={name} upstream={name} bytes=identical' in output, f'{key}: the pinned upstream convert does not reproduce FHR_CONVERT:\n{output}')
-        check('PARITY parity-faa local=parity-faa.fhr.faa upstream=parity-faa.fhr.fasta bytes=identical' in output, f'the .faa output-extension gap changed:\n{output}')
+        output = run(conv, work, ['--metadata', str(parity_meta), '--protein', str(chain / 'protein.fhp.faa')])
+        for key, name in [('json', 'cvt-json.json'), ('yaml', 'cvt-yaml.yaml'), ('html', 'cvt-html.html'), ('extract', 'cvt-extract.json')]:
+            check(f'CONVERTED cvt-{key} {name}' in output, f'{key}: the upstream convert did not publish the plain <id>.<format> name:\n{output}')
+        # The extracted sidecar is the FHP header of the combined file, as JSON.
+        extracted = json.loads(next((work / 'work').glob('*/*/cvt-extract.json')).read_text())
+        check(extracted['schema'].endswith('/fhp/v0.4.0') and extracted['sourceType'] == 'predicted', f'header extraction lost FHP metadata: {extracted}')
 
-        # Upstream rejects an unknown or unsupported format inside the task (the toolkit
-        # reads --to), where FHR_CONVERT rejects it before the task is submitted (the
-        # Unsupported format case above).
+        # Upstream rejects an unknown or unsupported --to token inside the task (the
+        # toolkit's argparse); there is no `faa` token, and no pre-launch whitelist.
         for format, message in [('faa', "invalid choice: 'faa'"), ('exe', "invalid choice: 'exe'")]:
             bad_upstream = work / f'convert-upstream-{format}.nf'
             bad_upstream.write_text(pinned_convert + f"""workflow {{
@@ -391,6 +379,17 @@ workflow {
 }}
 """)
             run(bad_upstream, work, ['--metadata', str(parity_meta)], failure=message)
+
+        # Upstream refuses an output that would overwrite a staged input (its documented
+        # collision guard): here the output <id>.json equals the input file's own name.
+        collide_meta = work / 'cvt.json'
+        collide_meta.write_text(json.dumps(fields))
+        collide = work / 'convert-upstream-collide.nf'
+        collide.write_text(pinned_convert + """workflow {
+    FAIRBIOHEADERS_CONVERT(Channel.of(tuple([id: 'cvt'], file(params.metadata, checkIfExists: true))), Channel.value('json'))
+}
+""")
+        run(collide, work, ['--metadata', str(collide_meta)], failure='Input and output names are the same')
 
         # The merged upstream revision dropped the spaced-file-name test its review head
         # carried, so this suite keeps that case: the fixture file name holds spaces and
@@ -402,8 +401,8 @@ workflow {
 }
 """)
         output = run(spaced_upstream, work, ['--metadata', str(fixture)])
-        check('SPACED spaced_converted.json' in output, f'the pinned upstream convert did not read the spaced and quoted metadata name:\n{output}')
-        report = next((work / 'work').glob('*/*/spaced_converted.json'))
+        check('SPACED spaced.json' in output, f'the pinned upstream convert did not read the spaced and quoted metadata name:\n{output}')
+        report = next((work / 'work').glob('*/*/spaced.json'))
         check(json.loads(report.read_text()) == fields, 'the pinned upstream convert did not reproduce the metadata')
 
         # Toolkit 0.7.0+ selects FHR 2.0 for the raw-main URL. Since 0.8.4 (spec rule V6,
@@ -416,7 +415,7 @@ workflow {
         source.write_text(json.dumps(raw_main))
         raw_main_work = work / 'fhr-raw-main-work'
         run(ROOT / 'main.nf', work, ['-work-dir', str(raw_main_work), '--metadata', str(source), '--outdir', str(work / 'fhr-raw-main')])
-        check((work / 'fhr-raw-main/fhr-raw-main/metadata/fhr-raw-main.fhr.json').is_file(), 'raw-main FHR 1 record was not published')
+        check((work / 'fhr-raw-main/fhr-raw-main/metadata/fhr-raw-main.json').is_file(), 'raw-main FHR 1 record was not published')
         task_errors = ''.join(path.read_text() for path in raw_main_work.glob('*/*/.command.err'))
         check('is read as FHR 1 (v0.3.1)' in task_errors, f'raw-main FHR 1 record did not warn:\n{task_errors}')
         raw_main['schemaVersion'] = '1'
@@ -462,9 +461,9 @@ workflow {
         # The runnable example accepts protein FASTA with --sequence_format faa.
         output = work / 'protein-output'
         run(ROOT / 'main.nf', work, ['--metadata', str(ROOT / 'examples/protein-metadata.json'), '--sequence', str(ROOT / 'examples/protein.faa'), '--sequence_format', 'faa', '--outdir', str(output)])
-        expected = ['protein-metadata/sequence/protein-metadata.fhp.faa', 'protein-metadata/sequence/protein-metadata.fhr.json', 'protein-metadata/sequence/protein-metadata.fhr.yaml']
+        expected = ['protein-metadata/sequence/protein-metadata.faa', 'protein-metadata/sequence/protein-metadata.json', 'protein-metadata/sequence/protein-metadata.yaml']
         check(published(output) == expected, f'unexpected protein example outputs: {published(output)}')
-        check((output / 'protein-metadata/sequence/protein-metadata.fhp.faa').read_bytes().startswith(b';~schema: https://w3id.org/fair-bioheaders/fhp/'), 'protein example is not an FHP header')
+        check((output / 'protein-metadata/sequence/protein-metadata.faa').read_bytes().startswith(b';~schema: https://w3id.org/fair-bioheaders/fhp/'), 'protein example is not an FHP header')
 
         # The runnable example also publishes verify-links reports per ID.
         output = work / 'verify-output'
@@ -485,7 +484,7 @@ workflow {
             run(ROOT / 'main.nf', work, ['--converter_source', str(source), '--outdir', str(output)])
             total, failures = junit_totals(output / 'converter-tests/converter-tests.xml')
             check(total > 0 and failures == 0, f'converter JUnit report: {total} tests, {failures} failures')
-            check((output / 'example/metadata/example.fhr.json').exists(), 'results were not published after passing tests')
+            check((output / 'example/metadata/example.json').exists(), 'results were not published after passing tests')
             check(snapshot(source) == before, 'converter tests modified the supplied checkout')
             print(f'Converter wrapper: {total} tests passed.', flush=True)
 

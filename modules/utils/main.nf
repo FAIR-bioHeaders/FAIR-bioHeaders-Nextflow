@@ -26,17 +26,25 @@ def fhrFormat(Object value, List allowed) {
 
 def sequenceType(Object value, List allowed = ['fasta', 'faa', 'gfa']) {
     // The toolkit's fhr-<type>-* commands are keyed by sequence type, not by
-    // extension: protein FASTA (.faa) is FASTA to the toolkit. The modules keep
-    // 'faa' as a distinct kind so outputs keep the .faa extension and callers
-    // can select protein explicitly; this maps it back for the command name.
+    // extension: protein FASTA (.faa) is FASTA to the toolkit. The repository's
+    // own modules keep 'faa' as a distinct kind so FHR_STRIP's output keeps the
+    // .faa extension and callers can select protein explicitly; this maps it
+    // back for the command name. The pinned upstream combine/convert (issue #29
+    // option (a)) do not distinguish faa: combine keeps the input's extension and
+    // convert's extension is its --to token, so a header-only protein conversion
+    // is a `fasta`. Callers carry the protein/genome distinction on `meta`
+    // (e.g. meta.kind / the FHR_ATTACH `kind` argument), not on the output name.
     def kind = fhrFormat(value, allowed)
     return kind == 'faa' ? 'fasta' : kind
 }
 
 def sequenceKindOf(Object sequence) {
-    // Sequence files this suite produces and consumes carry their kind in the
-    // extension: ID.fhr.faa, ID.fhr.fasta, ID.fhr.gfa, ID.stripped.faa, plus an
-    // optional .gz or .bgz. The toolkit reads compression from the magic bytes.
+    // Reads a caller-supplied **input** file's kind from its extension (the files
+    // handed to FHR_ATTACH/FHR_VERIFY_LINKS, e.g. genome.fasta, protein.faa,
+    // assembly.gfa, annotation.gff3, plus an optional .gz or .bgz). The toolkit
+    // reads compression from the magic bytes. This is not consulted for module
+    // **output** names: after #29 option (a) the outputs are named by the upstream
+    // convention and the sequence kind travels on `meta`, not on the output file.
     def name = sequence.name.replaceFirst(/\.(gz|bgz)$/, '')
     if (name.endsWith('.faa'))
         return 'faa'
