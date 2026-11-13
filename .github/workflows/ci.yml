@@ -189,7 +189,7 @@ jobs:
           version="$(sed -n 's/^ *- bioconda::fair-bioheaders=\([0-9.]*\)$/\1/p' "$workflow/environment.yml")"
           test -n "$version"
           # COMBINE is now the pinned upstream module (Seqera Wave image, #29 option (a)).
-          grep -q "^ *- bioconda::fair-bioheaders=$version$" modules/nf-core/fairbioheaders/combine/environment.yml
+          grep -qE "^ *- \"?bioconda::fair-bioheaders=$version\"?$" modules/nf-core/fairbioheaders/combine/environment.yml
           grep -q "community.wave.seqera.io/library/fair-bioheaders:$version--" modules/nf-core/fairbioheaders/combine/main.nf
           # VERIFY stays repository-owned (BioContainers image, Galaxy depot pair).
           grep -q "^ *- bioconda::fair-bioheaders=$version$" modules/nf-core/fairbioheaders/verify/environment.yml
