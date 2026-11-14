@@ -703,6 +703,74 @@ git diff --check
 ```
 
 
+## Testing status for slice 4 — verify adoption (2026-11-14)
+
+Same host and method as slices 1–3 (Docker 29.9.3 on an arm64 host; no host `nextflow`,
+`nf-test`, `nf-core` or Java — `java -version` on the macOS host is the Apple stub and
+fails): the repository's processes executed **natively** inside the reproducible
+verification image `fhr-nf29-verify:slice4` (`FROM nextflow/nextflow:26.04.6`, Amazon
+Linux 2023 / Java 21 CI baseline, python3.11 venv with `fair-bioheaders[jsonld]==0.9.0`,
+`gff3-validator==0.1.0`, pytest, pyld, nf-test 0.9.5), linux/amd64 emulation. The image
+is a verification artifact, not repository content. As in earlier slices this exercises
+scripts, channel wiring, snapshots and toolkit semantics, not the container-image pulls
+(CI's `--profile docker` jobs).
+
+- **Merged-revision fetch:** all seven upstream verify files were downloaded at
+  `6fb4f8f1f3f70a34a1f0efdc84729c5dacbc33e5` with the recorded procedure script; each
+  `git hash-object` matched the blob sha in the untruncated recursive GitHub tree.
+  `python3 scripts/check_upstream_modules.py` (host, network) reported `combine: all 7
+  files match 8faff340…`, `validate: all 7 files match 86e852ef…`, `convert: all 8 files
+  match 4dc3bc54…` and **`verify: all 7 files match 6fb4f8f1…`** — the manifest-driven
+  guard included the new module automatically. `python3 -m unittest discover -s tests -p
+  test_upstream_modules.py` stays green (2 tests).
+- **CI pin steps re-run locally:** the nf-test job's Wave loop is now `for module in
+  combine validate convert verify` and the BioContainers/depot loop `modules/strip
+  modules/verify_links`; the dockstore job's verify check moved to the Wave family. All
+  greps, the converter-environment checks and the `.dockstore.yml` path existence loop
+  pass against the tree.
+- **Behaviour probes before wiring the ported cases** (native toolkit 0.9.0):
+  `bioheaders verify --type fasta sample.txt` succeeds (the retired local module's
+  forced-FASTA surface) while `bioheaders verify sample.txt` fails with
+  `FHR: Unsupported file extension: sample.txt` (the pinned module's inference surface);
+  `.gff3` and a `protein with space.faa` name verify cleanly. These are the parity items
+  step 3 asked to re-check, now pinned as `tests/run.py` cases.
+- **`nf-test test --ci` — 30/30 passed** in 895 s: pinned upstream combine 8, convert 11,
+  validate 7 and the **merged upstream verify suite 4** (`sarscov2 - fasta - fhr` asserting
+  the exact report `['file: test.fasta', 'Checksum verified.']`, `changed after combine -
+  fails` with `Checksum verification failed`, `no header - fails` with `No ;~ FHR metadata
+  header found`, stub). The count moves 31 → 30 because the retired local 5-case suite is
+  replaced by upstream's 4 cases; the lost coverage went to `tests/run.py`, not to the
+  bin. Committed upstream snapshots (recorded under Nextflow 26.10.4 / nf-test 0.9.5)
+  matched in CI mode under Nextflow 26.04.6 / nf-test 0.9.5, as for the other modules.
+- **`python tests/run.py --converter-source <Tools v0.9.0 @ c6d7454>` — 65/65 passed** in
+  4584 s (slice 3's 62 plus the three ported verify runs: direct FHGFF3 verification of
+  `chain/annotation.fhgff3.gff3`, the `Unsupported file extension` odd-extension
+  rejection, and the spaced-name two-line report case). Every pre-existing verify-driven
+  rejection fired identically through the pinned module (`checksum`, `after sequence
+  data` ×2, `duplicate key`, `proteome`), and `FHR_ATTACH`'s report join, the protein
+  `ATTACHED … .faa`/`.faa.gz` markers and the converter gate (the toolkit's own **2410**
+  pytest tests) behaved as documented; the injected-failure, `-resume` and
+  version-mismatch rejections passed.
+- **`nextflow run workflows/fairbioheaders/main.nf -profile test` (native) — passed:**
+  five samplesheet rows produce `combine/{fasta.fa,gfa.gfa,gff3.gff3,jsonld.fa,proteins.faa}`
+  and five `verify/<id>.verify.txt` reports each carrying `Checksum verified.` — the
+  identical observable result slice 3 recorded, now from the pinned module (only the
+  container family changes, which the native run does not exercise).
+- `python -m py_compile tests/run.py` and `git diff --check` clean.
+
+Commands still required from a maintainer/CI machine with Docker (native runs cannot
+exercise image pulls; unchanged in kind, but the Dockstore job now pulls **only** the
+Wave family since verify joined it):
+
+```sh
+nf-test test --profile docker --ci            # Wave images for all four pinned modules
+python tests/run.py --converter-source <fair-bioheaders-0.9.0-checkout>
+nextflow run workflows/fairbioheaders/main.nf -profile test,docker --outdir results   # combine + pinned-verify reports in Wave
+nextflow run main.nf -profile docker --sequence examples/assembly.gfa --sequence_format gfa   # plus the FASTA/GFF3/protein examples as in ci.yml
+docker build -t fhr-nextflow:0.1.0 environment
+git diff --check
+```
+
 ## Adopting verify and convert after their merge
 
 Gate (from #29): adopt only after the upstream interfaces **merge** and **pass

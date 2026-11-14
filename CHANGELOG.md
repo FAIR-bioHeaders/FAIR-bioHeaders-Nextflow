@@ -91,6 +91,18 @@ container-family checks moved verify to the Wave loop. With this slice all four
 `modules/local/` layout migration and the container-pin re-evaluation at the next toolkit
 bump (documented as non-blocking in that issue's final-slice comment).
 
+Verification on this host (native processes in the `nextflow/nextflow:26.04.6`
+verification container, as in slices 1–3): drift checker 7/7/8/7 including the new verify
+entry, drift guard unittests 2/2, `nf-test test --ci` **30/30** (combine 8, convert 11,
+validate 7, upstream verify 4; committed upstream snapshots matched under Nextflow 26.04.6
+in CI mode), `python tests/run.py --converter-source <Tools v0.9.0>` **65/65** (the three
+ported verify cases plus the unchanged converter gate: **2410** toolkit pytest tests), and
+the Dockstore workflow `-profile test` producing the five input-faithful combine outputs
+with five `Checksum verified.` reports from the pinned module. `nf-test --profile docker`,
+the Docker example/Dockstore runs, `docker build environment` and `nf-core modules lint`
+remain CI-/maintainer-side, as recorded in docs/module-migration.md ("Testing status for
+slice 4"); this branch runs no nf-core CLI (mixed local-module layout limitation).
+
 ### Prior #29 work (slices 1 and 2a), unchanged by the naming decision except that the
 compat modules the slices preserved are now retired
 
