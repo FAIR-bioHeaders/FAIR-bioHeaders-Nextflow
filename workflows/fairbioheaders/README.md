@@ -9,7 +9,11 @@ A minimal Nextflow DSL2 workflow around two modules of this repository:
    see [docs/module-migration.md](../../docs/module-migration.md)) adds FAIR-bioHeaders
    metadata (FHR for FASTA and GFA, FHP for protein FASTA, FHGFF3 for GFF3) to each
    sequence file and calculates its checksum;
-2. `FAIRBIOHEADERS_VERIFY` (repository module, pending its upstream review) checks the
+2. `FAIRBIOHEADERS_VERIFY` (the pinned upstream nf-core module
+   `modules/nf-core/fairbioheaders/verify`; issue #29 slice 4 retired the repository's own
+   implementation under the same path — same tuple shapes and report names, but the toolkit
+   now infers the file type and the module runs the Wave image, see
+   [docs/module-migration.md](../../docs/module-migration.md)) checks the
    headed file against the schema and the checksum. The run fails if a file does not verify.
 
 It moved here from FAIR-bioHeaders-Tools (`nextflow/workflows/fairbioheaders`, FAIR-bioHeaders-Nextflow
@@ -81,8 +85,8 @@ header type comes from the metadata's `schema` URL. In a clone of the repository
 
 | Profile | Runs `bioheaders` from |
 | --- | --- |
-| `docker` | the modules' BioContainers image, `quay.io/biocontainers/fair-bioheaders:0.9.0--pyhdfd78af_0` |
-| `singularity`, `apptainer` | the modules' Galaxy depot Singularity image of the same build |
+| `docker` | the modules' Seqera Wave image, `community.wave.seqera.io/library/fair-bioheaders:0.9.0--71029206d3ce1119` |
+| `singularity`, `apptainer` | the modules' matching Wave `community-cr-prod` blob URL of the same build |
 | `conda` | [`environment.yml`](environment.yml): `bioconda::fair-bioheaders=0.9.0` |
 | `test` | the samplesheet in [`assets/test`](assets/test): a FASTA, a GFA and a GFF3 example, the FASTA with expanded JSON-LD metadata, and the repository's FHP protein example |
 | none | `bioheaders` on the `PATH` (`pip install "fair-bioheaders[jsonld]"`) |
@@ -92,14 +96,16 @@ Combine `test` with one of the others, for example `-profile test,docker`.
 (`-params-file`), reading the samplesheet from GitHub; Dockstore lists it as the test
 parameter file.
 
-**Container and conda environment.** Both processes run the modules' container, the
-BioContainers image of `fair-bioheaders` 0.9.0 (or the Galaxy depot's Singularity image of
-it). The conda profile uses [`environment.yml`](environment.yml), which pins the same
-Bioconda package as the modules; keep the two pins equal. From 0.8.2 the Bioconda package,
+**Container and conda environment.** Both processes are pinned upstream nf-core modules
+and run the modules' Seqera Wave image, built from the Bioconda `fair-bioheaders` 0.9.0
+package (Singularity/Apptainer use the matching Wave `community-cr-prod` blob URL); since
+slice 4 adopted verify, no process in this workflow pulls the BioContainers/Galaxy-depot
+pair any more. The conda profile uses [`environment.yml`](environment.yml), which pins the
+same Bioconda package as the modules; keep the pins equal. From 0.8.2 the Bioconda package,
 and so the image, includes `pyld`, the optional dependency (the `jsonld` extra) that
 reading JSON-LD metadata in other than the canonical form needs, for example expanded
 JSON-LD, so the workflow no longer replaces the modules' image with the project's GHCR
-image.
+image. Offline mirrors that whitelist registries must allow `community.wave.seqera.io`.
 
 The `dockstore-workflow` job of [CI](../../.github/workflows/ci.yml) checks that the
 workflow sets no container and that its Bioconda pin equals the modules', then runs
