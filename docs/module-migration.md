@@ -919,6 +919,36 @@ current upstream naming (option (a)). Filing it is a maintainer action.
   `nextflow.config`, the `test` and `dockstore-workflow` jobs); 26.10.4 is exercised only as
   the baseline the pinned upstream snapshots were recorded under. Bumping the supported
   baseline remains a #7 compatibility-matrix decision with its own pin review.
+  **First-run result (PR #34 CI, run `43617282873`, head `1cc979f`, 2026-11-14).** The two
+  legs resolved genuinely different engines — the Record step printed `nextflow 26.04.6
+  build 12646` and `nextflow 26.10.4 build 14435`, both under nf-test 0.9.5 — and reported
+  `SUCCESS: Executed 30 tests in 216.39s` on 26.04.6 versus `FAILURE: Executed 30 tests in
+  151.763s (2 failed)` on 26.10.4. **All 22 committed snapshots matched on both engines —
+  the drift this matrix was built to catch did not appear.** The two red assertions are not
+  snapshot tests: `sarscov2 - fhr yaml - yaml - same input and output names - fails` and its
+  `- stub` twin in the pinned `modules/nf-core/fairbioheaders/convert/tests/main.nf.test`
+  assert `process.stdout.toString().contains("Input and output names are the same")`, and
+  26.10.4 writes the Nextflow log — the `ERROR ~ Error executing process` block included —
+  to **stderr**, so on that leg `process.stdout` is empty (`[]`) even though the module's
+  name-collision guard fires identically (`Caused by: Input and output names are the same,
+  set prefix in module configuration to disambiguate! -- Check script
+  '.../fairbioheaders/convert/main.nf' at line: 27`, and line 40 under `-stub`). The
+  assertion therefore pins a Nextflow log-stream behavior, not the module contract, and it
+  moved between the two baselines. These two are the only stdout-**alone** failure assertions
+  among the eight stream-reading ones across the four pinned suites; the other six read
+  `(process.stdout + process.stderr)` and passed on both legs — the asymmetry is the defect.
+  A native local run of the convert file under `NXF_VER=26.10.4` in the verification
+  container reproduced both failures identically (`Executed 11 tests in 677.086s (3 failed)`;
+  the third failure, `sarscov2 - fasta - no header - fails`, sees empty streams on this
+  host's emulated native executor — a local-environment artifact, since that case is
+  stream-agnostic and passes in both CI legs). **Disposition:** the correct fix is a
+  stream-tolerant assertion **upstream** (match on stdout *or* stderr, like the other six),
+  adopted here by moving the convert pin through the recorded procedure — it joins the staged,
+  unfiled upstream requests above (filing is a maintainer action, standing posture unchanged). Until then
+  the 26.10.4 leg stays red on this PR as a named compatibility finding; it is **not** to
+  be silenced by editing the pinned test, by skipping the two cases, or by making the leg
+  advisory. Bumping the supported baseline to 26.10.4 would *not* fix it either — the same
+  assertion fails under that engine regardless of which baseline is called supported.
 - **The layout migration is #7's now** (decision 6A, 2026-11-14): moving `modules/*` →
   `modules/local/` plus every importer path is what makes `nf-core modules update`,
   `list local` and `lint` usable in this repository, and it pairs with the next toolkit bump

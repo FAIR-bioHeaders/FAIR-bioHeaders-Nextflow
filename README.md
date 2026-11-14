@@ -145,7 +145,7 @@ nf-test test --profile docker                       # modules/nf-core/fairbiohea
 nextflow run workflows/fairbioheaders/main.nf -profile test,docker --outdir results-dockstore
 ```
 
-CI runs the nf-test suite twice, once per snapshot baseline: Nextflow **26.04.6** (this suite's supported baseline) and **26.10.4** (the version the pinned upstream snapshots were recorded under). Run it locally against either by exporting `NXF_VER` before `nf-test`; a mismatch on one baseline only is a snapshot-baseline drift signal, not a module failure.
+CI runs the nf-test suite twice, once per snapshot baseline: Nextflow **26.04.6** (this suite's supported baseline) and **26.10.4** (the version the pinned upstream snapshots were recorded under). Run it locally against either by exporting `NXF_VER` before `nf-test`; a failure on one baseline only is an engine-specific output difference (snapshot content, or which stream Nextflow logs to), not a module failure — see [docs/module-migration.md](docs/module-migration.md).
 
 `combine`, `validate`, `convert` and `verify` under `modules/nf-core/` are pinned upstream copies; update them only through the recorded procedure in [docs/module-migration.md](docs/module-migration.md#how-the-upstream-modules-are-pinned) (`nf-core modules update` or the byte-identical fetch), and CI verifies they still match the revisions in `modules.json`.
 

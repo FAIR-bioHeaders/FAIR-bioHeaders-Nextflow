@@ -116,9 +116,11 @@ behavior, so nothing in the BREAKING/CHANGED sections above moves.
   `nxf_version: ['26.04.6', '26.10.4']`, with the job-level `NXF_VER` override and the
   `nf-core/setup-nextflow` `version:` both taken from the matrix so the installed launcher
   and the one nf-test invokes cannot disagree. `fail-fast: false` keeps both legs reporting:
-  a red `nf-test (Nextflow 26.10.4)` beside a green `nf-test (Nextflow 26.04.6)` is
-  baseline-specific snapshot drift, not a broken module, and the leg name says which engine
-  produced it. A new step prints the resolved engine, the nf-test version and the
+  a red `nf-test (Nextflow 26.10.4)` beside a green `nf-test (Nextflow 26.04.6)` is an
+  engine-specific output difference — a snapshot-content mismatch, or an assertion that
+  assumes which stream Nextflow prints its own log to — not a broken module, and the leg
+  name says which engine produced it (the first run of the matrix hit the second kind; see
+  "First-run result" below). A new step prints the resolved engine, the nf-test version and the
   `meta.nextflow` recorded in the committed snapshots, so a failure names the diverging pair
   from the log alone; `--ci` mode never rewrites a snapshot. The `test` and
   `dockstore-workflow` jobs stay on the single supported baseline **26.04.6** — this is a
@@ -153,6 +155,39 @@ slices 1–4; the container's launcher resolves either matrix baseline through `
 --profile docker`, the Docker example/Dockstore runs and `docker build environment` remain
 CI-side — the two matrix legs land in this PR's CI, which is the first place both baselines
 run with real image pulls.
+
+**First-run result (CI run `43617282873` at head `1cc979f`, 2026-11-14).** `test` is green
+(harness `PASS: 66 pipeline runs and rejection cases`, converter wrapper `2410 tests passed`,
+all four Docker examples), `dockstore-workflow` is green, and
+`nf-test (Nextflow 26.04.6)` reports `SUCCESS: Executed 30 tests in 216.39s`.
+`nf-test (Nextflow 26.10.4)` reports `FAILURE: Executed 30 tests in 151.763s (2 failed)`.
+The two failures are the pinned convert suite's
+*sarscov2 - fhr yaml - yaml - same input and output names - fails* and its `- stub` twin —
+`modules/nf-core/fairbioheaders/convert/tests/main.nf.test:289,356`, the only two of the
+**eight** stream-reading failure assertions across the four pinned suites that read
+`process.stdout` **alone**; the other six read `(process.stdout + process.stderr)` and pass
+under both engines. Nextflow 26.10.4 writes the name-collision diagnostic to **stderr** —
+the failure dump shows an empty `Nextflow stdout:` and the full
+`ERROR ~ ... Caused by: Input and output names are the same, set prefix in module
+configuration to disambiguate!` block under `Nextflow stderr:` — while 26.04.6 prints it to
+stdout, so `process.stdout` is `[]` and only that assertion fails (`assert process.failed`
+passes: the guard fires identically on both engines). **Zero snapshot mismatches on either
+leg** — the matrix found an upstream *assertion-portability* defect on its first run, not
+baseline drift and not a module break. Reproduced deterministically on this host under
+`NXF_VER=26.10.4` in the verification container (native executor): the same two assertions
+fail the same way. The local run additionally failed
+*sarscov2 - fasta - no header - fails* with **both** streams empty — a host artifact of the
+emulated native executor for that task-level (in-container) failure: that case is
+stream-agnostic and passes in both CI legs. **Remedy:** stream-tolerant assertions upstream
+(read `stdout + stderr` like the other six), adopted here by moving the convert pin through
+the recorded procedure in docs/module-migration.md. Filing the upstream request is a
+maintainer action; it is staged unfiled alongside the `faa`-alias draft. Until it is
+adopted, the `nf-test (Nextflow 26.10.4)` leg stays red as a named compatibility finding —
+it is not silenced by editing the pinned module, skipping the two cases, making the leg
+advisory, or dropping 26.10.4 from the matrix. `main` is not branch-protected
+(`gh api …/branches/main/protection` → 404), so a red named leg does not mechanically block
+merges; what to do about this finding (file upstream / merge with the documented red leg /
+narrow the matrix and knowingly lose the coverage) is a maintainer decision.
 
 ### Prior #29 work (slices 1 and 2a), unchanged by the naming decision except that the
 compat modules the slices preserved are now retired

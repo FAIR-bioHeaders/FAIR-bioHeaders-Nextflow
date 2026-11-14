@@ -139,9 +139,12 @@ jobs:
     # not as a broken module. Each leg is a separately named check (nf-test (Nextflow
     # 26.04.6), nf-test (Nextflow 26.10.4)), and the "Record the engine..." step prints the
     # version actually resolved plus the meta.nextflow recorded in the committed snapshots,
-    # so the log names the diverging pair without re-running anything. A red leg means the
-    # snapshot content produced by that engine differs from the committed baseline; it is
-    # never fixed by editing a pinned module — re-record or update upstream per
+    # so the log names the diverging pair without re-running anything. A red leg means that
+    # engine's output differs from what the suite asserts: a snapshot-content mismatch, or —
+    # as the 26.10.4 leg's first run showed — an assertion inside a pinned upstream test that
+    # assumes which stdout/stderr stream Nextflow prints its own log to (26.10.4 moved it to
+    # stderr). Either way it is never fixed by hand-editing a pinned module or by skipping the
+    # test; the remedy lives upstream and is adopted by moving the pin per
     # docs/module-migration.md.
     name: nf-test (Nextflow ${{ matrix.nxf_version }})
     runs-on: ubuntu-24.04
@@ -204,7 +207,7 @@ jobs:
       - name: Point at the failing leg on mismatch
         if: failure()
         run: |
-          echo "::error::nf-test failed on the Nextflow ${{ matrix.nxf_version }} baseline. The other matrix leg keeps running (fail-fast: false): compare the two check names to tell a baseline-specific snapshot drift from a real module break. --ci never rewrites a snapshot; see docs/module-migration.md for the recorded update procedure."
+          echo "::error::nf-test failed on the Nextflow ${{ matrix.nxf_version }} baseline. The other matrix leg keeps running (fail-fast: false): compare the two check names, then check the failed assertion — a snapshot-content mismatch is baseline drift, an stdout/stderr assertion in a pinned upstream test is an engine log-stream move; neither is fixed by editing a pinned module or skipping the test. --ci never rewrites a snapshot; see docs/module-migration.md for the recorded procedure."
 
   dockstore-workflow:
     # Runs workflows/fairbioheaders (described for Dockstore by .dockstore.yml) with
