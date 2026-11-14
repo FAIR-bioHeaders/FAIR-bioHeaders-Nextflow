@@ -10,81 +10,18 @@ nextflow_process {
     tag "fairbioheaders/verify"
     tag "fairbioheaders/combine"
 
-    // Minimal FHR metadata for the test genome (see fairbioheaders/combine).
-    def metadata = '''\
-schema: https://w3id.org/fair-bioheaders/fhr/v0.4.0
-schemaVersion: '2.0'
-genome: SARS-CoV-2 test genome
-taxon:
-  name: Severe acute respiratory syndrome coronavirus 2
-  uri: https://identifiers.org/taxonomy:2697049
-version: '1'
-metadataAuthor:
-  - name: Josiah Carberry
-    uri: https://orcid.org/0000-0002-1825-0097
-assemblyAuthor:
-  - name: Josiah Carberry
-    uri: https://orcid.org/0000-0002-1825-0097
-dateCreated: '2020-01-01'
-masking: unknown
-checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-'''
-
-    // Minimal FHGFF3 metadata; GFF3 combine/verify require the FHGFF3 family.
-    def gff3Metadata = '''\
-schema: https://w3id.org/fair-bioheaders/fhgff3/v0.4.0
-schemaVersion: '1.0'
-annotation: Candidatus Portiera aleyrodidarum test annotation
-taxon:
-  name: Candidatus Portiera aleyrodidarum
-  uri: https://identifiers.org/taxonomy:235282
-version: '1'
-metadataAuthor:
-  - name: Josiah Carberry
-    uri: https://orcid.org/0000-0002-1825-0097
-dateCreated: '2020-01-01'
-derivedFrom:
-  - headerType: FHR
-    checksum: 8kMW7cFzWbKkOLt0tgS3srVGNuzqNuoGaVqAimI8A2c=
-    relationship: annotates
-checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-'''
-
-    // Minimal FHP metadata for the test proteome (see fairbioheaders/combine).
-    def fhpMetadata = '''\
-schema: https://w3id.org/fair-bioheaders/fhp/v0.4.0
-schemaVersion: '1.0'
-proteome: SARS-CoV-2 test proteome
-sourceType: database
-taxon:
-  name: Severe acute respiratory syndrome coronavirus 2
-  uri: https://identifiers.org/taxonomy:2697049
-version: '1'
-metadataAuthor:
-  - name: Josiah Carberry
-    uri: https://orcid.org/0000-0002-1825-0097
-dateCreated: '2020-01-01'
-checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-'''
-
-    test("sarscov2 - fasta.gz") {
+    test("sarscov2 - fasta - fhr") {
 
         setup {
             run("FAIRBIOHEADERS_COMBINE") {
-                // Setup combines through the pinned upstream nf-core combine (issue #29
-                // option (a)): it keeps the input's extension in the output name, so the
-                // verify report below records file: <id>.<ext> (test.faa / test.gff /
-                // test.fasta.gz), not a header-family name. See docs/module-migration.md.
                 script "../../combine/main.nf"
                 process {
                     """
-                    input[0] = Channel.of('''${metadata}''')
-                        .collectFile(name: 'test.fhr.yaml')
-                        .map { yaml -> [
-                            [ id:'test' ],
-                            yaml,
-                            file(params.modules_testdata_base_path + 'genomics/sarscov2/genome/genome.fasta.gz', checkIfExists: true)
-                        ] }
+                    input[0] = [
+                        [ id:'test' ],
+                        file(params.modules_testdata_base_path + 'genomics/sarscov2/genome/fairbioheaders/genome.fhr.yaml', checkIfExists: true),
+                        file(params.modules_testdata_base_path + 'genomics/sarscov2/genome/genome.fasta', checkIfExists: true)
+                    ]
                     """
                 }
             }
@@ -99,33 +36,27 @@ checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
         }
 
         then {
-            assert process.success
             assertAll(
-                { assert path(process.out.report[0][1]).readLines().contains('Checksum verified.') },
+                { assert process.success },
+                { assert path(process.out.report[0][1]).readLines() == ['file: test.fasta', 'Checksum verified.'] },
                 { assert snapshot(sanitizeOutput(process.out)).match() }
             )
         }
 
     }
 
-    test("sarscov2 - faa - fhp") {
+    test("sarscov2 - fasta - fhr - changed after combine - fails") {
 
         setup {
             run("FAIRBIOHEADERS_COMBINE") {
-                // Setup combines through the pinned upstream nf-core combine (issue #29
-                // option (a)): it keeps the input's extension in the output name, so the
-                // verify report below records file: <id>.<ext> (test.faa / test.gff /
-                // test.fasta.gz), not a header-family name. See docs/module-migration.md.
                 script "../../combine/main.nf"
                 process {
                     """
-                    input[0] = Channel.of('''${fhpMetadata}''')
-                        .collectFile(name: 'test.fhp.yaml')
-                        .map { yaml -> [
-                            [ id:'test' ],
-                            yaml,
-                            file(params.modules_testdata_base_path + 'genomics/sarscov2/genome/proteome_test.faa', checkIfExists: true)
-                        ] }
+                    input[0] = [
+                        [ id:'test' ],
+                        file(params.modules_testdata_base_path + 'genomics/sarscov2/genome/fairbioheaders/genome.fhr.yaml', checkIfExists: true),
+                        file(params.modules_testdata_base_path + 'genomics/sarscov2/genome/genome.fasta', checkIfExists: true)
+                    ]
                     """
                 }
             }
@@ -135,62 +66,23 @@ checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
             process {
                 """
                 input[0] = FAIRBIOHEADERS_COMBINE.out.sequence
+                    .map { meta, fasta -> fasta.text + '>extra\\nACGT\\n' }
+                    .collectFile(name: 'changed.fhr.fasta')
+                    .map { fasta -> [ [ id:'test' ], fasta ] }
                 """
             }
         }
 
         then {
-            assert process.success
             assertAll(
-                { assert path(process.out.report[0][1]).readLines() == ['file: test.faa', 'Checksum verified.'] },
-                { assert snapshot(sanitizeOutput(process.out)).match() }
+                { assert process.failed },
+                { assert (process.stdout + process.stderr).any { line -> line.contains('Checksum verification failed') } }
             )
         }
 
     }
 
-    test("candidatus portiera - gff3") {
-
-        setup {
-            run("FAIRBIOHEADERS_COMBINE") {
-                // Setup combines through the pinned upstream nf-core combine (issue #29
-                // option (a)): it keeps the input's extension in the output name, so the
-                // verify report below records file: <id>.<ext> (test.faa / test.gff /
-                // test.fasta.gz), not a header-family name. See docs/module-migration.md.
-                script "../../combine/main.nf"
-                process {
-                    """
-                    input[0] = Channel.of('''${gff3Metadata}''')
-                        .collectFile(name: 'test.fhgff3.yaml')
-                        .map { yaml -> [
-                            [ id:'test' ],
-                            yaml,
-                            file(params.modules_testdata_base_path + 'genomics/prokaryotes/candidatus_portiera_aleyrodidarum/genome/gff/test1.gff', checkIfExists: true)
-                        ] }
-                    """
-                }
-            }
-        }
-
-        when {
-            process {
-                """
-                input[0] = FAIRBIOHEADERS_COMBINE.out.sequence
-                """
-            }
-        }
-
-        then {
-            assert process.success
-            assertAll(
-                { assert path(process.out.report[0][1]).readLines().contains('Checksum verified.') },
-                { assert snapshot(sanitizeOutput(process.out)).match() }
-            )
-        }
-
-    }
-
-    test("sarscov2 - fasta without a header - fails") {
+    test("sarscov2 - fasta - no header - fails") {
 
         when {
             process {
@@ -204,7 +96,10 @@ checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
         }
 
         then {
-            assert process.failed
+            assertAll(
+                { assert process.failed },
+                { assert (process.stdout + process.stderr).any { line -> line.contains('No ;~ FHR metadata header found') } }
+            )
         }
 
     }
@@ -225,8 +120,8 @@ checksum: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
         }
 
         then {
-            assert process.success
             assertAll(
+                { assert process.success },
                 { assert snapshot(sanitizeOutput(process.out)).match() }
             )
         }
