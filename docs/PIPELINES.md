@@ -150,13 +150,13 @@ Modules leave files in their task work directories. The example workflow publish
 
 ## nf-core-style modules
 
-`modules/nf-core/fairbioheaders/` holds the FAIR-bioHeaders modules in nf-core/modules layout (`main.nf`, `meta.yml` with EDAM formats, `environment.yml`, `tests/main.nf.test` and snapshots). `combine`, `validate` and `convert` are **pinned copies of the upstream nf-core/modules revisions** recorded in `modules.json` (combine `8faff340`, validate `86e852e`, convert `4dc3bc54`); never patch them locally — repository behavior belongs in repository-owned modules. `verify` remains the repository's own module, pending its upstream review (nf-core/modules#13635). The full comparison and the update procedure live in [docs/module-migration.md](module-migration.md).
+`modules/nf-core/fairbioheaders/` holds the FAIR-bioHeaders modules in nf-core/modules layout (`main.nf`, `meta.yml` with EDAM formats, `environment.yml`, `tests/main.nf.test` and snapshots). All four — `combine`, `validate`, `convert` and (since issue #29 slice 4, 2026-11-14) `verify` — are **pinned copies of the upstream nf-core/modules revisions** recorded in `modules.json` (combine `8faff340`, validate `86e852e`, convert `4dc3bc54`, verify `6fb4f8f1`); never patch them locally — repository behavior belongs in repository-owned modules. The full comparison and the update procedure live in [docs/module-migration.md](module-migration.md).
 
 | Module | Input | Output |
 | --- | --- | --- |
 | `FAIRBIOHEADERS_COMBINE` (upstream, pinned; used by `FHR_ATTACH`, the example and the Dockstore workflow) | `(meta, metadata, sequence)` | `sequence`: the headed file, **named after the input's extension**: `ID.<ext>` (`ID.fasta`, `ID.fa`, `ID.faa`, `ID.gfa`, `ID.gff3`), with `.gz` when the input was compressed; the header family lives in the file, not the name. Fails when the output name would overwrite a staged input — set `ext.prefix` or use a non-colliding id |
 | `FAIRBIOHEADERS_CONVERT` (upstream, pinned; the suite's convert) | **two rows**: `(meta, input)` and `format` | `metadata`: `ID.<format>` when the project sets `ext.prefix = { meta.id }` (otherwise the default `ID_converted.<format>`). Reads a standalone metadata file or extracts the header of a combined FASTA/GFA/GFF3; `<format>` is a toolkit `--to` token and also the output extension (`json`, `yaml`, `jsonld`, `html`, `fasta`, `gfa`, `gff3`; **no `faa`** — a header-only protein becomes `.fasta`). Fails when the output name would equal the input — set `ext.prefix` |
-| `FAIRBIOHEADERS_VERIFY` (repository module, pending upstream) | `(meta, sequence)` | `report`: `PREFIX.verify.txt`; the task fails when the header is invalid or the checksum does not match |
+| `FAIRBIOHEADERS_VERIFY` (upstream, pinned; used by `FHR_ATTACH` and the Dockstore workflow) | `(meta, sequence)` | `report`: `PREFIX.verify.txt`; the task fails when the header is invalid or the checksum does not match. The toolkit infers the file type from the extension (no `--type`): `.fa/.fasta/.fna/.fas/.faa/…` FASTA, `.gfa`, `.gff/.gff3`, `.gz`/`.bgz` preserved; an unknown extension fails in the task with `FHR: Unsupported file extension` |
 | `FAIRBIOHEADERS_VALIDATE` (upstream, pinned) | `(meta, metadata)` | `report`: `PREFIX.validate.txt`; the task fails when standalone JSON/YAML/JSON-LD metadata does not validate |
 
 `PREFIX` is `task.ext.prefix` or `meta.id`; `task.ext.args` is passed to `bioheaders`.
@@ -170,8 +170,9 @@ upstream modules do not shell-quote `ext.prefix`/`meta.id`, so **you must constr
 `isSampleId`); (2) `bioheaders combine`/`convert` refuse to overwrite a staged input
 (`FHR: Output must differ from the input files` / `Input and output names are the same,
 set prefix...`), so pick ids where `<id>.<extension>` cannot equal the sequence file's
-own name, or set `ext.prefix`. The upstream COMBINE leaves format inference to the
-toolkit and keeps the input extension; `FHR_STRIP`/`FHR_VERIFY_LINKS` (repository
+own name, or set `ext.prefix`. The upstream COMBINE and VERIFY leave format inference to the
+toolkit (combine keeps the input extension; an unknown extension fails in the task with
+`FHR: Unsupported file extension`); `FHR_STRIP`/`FHR_VERIFY_LINKS` (repository
 modules) still read the kind from a supplied **input** file's extension via
 `sequenceKindOf`. Versions go to the `versions` topic. Run their tests with
 `nf-test test --profile docker` from the repository root (`nf-test.config`,

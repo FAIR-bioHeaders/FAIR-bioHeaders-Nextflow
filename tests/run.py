@@ -282,6 +282,34 @@ workflow {
         run(faa_verify, work, ['--sequence', str(fhp / 'malformed-missing-proteome.fhp.faa')], failure='proteome')
         run(faa_verify, work, ['--sequence', str(fhp / 'malformed-duplicate-checksum.fhp.faa')], failure='duplicate key')
 
+        # Direct FHGFF3 verification (issue #29 slice 4): these three cases moved here
+        # from the retired repository verify suite, whose nf-tests the pinned upstream
+        # nf-core/modules revision 6fb4f8f1 does not carry (its four cases cover plain
+        # FHR FASTA, changed-after-combine, no-header and stub). The compressed case
+        # stays covered through the FHR_ATTACH gzip run below, which only emits its
+        # ATTACHED marker after verify has joined a passing report for the BGZF file.
+        output = run(faa_verify, work, ['--id', 'annotation', '--sequence', str(chain / 'annotation.fhgff3.gff3')])
+        check('VERIFIED annotation annotation.verify.txt' in output, f'FHGFF3 was not verified:\n{output}')
+        # Without the retired local module's --type whitelist the toolkit infers the
+        # sequence type from the extension and rejects odd ones in the task; the local
+        # module forced any non-GFA/GFF3 name to FASTA instead (docs/module-migration.md).
+        odd_extension = work / 'protein-header.txt'
+        odd_extension.write_bytes((chain / 'protein.fhp.faa').read_bytes())
+        run(faa_verify, work, ['--id', 'odd', '--sequence', str(odd_extension)], failure='Unsupported file extension')
+        # The merged upstream revision dropped the spaced-name tests its review heads
+        # carried (as convert did); this suite keeps the verify case: the staged path
+        # holds spaces and the module interpolates it unquoted, so success plus a
+        # single-line file: report pins Nextflow's staged-path escaping.
+        spaced_sequence = work / 'protein with space.faa'
+        spaced_sequence.write_bytes((chain / 'protein.fhp.faa').read_bytes())
+        output = run(faa_verify, work, ['--id', 'spaced', '--sequence', str(spaced_sequence)])
+        check('VERIFIED spaced spaced.verify.txt' in output, f'spaced-name FHP FASTA was not verified:\n{output}')
+        report_lines = next((work / 'work').glob('*/*/spaced.verify.txt')).read_text().splitlines()
+        check(len(report_lines) == 2 and report_lines[0].startswith('file: ')
+              and report_lines[0].endswith('protein with space.faa')
+              and report_lines[1] == 'Checksum verified.',
+              f'spaced-name verify report is not the documented two lines: {report_lines}')
+
         # Standalone FHP metadata: FAIRBIOHEADERS_VALIDATE (no sequence, no checksum check).
         validate_script = work / 'fhp-validate.nf'
         validate_script.write_text(validate + """workflow {

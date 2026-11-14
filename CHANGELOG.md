@@ -62,6 +62,47 @@ Changes in this decision:
   snapshots, and the CI example/Dockstore assertions. See [docs/module-migration.md](docs/module-migration.md)
   for the full OLD → NEW table and the resolution of the recorded blockers.
 
+### Verify adopted — final #29 slice (2026-11-14): `FAIRBIOHEADERS_VERIFY` becomes a pinned upstream module (CHANGED for direct importers, targets the same minor **0.3.0**)
+
+nf-core/modules#13635 merged 2026-11-13T15:26:20Z. `modules/nf-core/fairbioheaders/verify`
+is now the byte-identical pinned upstream module at merge commit
+`6fb4f8f1f3f70a34a1f0efdc84729c5dacbc33e5` (recorded in `modules.json`; drift checker green
+7/7/8/7 — the manifest-driven check covers verify automatically). The repository's own
+verify implementation is retired **under the same include path**: `FHR_ATTACH`, the Dockstore
+workflow and the harness keeps its import line because the pinned tree overlays the local
+files, the `(meta, sequence)` input and `(meta, ID.verify.txt)` report tuple are preserved, and
+no caller sets `ext.prefix` for verify — so no import was rewritten and none dangles. Three
+observable changes for direct importers (CHANGED, on top of the naming BREAKING above, in the
+same 0.3.0 minor): (1) **no `--type`** — the toolkit infers the file type from the extension
+and rejects unknown ones in the task (`FHR: Unsupported file extension: <name>`) where the
+local module forced anything non-GFA/GFF3 to FASTA; (2) the **container is the Seqera Wave
+image** (+ `community-cr-prod` blob for Singularity) instead of the BioContainers/Galaxy-depot
+pair, so the workflow now pulls only Wave for both of its processes and registry allowlists
+must include `community.wave.seqera.io`; (3) the report redirect is **not shell-quoted** —
+constrain `meta.id`/`ext.prefix` as for combine/validate/convert. The merged upstream nf-test
+suite carries **4** cases (not the 10 recorded at review head: the re-diff at the merge commit
+showed the spaced-name test became the changed-after-combine test); the coverage it does not
+carry was ported to `tests/run.py` rather than dropped — direct FHGFF3 verification, the new
+odd-extension rejection, and a spaced-name report case (compressed verification stays covered
+through the `FHR_ATTACH` BGZF run). Full merged-revision contract table, provenance blobs and
+the step-by-step record are in [docs/module-migration.md](docs/module-migration.md); CI's
+container-family checks moved verify to the Wave loop. With this slice all four
+`fairbioheaders` modules are upstream-pinned; #29's remaining checklist items are the routine
+`modules/local/` layout migration and the container-pin re-evaluation at the next toolkit
+bump (documented as non-blocking in that issue's final-slice comment).
+
+Verification on this host (native processes in the `nextflow/nextflow:26.04.6`
+verification container, as in slices 1–3): drift checker 7/7/8/7 including the new verify
+entry, drift guard unittests 2/2, `nf-test test --ci` **30/30** (combine 8, convert 11,
+validate 7, upstream verify 4; committed upstream snapshots matched under Nextflow 26.04.6
+in CI mode), `python tests/run.py --converter-source <Tools v0.9.0>` **65/65** (the three
+ported verify cases plus the unchanged converter gate: **2410** toolkit pytest tests), and
+the Dockstore workflow `-profile test` producing the five input-faithful combine outputs
+with five `Checksum verified.` reports from the pinned module. `nf-test --profile docker`,
+the Docker example/Dockstore runs, `docker build environment` and `nf-core modules lint`
+remain CI-/maintainer-side, as recorded in docs/module-migration.md ("Testing status for
+slice 4"); this branch runs no nf-core CLI (mixed local-module layout limitation).
+
 ### Prior #29 work (slices 1 and 2a), unchanged by the naming decision except that the
 compat modules the slices preserved are now retired
 

@@ -25,6 +25,13 @@
                         "installed_by": [
                             "modules"
                         ]
+                    },
+                    "fairbioheaders/verify": {
+                        "branch": "master",
+                        "git_sha": "6fb4f8f1f3f70a34a1f0efdc84729c5dacbc33e5",
+                        "installed_by": [
+                            "modules"
+                        ]
                     }
                 }
             }

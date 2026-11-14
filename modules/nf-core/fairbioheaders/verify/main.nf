@@ -1,44 +1,42 @@
+// Copyright (c) the nf-core community under an open-source MIT license.
+// See https://github.com/nf-core/modules for full license, file patching instructions and upstream contributing.
+
 process FAIRBIOHEADERS_VERIFY {
     tag "${meta.id}"
     label 'process_single'
 
     conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/fair-bioheaders:0.9.0--pyhdfd78af_0':
-        'quay.io/biocontainers/fair-bioheaders:0.9.0--pyhdfd78af_0' }"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/3a/3a69700529d3e088166672547fbd632315145414a75ee81a1686e1208038a937/data'
+        : 'community.wave.seqera.io/library/fair-bioheaders:0.9.0--71029206d3ce1119'}"
 
     input:
     tuple val(meta), path(sequence)
 
     output:
-    tuple val(meta), path("*.verify.txt"), emit: report
-    tuple val("${task.process}"), val('fair-bioheaders'), eval("bioheaders --version"), emit: versions_fairbioheaders, topic: versions
+    tuple val(meta), path("${prefix}.verify.txt"), emit: report
+    tuple val("${task.process}"), val('fair-bioheaders'), eval("bioheaders --version"), topic: versions, emit: versions_fairbioheaders
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     def args = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    // Single-quote for the shell: file names and meta.id may hold any character.
-    def quote = { value -> "'" + value.toString().replace("'", "'\\''") + "'" }
-    def type = sequence.name ==~ /.*\.gfa(\.b?gz)?$/ ? 'gfa'
-        : sequence.name ==~ /.*\.gff3?(\.b?gz)?$/ ? 'gff3' : 'fasta'
-    def report = quote.call("${prefix}.verify.txt")
-    // A header that fails the schema or a checksum that does not match exits non-zero,
-    // so the task fails; the report records the verified file and the result.
+    prefix = task.ext.prefix ?: "${meta.id}"
+    // A group, not a pipe, so that a failed check fails the task.
     """
     {
-        printf 'file: %s\\n' ${quote.call(sequence)}
-        bioheaders verify --type ${type} ${args} ${quote.call(sequence)}
-    } > ${report}
+        printf 'file: %s\\n' ${sequence}
+        bioheaders \\
+            verify \\
+            ${args} \\
+            ${sequence}
+    } > ${prefix}.verify.txt
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.id}"
-    def quote = { value -> "'" + value.toString().replace("'", "'\\''") + "'" }
-    def report = quote.call("${prefix}.verify.txt")
+    prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${report}
+    touch ${prefix}.verify.txt
     """
 }

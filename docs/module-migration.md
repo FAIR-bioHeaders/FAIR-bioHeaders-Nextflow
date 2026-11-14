@@ -8,9 +8,10 @@ upstream modules and the repository modules intentionally diverged during
 development (#21 consolidation, then the upstream submissions) and must be
 reconciled without silently dropping documented behavior.
 
-Status date: **2026-11-13** (slice 3 records the maintainer naming decision; all
-upstream state below was re-verified against the GitHub API on 2026-11-12; re-check before
-acting on it — checkouts and PRs move).
+Status date: **2026-11-14** (slice 4 adopts **verify** at its merged revision `6fb4f8f1`
+and retires the local repository module — the last non-pinned `fairbioheaders` module; slice 3
+records the maintainer naming decision; upstream state was re-verified against the GitHub API
+on 2026-11-13/14; re-check before acting on it — checkouts and PRs move).
 
 ## Naming decision (2026-11-13) — Option (a): adopt upstream naming, retire the family contract
 
@@ -57,13 +58,13 @@ pre-decision record and are annotated in place below. The family-signifying-file
 "Open questions" entry is closed for this repository (it can be reopened upstream — see the
 staged follow-up request at the end of this document).
 
-## Upstream state (verified 2026-11-12)
+## Upstream state (verified 2026-11-13/14)
 
 | Upstream module | PR | State | Revision |
 | --- | --- | --- | --- |
 | `fairbioheaders/combine` | [nf-core/modules#13492](https://github.com/nf-core/modules/pull/13492) | merged 2026-11-09 | `8faff34023b16ecdc41b02bac42989834075e3f1` |
 | `fairbioheaders/validate` | [nf-core/modules#13509](https://github.com/nf-core/modules/pull/13509) | merged 2026-11-09 | `86e852ef429e021d16f7279aaddb9b81eb067f8a` (contained in `8faff340…`) |
-| `fairbioheaders/verify` | [nf-core/modules#13635](https://github.com/nf-core/modules/pull/13635) | **open, in review** (still open 2026-11-12, branch last updated 2026-11-12) | head at review time `bb6c49233b2f4ce467b7e332dcfc2c1608e35067`; head 2026-11-12 `bc5a8640cfbca366bfe9d967ad9e43f5dc292216` (a moving PR branch, not a merge revision) |
+| `fairbioheaders/verify` | [nf-core/modules#13635](https://github.com/nf-core/modules/pull/13635) | **merged 2026-11-13T15:26:20Z** | `6fb4f8f1f3f70a34a1f0efdc84729c5dacbc33e5` (merge commit; PR head at merge `154ca9f02b73f4c1c3ab8dc0e4b23ca9e0b0616f` — the review heads this document had recorded (`bb6c492`/`bc5a8640`) are superseded; the merged tree differs from them, see the contract table) |
 | `fairbioheaders/convert` | [nf-core/modules#13636](https://github.com/nf-core/modules/pull/13636) | merged 2026-11-11T23:01Z | `4dc3bc54779d6caf3a47d49f37811e651fa2700a` (merge commit; PR head at merge `35dc28bd72563db7fb7192d9fcee7068b65984c4`, review head `639dd3cc…` was superseded — see the contract table) |
 
 Shared test fixtures landed in [nf-core/test-datasets#2363](https://github.com/nf-core/test-datasets/pull/2363);
@@ -73,19 +74,21 @@ they resolve under `modules_testdata_base_path` at
 (verified present on the `modules` branch 2026-11-10; the convert suite fetched the
 same paths again on 2026-11-12).
 
-Slice 1 (merged as #30) adopted **combine** and **validate**. Slice 2a installs the
-newly merged **convert** module and runs its parity check: convert is now **pinned and
-tested**, but its callers are **not migrated** — the parity result is partial coverage
-(see the convert contract table), so `FHR_CONVERT` stays the callers' module and the
-naming/format questions are recorded as blockers with a maintainer decision ask.
-**verify** is unchanged and still not adopted: nf-core/modules#13635 remains open as of
-2026-11-12, and adoption of anything is gated on merge **plus** local parity checks
-(section "Adopting verify and convert after their merge").
+Slice 1 (merged as #30) adopted **combine** and **validate**. Slice 2a (merged as #31)
+installed the newly merged **convert** module and ran its parity check; slice 3 (merged as
+#32) executed the maintainer naming decision (option (a)) and migrated every caller.
+**Slice 4 (2026-11-14) adopts verify:** nf-core/modules#13635 merged 2026-11-13T15:26:20Z
+and the module is now pinned at its merge commit `6fb4f8f1`, with the local repository
+implementation retired by the byte-for-byte overlay at the same canonical path (no import
+rewritten; the tuple shapes and default report names are preserved). Adoption stayed gated
+on merge **plus** local parity checks throughout (section "Adopting verify and convert
+after their merge").
 
 ## How the upstream modules are pinned
 
-- `modules/nf-core/fairbioheaders/combine/`, `modules/nf-core/fairbioheaders/validate/`
-  and `modules/nf-core/fairbioheaders/convert/` (including `.conda-lock/`, `meta.yml`,
+- `modules/nf-core/fairbioheaders/combine/`, `modules/nf-core/fairbioheaders/validate/`,
+  `modules/nf-core/fairbioheaders/convert/` and `modules/nf-core/fairbioheaders/verify/`
+  (including `.conda-lock/`, `meta.yml`,
   `environment.yml`, tests and snapshots) are
   **byte-identical copies** of the upstream files at the recorded revisions.
   They must stay unpatched: repository behavior goes into repository-owned
@@ -96,7 +99,8 @@ naming/format questions are recorded as blockers with a maintainer decision ask.
   `fairbioheaders/<name>` entry with `branch`, `git_sha` and
   `installed_by: ["modules"]`. `.nf-core.yml` declares `repository_type: pipeline`.
 - The repository still has a mixed module layout: repository-owned modules live
-  under `modules/*`, including local verify in the `nf-core` namespace. nf-core
+  under `modules/*` (and `subworkflows/*`) beside the pinned `modules/nf-core/` tree —
+  since slice 4 the whole `modules/nf-core/fairbioheaders` set is upstream-pinned. nf-core
   4.2.2 rejects those untracked directories. A valid manifest alone does **not**
   make `nf-core modules update`, `list local` or `lint` usable here. Use the
   CLI-less procedure below until a separate layout migration moves local modules
@@ -107,12 +111,13 @@ naming/format questions are recorded as blockers with a maintainer decision ask.
   paths, blob hashes and file modes. Hidden lock files, missing files and extra local
   files are included. Any drift fails the job before nf-test runs. Because the guard is
   manifest-driven, installing a module adds it to the drift check automatically: it now
-  covers combine (7 files), validate (7) and convert (8 — convert also ships
-  `tests/nextflow.config` for its `ext.args`/`ext.prefix` cases).
+  covers combine (7 files), validate (7), convert (8 — convert also ships
+  `tests/nextflow.config` for its `ext.args`/`ext.prefix` cases) and verify (7 — installed
+  2026-11-14 at `6fb4f8f1`; verify ships no `tests/nextflow.config`).
 
 Provenance of the runtime/test files (the complete directory for each pinned module
-also includes the two `.conda-lock/` platform locks, verified by CI; combine and
-validate hold seven files each, convert eight because it also ships
+also includes the two `.conda-lock/` platform locks, verified by CI; combine, validate
+and verify hold seven files each, convert eight because it also ships
 `tests/nextflow.config`):
 
 | Module @ revision | File | Upstream blob sha |
@@ -135,6 +140,13 @@ validate hold seven files each, convert eight because it also ships
 | convert @ `4dc3bc5477…` | tests/nextflow.config | `3bf6653083dee274273e4f72bbe61db2f5d4874d` |
 | convert @ `4dc3bc5477…` | `.conda-lock/linux_amd64-bd-71029206d3ce1119_1.txt` | `614f61ced8ebef6dc1a6e78742a2f0672b805031` |
 | convert @ `4dc3bc5477…` | `.conda-lock/linux_arm64-bd-1ff11621d7e9a7c8_1.txt` | `8cc63c8d8b1d37b467b2074e22af63c10a61a6fa` |
+| verify @ `6fb4f8f1f3…` | main.nf | `69ea8fba319e498ce3e71cb6fe120529b5920abb` |
+| verify @ `6fb4f8f1f3…` | meta.yml | `f420baaccf215c1530b595a8b5b0c4fe25d9b698` |
+| verify @ `6fb4f8f1f3…` | environment.yml | `d0c0735cb08e0a193ca197dc24ca046d2e6c2cc8` |
+| verify @ `6fb4f8f1f3…` | tests/main.nf.test | `62b1e97997550e2e6b6646c49b36d7f2ca7b4d16` |
+| verify @ `6fb4f8f1f3…` | tests/main.nf.test.snap | `e83cd3cdb6bce2c8280c91792b051154bd1a9a06` |
+| verify @ `6fb4f8f1f3…` | `.conda-lock/linux_amd64-bd-71029206d3ce1119_1.txt` | `614f61ced8ebef6dc1a6e78742a2f0672b805031` |
+| verify @ `6fb4f8f1f3…` | `.conda-lock/linux_arm64-bd-1ff11621d7e9a7c8_1.txt` | `8cc63c8d8b1d37b467b2074e22af63c10a61a6fa` |
 
 ### Updating a pinned module (recorded procedure)
 
@@ -283,30 +295,46 @@ and space-free, so the quoting difference is not observable there. The two local
 test cases the upstream revision does not carry (FHR 2.1 `x-` fields) were
 **ported into `tests/run.py`** so the coverage is not dropped.
 
-### `fairbioheaders/verify` — upstream PR #13635 (open) vs local `FAIRBIOHEADERS_VERIFY` (kept)
+### `fairbioheaders/verify` (upstream `6fb4f8f1`, merged 2026-11-13) vs local `FAIRBIOHEADERS_VERIFY` (retired in slice 4)
 
-Not adopted (gated on the open PR). **Re-verified 2026-11-12: still open, and nothing
-about this module changed in slice 2a** — only the table's revision column above was
-refreshed (the head moved `bb6c492` → `bc5a8640`, so the comparison below still describes
-the 2026-11-10 review head and must be re-diffed at merge time). Contract differences
-between the local module and the PR head reviewed on 2026-11-10 (`bb6c492`, a moving
-branch — re-diff at merge time):
+Adopted at the merge commit, not at a review head. **The re-diff mattered again:** the
+merged tree differs from both review heads this section had recorded (`bb6c492` /
+`bc5a8640`). The merged revision (1) drops the review head's double-quoted prefix redirect
+— `${prefix}.verify.txt` is unquoted in `script` and `stub`, exactly as in the merged
+convert; (2) replaces the spaced-names test with the changed-after-combine failure test, so
+the merged suite is **4 cases** (plain FHR FASTA via upstream combine, changed-after-combine
+fails with `Checksum verification failed`, no-header fails with `No ;~ FHR metadata header
+found`, stub), not the 10 recorded at review head; and (3) ships the Wave container pair
+plus `.conda-lock/` (7 files, no `tests/nextflow.config`). Contract comparison at the
+merged revision against the retired local module:
 
-| Aspect | Upstream PR head | Local | Notes for the later adoption |
+| Aspect | Upstream @ `6fb4f8f1` | Local (retired) | Verdict |
 | --- | --- | --- | --- |
-| Input/output | `(meta, sequence)` → `(meta, ${prefix}.verify.txt)` + versions | same (glob vs prefix) | matches |
-| `--type` | **not passed** (toolkit infers from extension) | explicit `fasta`/`gfa`/`gff3` whitelist | adoption must re-check rejection messages for odd extensions; `tests/run.py` asserts on `checksum`, `after sequence data`, `duplicate key`, `proteome` — toolkit messages, inferred `--type` does not change those, but unknown extensions now fail in the toolkit instead of being forced to `--type fasta` |
-| Compression | same `.gz/.bgz` handling | same | matches |
-| Quoting | prefix double-quoted at redirect; staged path by interpolation | full single-quote closure on path, prefix, `meta.id` | PR adds a *spaced names* test (`test sample.fasta` → `test sample.verify.txt`) as the upstream hardening evidence |
-| Failure semantics | schema/checksum failure fails the task; report `file: …` + validator output | identical | matches |
-| Containers | Wave | quay/depot | same 0.9.0 content |
-| nf-tests | 10 cases incl. spaced names, changed-after-combine, combined with upstream `FAIRBIOHEADERS_COMBINE` in `setup` | 5 cases (fasta.gz, faa-fhp, gff3, no-header-fails, stub), fixtures inline | PR tests depend on the *upstream combine* outputs (extension-preserving names) — re-verify the local `FHR_ATTACH` join-based flow after adoption. The local test's combine setups were retargeted to `modules/combine` (`FHR_COMBINE`) in this slice because their assertions rely on the header-family names |
-| Role separation | verifies headed sequence files (schema + checksum), never parent links; standalone JSON → validate | same | matches |
+| Input | `tuple val(meta), path(sequence)` | same | matches — every caller keeps its wiring |
+| Output | `tuple val(meta), path("${prefix}.verify.txt")`, emit `report` + versions | `path("*.verify.txt")` (glob) | matches for every caller: `ext.prefix` is set nowhere for verify, so the prefixed name equals the globbed one (`ID.verify.txt`) |
+| `--type` | **not passed**; the toolkit infers from the extension (`.fa/.fasta/.fna/.fas/.faa/.ffn/.frn/.fsa/.mpfa/.gfa/.gff/.gff3`, `.gz`/`.bgz` handled) | explicit whitelist: `.gfa→gfa`, `.gff3?→gff3`, **anything else forced to `fasta`** | **differs — the parity item.** Odd extensions change side: the local module verified a FHR/FHP-headed `sample.txt` (forced FASTA); the pinned module fails it in the task with `FHR: Unsupported file extension: sample.txt` (toolkit 0.9.0, probe-verified). All this repository's callers stage combine outputs or fixture names, which infer correctly; the new surface is pinned by a `tests/run.py` case |
+| Compression | same `.gz/.bgz` verification (toolkit side) | same | matches (covered through the `FHR_ATTACH` BGZF harness run) |
+| Quoting | report redirect and prefix unquoted; staged path interpolated (Nextflow escapes staged paths) | full single-quote closure on path, prefix, `meta.id` | differs (same caller-discipline caveat as combine/validate/convert: constrain `meta.id`/`ext.prefix`; `FHR_ATTACH` and the example gate IDs with `isSampleId`). Probe: a staged `protein with space.faa` verifies cleanly with a single-line `file:` report — pinned by a new `tests/run.py` case |
+| Failure semantics | schema/checksum failure fails the task; report keeps the `file: <path>` header | identical | matches; the harness failure substrings (`checksum`, `after sequence data`, `duplicate key`, `proteome`) are toolkit messages and still fire — all five rejection cases pass unchanged |
+| Report content | `file: <staged path>` + `bioheaders verify` stdout | same (quoted interpolation) | matches for space-free paths |
+| Conda | `"bioconda::fair-bioheaders=0.9.0"` (quoted line) | same pin, unquoted line | matches (content) |
+| Container | Wave `community.wave.seqera.io/library/fair-bioheaders:0.9.0--71029206d3ce1119` (+ `community-cr-prod` blob URL for Singularity) | BioContainers `quay.io/biocontainers/fair-bioheaders:0.9.0--pyhdfd78af_0` + Galaxy depot pair | **differs — same Wave/quay split as the other three pinned modules** (see "Containers and conda"); CI's verify pin check moved to the Wave family |
+| Version reporting | `(task.process, 'fair-bioheaders', bioheaders --version)` on topic `versions` + named emit | identical | matches |
+| Stub | `touch ${prefix}.verify.txt` | same (quoted) | matches |
+| nf-tests | 4 cases, fixtures from nf-core/test-datasets (the merged #2363 set), snapshots recorded under Nextflow 26.10.4 / nf-test 0.9.5 | 5 cases (fasta.gz, faa-fhp, gff3, no-header-fails, stub), inline metadata fixtures | upstream lacks the **direct FHGFF3**, **compressed** and **spaced-name** cases the local suite carried. Not dropped: the compressed case stays covered through the `FHR_ATTACH` gzip harness run (its `ATTACHED … .faa.gz` marker only appears after verify joined a passing report); direct FHGFF3, odd-extension rejection and the spaced-name report shape were **ported into `tests/run.py`** per the slice-1 validate precedent |
 
-`subworkflows/attach` and the Dockstore workflow keep consuming the local module
-at `modules/nf-core/fairbioheaders/verify/` **migration-pending**; `FHR_VERIFY_LINKS`
-(parent links, `bioheaders verify-links`) stays repository-owned — upstream has no
-parent-link module.
+**Verdict: parity confirmed; migrated in place; local module retired.** The retirement has
+no import-rewrite step because the local module and the pinned module share the canonical
+path `modules/nf-core/fairbioheaders/verify/main.nf`: installing the byte-identical upstream
+tree overlays (retires) the local implementation, and every existing import — `FHR_ATTACH`
+(`FAIRBIOHEADERS_VERIFY as CHECK_COMBINED`), the Dockstore workflow, the three harness
+scripts in `tests/run.py` and the README/PIPELINES examples — resolves to the pinned module
+unchanged. The zero-dangling proof is the drift checker (4/4 manifest entries byte-identical,
+so no local-only file survives) plus a repository grep: no reference to the local module's
+unique surfaces (`--type` whitelist, quay/depot pin at the verify path) remains outside the
+pinned tree. `subworkflows/attach` and the Dockstore workflow consume the pinned module;
+`FHR_VERIFY_LINKS` (parent links, `bioheaders verify-links`) stays repository-owned —
+upstream has no parent-link module.
 
 ### `fairbioheaders/convert` (upstream `4dc3bc5477`, merged 2026-11-11) vs `FHR_CONVERT` (local)
 
@@ -397,7 +425,7 @@ pinned upstream artifact with its own tests. Removing `modules/convert` requires
 | Job | Module | Owner |
 | --- | --- | --- |
 | Attach metadata + exact-byte checksum (`bioheaders combine`) | `FAIRBIOHEADERS_COMBINE` (pinned upstream; family-name compat module `FHR_COMBINE` retired 2026-11-13) | upstream |
-| Verify a **headed sequence file** (schema + checksum of the file) | `FAIRBIOHEADERS_VERIFY` | repo, migration-pending |
+| Verify a **headed sequence file** (schema + checksum of the file) | `FAIRBIOHEADERS_VERIFY` (pinned upstream; local repository module retired 2026-11-14) | upstream |
 | Validate **standalone metadata** (schema only, no checksum/sequence) | `FAIRBIOHEADERS_VALIDATE` (pinned upstream) | upstream |
 | Verify **parent links** (`derivedFrom`/`genomeReference` against candidate parents, `bioheaders verify-links`) | `FHR_VERIFY_LINKS` | repo-owned, no upstream counterpart |
 | GFF3 syntax/SO/biology rules | `GFF3_VALIDATE` (gff3-validator 0.1.0) | repo-owned, no upstream counterpart |
@@ -408,11 +436,11 @@ pinned upstream artifact with its own tests. Removing `modules/convert` requires
 
 | Caller | Uses | Status |
 | --- | --- | --- |
-| Standalone example `main.nf` | `FHR_ATTACH` → pinned `FAIRBIOHEADERS_COMBINE` + local `FAIRBIOHEADERS_VERIFY`; `FHR_CREATE_JSON` → pinned `FAIRBIOHEADERS_VALIDATE`; pinned `FAIRBIOHEADERS_CONVERT` for the published YAML | **fully migrated (2026-11-13 option (a))**; compat modules deleted; outputs renamed to the upstream input-faithful names |
-| `subworkflows/attach` (`FHR_ATTACH`) | pinned `FAIRBIOHEADERS_COMBINE` + `FAIRBIOHEADERS_VERIFY` + pinned `FAIRBIOHEADERS_CONVERT` | **migrated**; external channel tuple unchanged, but `sequence` is now `<id>.<ext>` and `json` is `<id>.json` (extract via upstream convert, `ext.prefix = meta.id`); the compat modules are gone |
-| Dockstore workflow `workflows/fairbioheaders` | pinned `FAIRBIOHEADERS_COMBINE` + `FAIRBIOHEADERS_VERIFY` | **migrated**; outputs renamed to `combine/<id>.<ext>` (`<id>.faa` for protein) and `verify/<id>.verify.txt`; descriptor `.dockstore.yml` paths unchanged and still resolve; the test samplesheet protein row id is `proteins` so its output cannot collide with the staged `protein.faa`; the workflow still does not call convert |
+| Standalone example `main.nf` | `FHR_ATTACH` → pinned `FAIRBIOHEADERS_COMBINE` + pinned `FAIRBIOHEADERS_VERIFY`; `FHR_CREATE_JSON` → pinned `FAIRBIOHEADERS_VALIDATE`; pinned `FAIRBIOHEADERS_CONVERT` for the published YAML | **fully migrated (2026-11-13 option (a) + 2026-11-14 slice 4)**; every fairbioheaders module it reaches is pinned upstream |
+| `subworkflows/attach` (`FHR_ATTACH`) | pinned `FAIRBIOHEADERS_COMBINE` + pinned `FAIRBIOHEADERS_VERIFY` + pinned `FAIRBIOHEADERS_CONVERT` | **migrated**; external channel tuple unchanged, `sequence` is `<id>.<ext>` and `json` is `<id>.json`; the verify include path did not change in slice 4 (the pinned tree overlays the retired local module) and the report join is unchanged |
+| Dockstore workflow `workflows/fairbioheaders` | pinned `FAIRBIOHEADERS_COMBINE` + pinned `FAIRBIOHEADERS_VERIFY` | **fully migrated**; outputs are `combine/<id>.<ext>` (`<id>.faa` for protein) and `verify/<id>.verify.txt`; since slice 4 both processes run the Wave container family (the `-profile test,docker` outputs and reports are unchanged); descriptor `.dockstore.yml` paths unchanged and still resolve; the test samplesheet protein row id is `proteins` so its output cannot collide with the staged `protein.faa`; the workflow still does not call convert |
 | `modules/create_json` | pinned `FAIRBIOHEADERS_VALIDATE` | migrated in place; its own output renamed `ID.fhr.json` → `ID.json` |
-| External direct importers | `modules/nf-core/fairbioheaders/{combine,convert,validate,verify}` | **the family compat modules are deleted; importers migrate to the upstream modules at the canonical paths** — see the two migration notes below |
+| External direct importers | `modules/nf-core/fairbioheaders/{combine,convert,validate,verify}` | **all four paths are the pinned upstream modules**; the family compat modules are deleted, and the local verify implementation is retired under the same path — see the migration notes below and the verify contract table for the `--type`/container deltas |
 
 **Migration note for importers of the retired `modules/combine` (`FHR_COMBINE`)** — the
 compatibility module no longer exists. Import `modules/nf-core/fairbioheaders/combine`
@@ -447,6 +475,19 @@ A header-only protein file loses its distinct extension (`faa` is not a `--to` c
 protein/genome distinction must travel on `meta` and in the file's own header. Callers that
 need the `.faa` name or the pre-launch rejection wrap the upstream module and rename from
 their own contract; this suite no longer ships either.
+
+**Migration note for importers of the retired local `FAIRBIOHEADERS_VERIFY`** — the include
+path is unchanged (`modules/nf-core/fairbioheaders/verify/main`); the file behind it is now
+the pinned upstream module at `6fb4f8f1`. The input/output tuples and the default report name
+`ID.verify.txt` are preserved, so call sites keep working. Three observable changes: (1) the
+module no longer passes `--type` — the toolkit infers the format from the extension and
+**rejects unknown extensions** (`FHR: Unsupported file extension: <name>`) where the local
+module forced anything non-GFA/GFF3 to FASTA; (2) the container is the Seqera Wave image (plus
+the `community-cr-prod` blob for Singularity) instead of the BioContainers/Galaxy-depot pair —
+offline registry allowlists must include `community.wave.seqera.io` (already true since slice 1
+for combine/validate/convert); (3) the prefix is not shell-quoted, so callers that set
+`ext.prefix` or pass unvalidated `meta.id` values must constrain them, as for the other three
+pinned modules.
 
 ## Containers and conda pins (reconciled)
 
@@ -662,6 +703,74 @@ git diff --check
 ```
 
 
+## Testing status for slice 4 — verify adoption (2026-11-14)
+
+Same host and method as slices 1–3 (Docker 29.9.3 on an arm64 host; no host `nextflow`,
+`nf-test`, `nf-core` or Java — `java -version` on the macOS host is the Apple stub and
+fails): the repository's processes executed **natively** inside the reproducible
+verification image `fhr-nf29-verify:slice4` (`FROM nextflow/nextflow:26.04.6`, Amazon
+Linux 2023 / Java 21 CI baseline, python3.11 venv with `fair-bioheaders[jsonld]==0.9.0`,
+`gff3-validator==0.1.0`, pytest, pyld, nf-test 0.9.5), linux/amd64 emulation. The image
+is a verification artifact, not repository content. As in earlier slices this exercises
+scripts, channel wiring, snapshots and toolkit semantics, not the container-image pulls
+(CI's `--profile docker` jobs).
+
+- **Merged-revision fetch:** all seven upstream verify files were downloaded at
+  `6fb4f8f1f3f70a34a1f0efdc84729c5dacbc33e5` with the recorded procedure script; each
+  `git hash-object` matched the blob sha in the untruncated recursive GitHub tree.
+  `python3 scripts/check_upstream_modules.py` (host, network) reported `combine: all 7
+  files match 8faff340…`, `validate: all 7 files match 86e852ef…`, `convert: all 8 files
+  match 4dc3bc54…` and **`verify: all 7 files match 6fb4f8f1…`** — the manifest-driven
+  guard included the new module automatically. `python3 -m unittest discover -s tests -p
+  test_upstream_modules.py` stays green (2 tests).
+- **CI pin steps re-run locally:** the nf-test job's Wave loop is now `for module in
+  combine validate convert verify` and the BioContainers/depot loop `modules/strip
+  modules/verify_links`; the dockstore job's verify check moved to the Wave family. All
+  greps, the converter-environment checks and the `.dockstore.yml` path existence loop
+  pass against the tree.
+- **Behaviour probes before wiring the ported cases** (native toolkit 0.9.0):
+  `bioheaders verify --type fasta sample.txt` succeeds (the retired local module's
+  forced-FASTA surface) while `bioheaders verify sample.txt` fails with
+  `FHR: Unsupported file extension: sample.txt` (the pinned module's inference surface);
+  `.gff3` and a `protein with space.faa` name verify cleanly. These are the parity items
+  step 3 asked to re-check, now pinned as `tests/run.py` cases.
+- **`nf-test test --ci` — 30/30 passed** in 895 s: pinned upstream combine 8, convert 11,
+  validate 7 and the **merged upstream verify suite 4** (`sarscov2 - fasta - fhr` asserting
+  the exact report `['file: test.fasta', 'Checksum verified.']`, `changed after combine -
+  fails` with `Checksum verification failed`, `no header - fails` with `No ;~ FHR metadata
+  header found`, stub). The count moves 31 → 30 because the retired local 5-case suite is
+  replaced by upstream's 4 cases; the lost coverage went to `tests/run.py`, not to the
+  bin. Committed upstream snapshots (recorded under Nextflow 26.10.4 / nf-test 0.9.5)
+  matched in CI mode under Nextflow 26.04.6 / nf-test 0.9.5, as for the other modules.
+- **`python tests/run.py --converter-source <Tools v0.9.0 @ c6d7454>` — 65/65 passed** in
+  4584 s (slice 3's 62 plus the three ported verify runs: direct FHGFF3 verification of
+  `chain/annotation.fhgff3.gff3`, the `Unsupported file extension` odd-extension
+  rejection, and the spaced-name two-line report case). Every pre-existing verify-driven
+  rejection fired identically through the pinned module (`checksum`, `after sequence
+  data` ×2, `duplicate key`, `proteome`), and `FHR_ATTACH`'s report join, the protein
+  `ATTACHED … .faa`/`.faa.gz` markers and the converter gate (the toolkit's own **2410**
+  pytest tests) behaved as documented; the injected-failure, `-resume` and
+  version-mismatch rejections passed.
+- **`nextflow run workflows/fairbioheaders/main.nf -profile test` (native) — passed:**
+  five samplesheet rows produce `combine/{fasta.fa,gfa.gfa,gff3.gff3,jsonld.fa,proteins.faa}`
+  and five `verify/<id>.verify.txt` reports each carrying `Checksum verified.` — the
+  identical observable result slice 3 recorded, now from the pinned module (only the
+  container family changes, which the native run does not exercise).
+- `python -m py_compile tests/run.py` and `git diff --check` clean.
+
+Commands still required from a maintainer/CI machine with Docker (native runs cannot
+exercise image pulls; unchanged in kind, but the Dockstore job now pulls **only** the
+Wave family since verify joined it):
+
+```sh
+nf-test test --profile docker --ci            # Wave images for all four pinned modules
+python tests/run.py --converter-source <fair-bioheaders-0.9.0-checkout>
+nextflow run workflows/fairbioheaders/main.nf -profile test,docker --outdir results   # combine + pinned-verify reports in Wave
+nextflow run main.nf -profile docker --sequence examples/assembly.gfa --sequence_format gfa   # plus the FASTA/GFF3/protein examples as in ci.yml
+docker build -t fhr-nextflow:0.1.0 environment
+git diff --check
+```
+
 ## Adopting verify and convert after their merge
 
 Gate (from #29): adopt only after the upstream interfaces **merge** and **pass
@@ -673,22 +782,30 @@ local parity** — no adoption on review heads.
    **Convert: done 2026-11-12** at merge commit `4dc3bc5477` — the re-diff mattered:
    the merged files differ from the `639dd3c` review head this document had recorded
    (default prefix, output-redirect quoting, a new collision guard, and the two
-   spaced-names tests replaced by name-collision tests). **Verify: still gated**;
-   #13635 remains open and its head moved again (`bb6c492` → `bc5a8640`, 2026-11-12),
-   so its table above must be re-diffed at merge time, not reused.
+   spaced-names tests replaced by name-collision tests). **Verify: done 2026-11-14**
+   at merge commit `6fb4f8f1f3f70a34a1f0efdc84729c5dacbc33e5` (merged
+   2026-11-13T15:26:20Z) — the re-diff mattered again: the merged module drops the
+   review head's quoted prefix, ships **4** tests rather than the 10 recorded at
+   review head (the spaced-names case became the changed-after-combine case), and
+   replaces the container pins with the Wave pair (see the verify contract table).
 2. Install combine-style: byte-identical files at recorded SHAs in `modules.json`;
    run the drift step; run the upstream nf-tests (`nf-test test --profile docker`).
    **Convert: done** — 8 files verified, drift step green, 11/11 upstream convert
-   tests passing (see "Testing status for slice 2a").
-3. **verify parity:** confirm `FHR_ATTACH`'s join and the Dockstore test profile
-   behave identically without `--type` (odd-extension rejection), that the report
-   names/content keep the `file:` header, and that the harness failure substrings
-   (`checksum`, `after sequence data`, `duplicate key`, `proteome`) still appear.
-   Then switch `subworkflows/attach`, the Dockstore workflow and the README import
-   examples from the local file to the pinned module **only if** the family-named
-   combine outputs still match verify's extension inference (they do: `.fhr.fa`,
-   `.fhp.faa`, `.fhr.gfa`, `.fhgff3.gff3` all infer correctly) — document the
-   switch.
+   tests passing (see "Testing status for slice 2a"). **Verify: done** — 7 files
+   fetched with per-blob `git hash-object` verification against the untruncated tree,
+   `modules.json` entry added, drift step green 7/7/8/7, upstream verify tests run
+   natively with `--ci` (see "Testing status for slice 4").
+3. **verify parity: done 2026-11-14.** `FHR_ATTACH`'s join and the Dockstore test
+   profile behave identically without `--type` (all combine outputs and fixture names
+   infer correctly; the native `test` profile produced the five `verify/<id>.verify.txt`
+   reports with `Checksum verified.`); the report keeps its `file: <path>` header under
+   the prefix-named output; the harness failure substrings (`checksum`, `after sequence
+   data`, `duplicate key`, `proteome`) still appear because they are toolkit messages.
+   The extension-inference delta was pinned as an observable change: a header-carrying
+   `sample.txt` now fails in the task with `FHR: Unsupported file extension` where the
+   local module forced `--type fasta` (new `tests/run.py` case). Callers stay on the
+   unchanged include paths — the pinned tree overlays the local module at the canonical
+   path, so the switch is the install itself (documented in the verify contract table).
 4. **convert parity: run 2026-11-12; result is partial coverage.** The serializations
    themselves match byte for byte (JSON, YAML, HTML, header extraction) and the
    `.fhr.` infix is reachable by configuration, but the upstream contract cannot name a
@@ -706,10 +823,16 @@ local parity** — no adoption on review heads.
    together; the local `verify` main.nf once step 3 passes).
    **Done 2026-11-13 (option (a)):** `modules/convert` and `modules/combine` were deleted in
    the same change once every caller, test and doc was migrated (migration preceded the
-   deletion — see the slice-3 "Testing status"). The local `verify` main.nf is **not** part
-   of this deletion: `FAIRBIOHEADERS_VERIFY` stays repository-owned and its nf-test setups
-   were retargeted from the retired `FHR_COMBINE` to the pinned upstream
-   `FAIRBIOHEADERS_COMBINE` (reports now record `file: <id>.<ext>`), pending step 3.
+   deletion — see the slice-3 "Testing status"). The local `verify` main.nf was **not** part
+   of that deletion: it stayed repository-owned with its nf-test setups retargeted from the
+   retired `FHR_COMBINE` to the pinned upstream `FAIRBIOHEADERS_COMBINE` (reports recorded
+   `file: <id>.<ext>`), pending step 3.
+   **Done 2026-11-14 (slice 4):** step 3 passed, and the local verify implementation was
+   retired by installing the byte-identical upstream tree over the same canonical path
+   (no separate deletion step exists for it: the retired files survive only in git history
+   and the drift checker proves no local bytes remain). Its 5-case nf-test suite and inline
+   fixtures were replaced by the merged upstream 4-case suite; the coverage the upstream
+   suite does not carry was ported to `tests/run.py` (verify contract table).
 6. Re-evaluate container pins at each toolkit bump: the reviewed complete-tree
    update procedure above maintains the Wave side (nf-core CLI updates require
    the separate local-layout migration first); the repo-side Bioconda/BioContainers/depot trio and

@@ -7,7 +7,8 @@
 // Adds FAIR-bioHeaders metadata to FASTA, protein FASTA, GFA or GFF3 files and
 // verifies the result: FAIRBIOHEADERS_COMBINE (the pinned upstream nf-core
 // module) writes the headed file with its checksum, then FAIRBIOHEADERS_VERIFY
-// checks the header against the schema and the checksum.
+// (also the pinned upstream nf-core module since issue #29 slice 4) checks the
+// header against the schema and the checksum.
 //
 // Issue #29 option (a): this workflow now calls the pinned upstream combine
 // directly (the repository's header-family compatibility module modules/combine

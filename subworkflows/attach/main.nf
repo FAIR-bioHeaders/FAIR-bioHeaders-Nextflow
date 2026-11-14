@@ -11,8 +11,10 @@ include { sequenceKindOf; sequenceType }           from '../../modules/utils/mai
 // Attaches metadata to a sequence file, verifies the result and extracts its JSON.
 //
 // As of issue #29 option (a) this composes the pinned **upstream** nf-core modules
-// (modules/nf-core/fairbioheaders/{combine,convert}) directly; the repository's
-// header-family compatibility modules (FHR_COMBINE / FHR_CONVERT) are retired. The
+// (modules/nf-core/fairbioheaders/{combine,convert,verify}) directly; the repository's
+// header-family compatibility modules (FHR_COMBINE / FHR_CONVERT) are retired, and the
+// repository's own verify implementation was retired in #29 slice 4 under the same
+// include path (tuples and report names unchanged). The
 // outputs therefore follow the upstream naming convention, not the old family names:
 //   sequence : <id>.<input extension>   (genome.fasta -> ID.fasta, .fa -> ID.fa,
 //                                        protein.faa -> ID.faa, assembly.gfa -> ID.gfa,

@@ -121,11 +121,10 @@ jobs:
       - run: git diff --check HEAD
 
   nf-test:
-    # The modules pin bioconda::fair-bioheaders=X.Y.Z. The three pinned upstream modules
-    # (modules.json: combine, validate and convert) run the Seqera Wave image built from
-    # that Bioconda package; the repository-owned modules (verify until #29 adopts it,
-    # plus the header-family compatibility modules combine and convert, strip and
-    # verify_links) pin the BioContainers image
+    # The modules pin bioconda::fair-bioheaders=X.Y.Z. The four pinned upstream modules
+    # (modules.json: combine, validate, convert and, since #29's final slice, verify) run
+    # the Seqera Wave image built from that Bioconda package; the repository-owned modules
+    # (strip and verify_links) pin the BioContainers image
     # quay.io/biocontainers/fair-bioheaders:X.Y.Z--<build> and its
     # Galaxy depot pair. Check that all of them agree with the Bioconda pin, verify that
     # the pinned files still match the recorded nf-core/modules revisions, then run
@@ -140,11 +139,11 @@ jobs:
         run: |
           version="$(sed -n 's/.*bioconda::fair-bioheaders=\([0-9][0-9.]*\)".*/\1/p' modules/nf-core/fairbioheaders/combine/environment.yml)"
           test -n "$version"
-          for module in combine validate convert; do
+          for module in combine validate convert verify; do
             grep -q "bioconda::fair-bioheaders=$version" "modules/nf-core/fairbioheaders/$module/environment.yml"
             grep -q "community.wave.seqera.io/library/fair-bioheaders:$version--" "modules/nf-core/fairbioheaders/$module/main.nf"
           done
-          for module in modules/nf-core/fairbioheaders/verify modules/strip modules/verify_links; do
+          for module in modules/strip modules/verify_links; do
             grep -q "^ *- bioconda::fair-bioheaders=$version$" "$module/environment.yml"
             grep -q "quay.io/biocontainers/fair-bioheaders:$version--" "$module/main.nf"
             grep -q "depot.galaxyproject.org/singularity/fair-bioheaders:$version--" "$module/main.nf"
@@ -172,9 +171,10 @@ jobs:
   dockstore-workflow:
     # Runs workflows/fairbioheaders (described for Dockstore by .dockstore.yml) with
     # -profile test,docker. The workflow composes the pinned upstream
-    # FAIRBIOHEADERS_COMBINE (modules/nf-core/fairbioheaders/combine; issue #29 option (a)
-    # input-faithful naming) and the repository-owned FAIRBIOHEADERS_VERIFY module; check
-    # their Bioconda pin and their container families (Wave vs BioContainers) first.
+    # FAIRBIOHEADERS_COMBINE and FAIRBIOHEADERS_VERIFY modules (modules/nf-core/
+    # fairbioheaders/*; issue #29 option (a) input-faithful naming, verify pinned at its
+    # merged upstream revision); both run the Seqera Wave image family. Check their
+    # Bioconda pin and container family first.
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -188,12 +188,12 @@ jobs:
           if grep -nE '^\s*container\s*=' "$workflow/nextflow.config"; then exit 1; fi
           version="$(sed -n 's/^ *- bioconda::fair-bioheaders=\([0-9.]*\)$/\1/p' "$workflow/environment.yml")"
           test -n "$version"
-          # COMBINE is now the pinned upstream module (Seqera Wave image, #29 option (a)).
-          grep -qE "^ *- \"?bioconda::fair-bioheaders=$version\"?$" modules/nf-core/fairbioheaders/combine/environment.yml
-          grep -q "community.wave.seqera.io/library/fair-bioheaders:$version--" modules/nf-core/fairbioheaders/combine/main.nf
-          # VERIFY stays repository-owned (BioContainers image, Galaxy depot pair).
-          grep -q "^ *- bioconda::fair-bioheaders=$version$" modules/nf-core/fairbioheaders/verify/environment.yml
-          grep -q "quay.io/biocontainers/fair-bioheaders:$version--" modules/nf-core/fairbioheaders/verify/main.nf
+          # COMBINE and VERIFY are both pinned upstream modules (Seqera Wave image;
+          # #29 option (a), verify adopted at its merged revision).
+          for module in combine verify; do
+            grep -qE "^ *- \"?bioconda::fair-bioheaders=$version\"?$" "modules/nf-core/fairbioheaders/$module/environment.yml"
+            grep -q "community.wave.seqera.io/library/fair-bioheaders:$version--" "modules/nf-core/fairbioheaders/$module/main.nf"
+          done
           # .dockstore.yml points at files that exist.
           for path in $(grep -oE '^ *(primaryDescriptorPath: |readMePath: |- )/[A-Za-z0-9_./-]+$' .dockstore.yml | grep -oE '/[A-Za-z0-9_./-]+$'); do
             test -f ".$path"
