@@ -129,8 +129,33 @@ jobs:
     # Galaxy depot pair. Check that all of them agree with the Bioconda pin, verify that
     # the pinned files still match the recorded nf-core/modules revisions, then run
     # nf-test, which pulls the images.
+    #
+    # Snapshot baselines (issue #7, maintainer decision 6B of 2026-11-14): the committed
+    # upstream main.nf.test.snap files record meta.nextflow 26.10.4, while this suite's
+    # supported baseline is 26.04.6. Both are exercised here so snapshot-baseline drift is
+    # a CI result rather than a property of whichever host runs nf-test.
+    # Failure semantics: fail-fast is off, so one leg never hides the other and a green
+    # 26.04.6 leg next to a red 26.10.4 leg reads as drift in the newer engine's output,
+    # not as a broken module. Each leg is a separately named check (nf-test (Nextflow
+    # 26.04.6), nf-test (Nextflow 26.10.4)), and the "Record the engine..." step prints the
+    # version actually resolved plus the meta.nextflow recorded in the committed snapshots,
+    # so the log names the diverging pair without re-running anything. A red leg means the
+    # snapshot content produced by that engine differs from the committed baseline; it is
+    # never fixed by editing a pinned module — re-record or update upstream per
+    # docs/module-migration.md.
+    name: nf-test (Nextflow ${{ matrix.nxf_version }})
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # 26.04.6 = this suite's supported baseline (env.NXF_VER, nextflow.config,
+        # README); 26.10.4 = the Nextflow the pinned upstream snapshots were recorded under.
+        nxf_version: ['26.04.6', '26.10.4']
+    env:
+      # Overrides the workflow-level NXF_VER for this job only, so the launcher the
+      # nf-core action installs and the one nf-test then runs are the matrix version.
+      NXF_VER: ${{ matrix.nxf_version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -161,12 +186,25 @@ jobs:
           java-version: '21'
       - uses: nf-core/setup-nextflow@893c28b667aedeba26e37f296d260ccc5bc4d914 # v3.0.1
         with:
-          version: ${{ env.NXF_VER }}
+          version: ${{ matrix.nxf_version }}
       - uses: nf-core/setup-nf-test@4069fbbaabe94c08faba4ad261bfa88225ba133f # v2.1.0
         with:
           version: 0.9.5
+      - name: Record the engine and the snapshot baselines under test
+        run: |
+          echo "matrix leg: ${{ matrix.nxf_version }}"
+          echo 'engine actually resolved:'
+          nextflow -version 2>&1 | sed -n 's/^ *version /  nextflow /p'
+          echo 'nf-test under test:'
+          nf-test version 2>&1 | sed -n '1p'
+          echo 'meta.nextflow recorded in the committed snapshots:'
+          grep -h '"nextflow"' modules/nf-core/fairbioheaders/*/tests/main.nf.test.snap | sort | uniq -c
       - name: Run nf-test
         run: nf-test test --profile docker --ci --verbose
+      - name: Point at the failing leg on mismatch
+        if: failure()
+        run: |
+          echo "::error::nf-test failed on the Nextflow ${{ matrix.nxf_version }} baseline. The other matrix leg keeps running (fail-fast: false): compare the two check names to tell a baseline-specific snapshot drift from a real module break. --ci never rewrites a snapshot; see docs/module-migration.md for the recorded update procedure."
 
   dockstore-workflow:
     # Runs workflows/fairbioheaders (described for Dockstore by .dockstore.yml) with

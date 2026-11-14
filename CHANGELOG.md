@@ -103,6 +103,57 @@ the Docker example/Dockstore runs, `docker build environment` and `nf-core modul
 remain CI-/maintainer-side, as recorded in docs/module-migration.md ("Testing status for
 slice 4"); this branch runs no nf-core CLI (mixed local-module layout limitation).
 
+### Snapshot-baseline matrix and the spaced-`ext.prefix` pin (2026-11-14, maintainer decisions 6B and F8)
+
+Two follow-ups recorded during #29 are implemented here; neither changes module
+behavior, so nothing in the BREAKING/CHANGED sections above moves.
+
+- **CI now matrixes the nf-test job over both snapshot baselines (decision 6B).** The
+  committed upstream `main.nf.test.snap` files record `meta.nextflow: 26.10.4` (upstream
+  recorded them there) while this suite's supported baseline is Nextflow **26.04.6** — the
+  version every previous local run reported on. Until now the agreement between the two was
+  an observation made on whichever host happened to run nf-test. The `nf-test` job runs
+  `nxf_version: ['26.04.6', '26.10.4']`, with the job-level `NXF_VER` override and the
+  `nf-core/setup-nextflow` `version:` both taken from the matrix so the installed launcher
+  and the one nf-test invokes cannot disagree. `fail-fast: false` keeps both legs reporting:
+  a red `nf-test (Nextflow 26.10.4)` beside a green `nf-test (Nextflow 26.04.6)` is
+  baseline-specific snapshot drift, not a broken module, and the leg name says which engine
+  produced it. A new step prints the resolved engine, the nf-test version and the
+  `meta.nextflow` recorded in the committed snapshots, so a failure names the diverging pair
+  from the log alone; `--ci` mode never rewrites a snapshot. The `test` and
+  `dockstore-workflow` jobs stay on the single supported baseline **26.04.6** — this is a
+  snapshot-baseline matrix, not a widening of the supported compatibility claim.
+- **`tests/run.py` pins the spaced-`ext.prefix` failure (F8).** The merged upstream
+  `fairbioheaders/verify` interpolates `ext.prefix` into its report redirect **unquoted**
+  (the quoting its review head carried was dropped before merge), so a caller-supplied
+  prefix containing a space dies in the task with
+  `.command.sh: line 8: syntax error near unexpected token `prefix.verify.txt'` — a shell
+  parse error that names only the tail of the redirect, with no hint that the prefix is the
+  cause. This is asymmetric with a spaced **input sequence**, which verifies cleanly because
+  Nextflow shell-escapes staged paths (already pinned by the slice-4 case). The behavior is
+  now pinned by one harness assertion rather than wrapped: the suite's own callers set no
+  verify prefix at all (it stays the `isSampleId`-gated `meta.id`), so a caller-layer
+  validator here would guard a path this repository does not use and would still not reach a
+  direct importer configuring the prefix in their own `nextflow.config` — which is the party
+  the documented obligation addresses. The pinned module itself is, as ever, untouched; if
+  upstream ever quotes the redirect, the assertion fails and the contract table in
+  [docs/module-migration.md](docs/module-migration.md) has to be re-read.
+- **Tracker bookkeeping (decision 6A).** #29 is closed: all four `fairbioheaders` modules are
+  pinned upstream at byte-identical revisions and the manifest-driven drift check passes
+  (combine 7/7, validate 7/7, convert 8/8, verify 7/7). The two remainders it carried — the
+  `modules/local/` layout migration and the container-pin re-evaluation due at the next
+  toolkit bump — are now scoped on **#7**, together with the FHT module question, which stays
+  draft-only/opt-in until FHT has a released contract. Neither is implemented by this change.
+
+Verification on this host (native processes in the `fhr-nf29-verify:slice4` container, as in
+slices 1–4; the container's launcher resolves either matrix baseline through `NXF_VER`):
+`python3 scripts/check_upstream_modules.py` 7/7/8/7 green, drift-guard unittests 2/2,
+`nf-test test --ci` under **both** Nextflow 26.04.6 and 26.10.4, and `python tests/run.py
+--converter-source <Tools v0.9.0 @ c6d7454>` including the new F8 assertion. `nf-test
+--profile docker`, the Docker example/Dockstore runs and `docker build environment` remain
+CI-side — the two matrix legs land in this PR's CI, which is the first place both baselines
+run with real image pulls.
+
 ### Prior #29 work (slices 1 and 2a), unchanged by the naming decision except that the
 compat modules the slices preserved are now retired
 
