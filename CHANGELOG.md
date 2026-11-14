@@ -103,6 +103,92 @@ the Docker example/Dockstore runs, `docker build environment` and `nf-core modul
 remain CI-/maintainer-side, as recorded in docs/module-migration.md ("Testing status for
 slice 4"); this branch runs no nf-core CLI (mixed local-module layout limitation).
 
+### Snapshot-baseline matrix and the spaced-`ext.prefix` pin (2026-11-14, maintainer decisions 6B and F8)
+
+Two follow-ups recorded during #29 are implemented here; neither changes module
+behavior, so nothing in the BREAKING/CHANGED sections above moves.
+
+- **CI now matrixes the nf-test job over both snapshot baselines (decision 6B).** The
+  committed upstream `main.nf.test.snap` files record `meta.nextflow: 26.10.4` (upstream
+  recorded them there) while this suite's supported baseline is Nextflow **26.04.6** — the
+  version every previous local run reported on. Until now the agreement between the two was
+  an observation made on whichever host happened to run nf-test. The `nf-test` job runs
+  `nxf_version: ['26.04.6', '26.10.4']`, with the job-level `NXF_VER` override and the
+  `nf-core/setup-nextflow` `version:` both taken from the matrix so the installed launcher
+  and the one nf-test invokes cannot disagree. `fail-fast: false` keeps both legs reporting:
+  a red `nf-test (Nextflow 26.10.4)` beside a green `nf-test (Nextflow 26.04.6)` is an
+  engine-specific output difference — a snapshot-content mismatch, or an assertion that
+  assumes which stream Nextflow prints its own log to — not a broken module, and the leg
+  name says which engine produced it (the first run of the matrix hit the second kind; see
+  "First-run result" below). A new step prints the resolved engine, the nf-test version and the
+  `meta.nextflow` recorded in the committed snapshots, so a failure names the diverging pair
+  from the log alone; `--ci` mode never rewrites a snapshot. The `test` and
+  `dockstore-workflow` jobs stay on the single supported baseline **26.04.6** — this is a
+  snapshot-baseline matrix, not a widening of the supported compatibility claim.
+- **`tests/run.py` pins the spaced-`ext.prefix` failure (F8).** The merged upstream
+  `fairbioheaders/verify` interpolates `ext.prefix` into its report redirect **unquoted**
+  (the quoting its review head carried was dropped before merge), so a caller-supplied
+  prefix containing a space dies in the task with
+  `.command.sh: line 8: syntax error near unexpected token `prefix.verify.txt'` — a shell
+  parse error that names only the tail of the redirect, with no hint that the prefix is the
+  cause. This is asymmetric with a spaced **input sequence**, which verifies cleanly because
+  Nextflow shell-escapes staged paths (already pinned by the slice-4 case). The behavior is
+  now pinned by one harness assertion rather than wrapped: the suite's own callers set no
+  verify prefix at all (it stays the `isSampleId`-gated `meta.id`), so a caller-layer
+  validator here would guard a path this repository does not use and would still not reach a
+  direct importer configuring the prefix in their own `nextflow.config` — which is the party
+  the documented obligation addresses. The pinned module itself is, as ever, untouched; if
+  upstream ever quotes the redirect, the assertion fails and the contract table in
+  [docs/module-migration.md](docs/module-migration.md) has to be re-read.
+- **Tracker bookkeeping (decision 6A).** #29 is closed: all four `fairbioheaders` modules are
+  pinned upstream at byte-identical revisions and the manifest-driven drift check passes
+  (combine 7/7, validate 7/7, convert 8/8, verify 7/7). The two remainders it carried — the
+  `modules/local/` layout migration and the container-pin re-evaluation due at the next
+  toolkit bump — are now scoped on **#7**, together with the FHT module question, which stays
+  draft-only/opt-in until FHT has a released contract. Neither is implemented by this change.
+
+Verification on this host (native processes in the `fhr-nf29-verify:slice4` container, as in
+slices 1–4; the container's launcher resolves either matrix baseline through `NXF_VER`):
+`python3 scripts/check_upstream_modules.py` 7/7/8/7 green, drift-guard unittests 2/2,
+`nf-test test --ci` under **both** Nextflow 26.04.6 and 26.10.4, and `python tests/run.py
+--converter-source <Tools v0.9.0 @ c6d7454>` including the new F8 assertion. `nf-test
+--profile docker`, the Docker example/Dockstore runs and `docker build environment` remain
+CI-side — the two matrix legs land in this PR's CI, which is the first place both baselines
+run with real image pulls.
+
+**First-run result (CI run `43617282873` at head `1cc979f`, 2026-11-14).** `test` is green
+(harness `PASS: 66 pipeline runs and rejection cases`, converter wrapper `2410 tests passed`,
+all four Docker examples), `dockstore-workflow` is green, and
+`nf-test (Nextflow 26.04.6)` reports `SUCCESS: Executed 30 tests in 216.39s`.
+`nf-test (Nextflow 26.10.4)` reports `FAILURE: Executed 30 tests in 151.763s (2 failed)`.
+The two failures are the pinned convert suite's
+*sarscov2 - fhr yaml - yaml - same input and output names - fails* and its `- stub` twin —
+`modules/nf-core/fairbioheaders/convert/tests/main.nf.test:289,356`, the only two of the
+**eight** stream-reading failure assertions across the four pinned suites that read
+`process.stdout` **alone**; the other six read `(process.stdout + process.stderr)` and pass
+under both engines. Nextflow 26.10.4 writes the name-collision diagnostic to **stderr** —
+the failure dump shows an empty `Nextflow stdout:` and the full
+`ERROR ~ ... Caused by: Input and output names are the same, set prefix in module
+configuration to disambiguate!` block under `Nextflow stderr:` — while 26.04.6 prints it to
+stdout, so `process.stdout` is `[]` and only that assertion fails (`assert process.failed`
+passes: the guard fires identically on both engines). **Zero snapshot mismatches on either
+leg** — the matrix found an upstream *assertion-portability* defect on its first run, not
+baseline drift and not a module break. Reproduced deterministically on this host under
+`NXF_VER=26.10.4` in the verification container (native executor): the same two assertions
+fail the same way. The local run additionally failed
+*sarscov2 - fasta - no header - fails* with **both** streams empty — a host artifact of the
+emulated native executor for that task-level (in-container) failure: that case is
+stream-agnostic and passes in both CI legs. **Remedy:** stream-tolerant assertions upstream
+(read `stdout + stderr` like the other six), adopted here by moving the convert pin through
+the recorded procedure in docs/module-migration.md. Filing the upstream request is a
+maintainer action; it is staged unfiled alongside the `faa`-alias draft. Until it is
+adopted, the `nf-test (Nextflow 26.10.4)` leg stays red as a named compatibility finding —
+it is not silenced by editing the pinned module, skipping the two cases, making the leg
+advisory, or dropping 26.10.4 from the matrix. `main` is not branch-protected
+(`gh api …/branches/main/protection` → 404), so a red named leg does not mechanically block
+merges; what to do about this finding (file upstream / merge with the documented red leg /
+narrow the matrix and knowingly lose the coverage) is a maintainer decision.
+
 ### Prior #29 work (slices 1 and 2a), unchanged by the naming decision except that the
 compat modules the slices preserved are now retired
 

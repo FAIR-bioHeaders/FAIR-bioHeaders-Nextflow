@@ -309,6 +309,19 @@ workflow {
               and report_lines[0].endswith('protein with space.faa')
               and report_lines[1] == 'Checksum verified.',
               f'spaced-name verify report is not the documented two lines: {report_lines}')
+        # The same case on the **prefix** does not hold: the merged upstream module
+        # interpolates `ext.prefix` into the report redirect unquoted (the quoting its
+        # review head carried was dropped before merge), so a caller-supplied prefix
+        # containing a space dies in the task as a bare shell parse error naming only the
+        # tail of the redirect target — no mention of ext.prefix. Pinned rather than
+        # wrapped: this suite's own callers never set a verify prefix (it stays the
+        # isSampleId-gated `meta.id`), so this is the direct-importer edge documented in
+        # docs/PIPELINES.md, and the assertion is what fails loudly if upstream ever
+        # quotes the redirect and the observable behavior changes.
+        prefix_dir = work / 'verify-spaced-prefix'
+        prefix_dir.mkdir()
+        (prefix_dir / 'nextflow.config').write_text("nextflow.enable.dsl = 2\nprocess { withName: FAIRBIOHEADERS_VERIFY { ext.prefix = { 'spaced prefix' } } }\n")
+        run(faa_verify, prefix_dir, ['--sequence', str(chain / 'protein.fhp.faa')], failure="syntax error near unexpected token `prefix.verify.txt'")
 
         # Standalone FHP metadata: FAIRBIOHEADERS_VALIDATE (no sequence, no checksum check).
         validate_script = work / 'fhp-validate.nf'

@@ -12,6 +12,12 @@ Status date: **2026-11-14** (slice 4 adopts **verify** at its merged revision `6
 and retires the local repository module — the last non-pinned `fairbioheaders` module; slice 3
 records the maintainer naming decision; upstream state was re-verified against the GitHub API
 on 2026-11-13/14; re-check before acting on it — checkouts and PRs move).
+**#29 is closed** (all four modules are upstream-pinned and byte-identical: combine 7/7,
+validate 7/7, convert 8/8, verify 7/7). Its two routine remainders — the `modules/local/`
+layout migration and the container-pin re-evaluation at the next toolkit bump — are
+**scoped on [#7](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Nextflow/issues/7)** as
+of 2026-11-14 (maintainer decision 6A), and the snapshot-baseline question #7 inherited is
+decided as a **dual matrix** (decision 6B), implemented in `.github/workflows/ci.yml`.
 
 ## Naming decision (2026-11-13) — Option (a): adopt upstream naming, retire the family contract
 
@@ -104,7 +110,11 @@ after their merge").
   4.2.2 rejects those untracked directories. A valid manifest alone does **not**
   make `nf-core modules update`, `list local` or `lint` usable here. Use the
   CLI-less procedure below until a separate layout migration moves local modules
-  to `modules/local/` and updates every importer. That migration remains #29 work.
+  to `modules/local/` and updates every importer. **That migration is [#7
+  work](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Nextflow/issues/7), not #29 work**
+  (maintainer decision 6A, 2026-11-14), and it pairs with the next toolkit bump: that bump is
+  when the container pins are re-evaluated anyway (step 6 of the adoption list), so one reviewed
+  cycle moves the layout, the importers and the pins together instead of two.
 - CI runs `python3 scripts/check_upstream_modules.py`. It iterates **every entry of
   `modules.json`**, retrieves the complete recursive GitHub tree at each pin with
   `curl --retry 3`, rejects truncated responses, and compares all module-relative
@@ -314,7 +324,7 @@ merged revision against the retired local module:
 | Output | `tuple val(meta), path("${prefix}.verify.txt")`, emit `report` + versions | `path("*.verify.txt")` (glob) | matches for every caller: `ext.prefix` is set nowhere for verify, so the prefixed name equals the globbed one (`ID.verify.txt`) |
 | `--type` | **not passed**; the toolkit infers from the extension (`.fa/.fasta/.fna/.fas/.faa/.ffn/.frn/.fsa/.mpfa/.gfa/.gff/.gff3`, `.gz`/`.bgz` handled) | explicit whitelist: `.gfa→gfa`, `.gff3?→gff3`, **anything else forced to `fasta`** | **differs — the parity item.** Odd extensions change side: the local module verified a FHR/FHP-headed `sample.txt` (forced FASTA); the pinned module fails it in the task with `FHR: Unsupported file extension: sample.txt` (toolkit 0.9.0, probe-verified). All this repository's callers stage combine outputs or fixture names, which infer correctly; the new surface is pinned by a `tests/run.py` case |
 | Compression | same `.gz/.bgz` verification (toolkit side) | same | matches (covered through the `FHR_ATTACH` BGZF harness run) |
-| Quoting | report redirect and prefix unquoted; staged path interpolated (Nextflow escapes staged paths) | full single-quote closure on path, prefix, `meta.id` | differs (same caller-discipline caveat as combine/validate/convert: constrain `meta.id`/`ext.prefix`; `FHR_ATTACH` and the example gate IDs with `isSampleId`). Probe: a staged `protein with space.faa` verifies cleanly with a single-line `file:` report — pinned by a new `tests/run.py` case |
+| Quoting | report redirect and prefix unquoted; staged path interpolated (Nextflow escapes staged paths) | full single-quote closure on path, prefix, `meta.id` | differs (same caller-discipline caveat as combine/validate/convert: constrain `meta.id`/`ext.prefix`; `FHR_ATTACH` and the example gate IDs with `isSampleId`). Probe: a staged `protein with space.faa` verifies cleanly with a single-line `file:` report — pinned by a new `tests/run.py` case. The mirror case is **not** clean and is now pinned too: `ext.prefix = { 'spaced prefix' }` interpolates into the redirect unquoted and the task dies with `.command.sh: line 8: syntax error near unexpected token `prefix.verify.txt'` (exit 1, recorded verbatim 2026-11-14, F8) — the message names only the redirect tail, never the prefix. `tests/run.py` asserts that exact failure so the asymmetry is documented behavior, and an upstream quoting fix would surface as a failing assertion rather than a silent contract move |
 | Failure semantics | schema/checksum failure fails the task; report keeps the `file: <path>` header | identical | matches; the harness failure substrings (`checksum`, `after sequence data`, `duplicate key`, `proteome`) are toolkit messages and still fire — all five rejection cases pass unchanged |
 | Report content | `file: <staged path>` + `bioheaders verify` stdout | same (quoted interpolation) | matches for space-free paths |
 | Conda | `"bioconda::fair-bioheaders=0.9.0"` (quoted line) | same pin, unquoted line | matches (content) |
@@ -902,3 +912,51 @@ current upstream naming (option (a)). Filing it is a maintainer action.
 - Upstream snapshots were recorded against Nextflow 26.10.4 while this repo's CI
   pins 26.04.6; #7's compatibility matrix should decide whether to dual-test or
   bump the baseline.
+  **Decided 2026-11-14 (maintainer decision 6B): dual-test.** The `nf-test` CI job is a
+  matrix over both (`nxf_version: ['26.04.6', '26.10.4']`, `fail-fast: false`), so
+  snapshot-baseline drift is a named CI result instead of a host property. The baseline
+  itself is **not** bumped: 26.04.6 stays the suite's supported version (README,
+  `nextflow.config`, the `test` and `dockstore-workflow` jobs); 26.10.4 is exercised only as
+  the baseline the pinned upstream snapshots were recorded under. Bumping the supported
+  baseline remains a #7 compatibility-matrix decision with its own pin review.
+  **First-run result (PR #34 CI, run `43617282873`, head `1cc979f`, 2026-11-14).** The two
+  legs resolved genuinely different engines — the Record step printed `nextflow 26.04.6
+  build 12646` and `nextflow 26.10.4 build 14435`, both under nf-test 0.9.5 — and reported
+  `SUCCESS: Executed 30 tests in 216.39s` on 26.04.6 versus `FAILURE: Executed 30 tests in
+  151.763s (2 failed)` on 26.10.4. **All 22 committed snapshots matched on both engines —
+  the drift this matrix was built to catch did not appear.** The two red assertions are not
+  snapshot tests: `sarscov2 - fhr yaml - yaml - same input and output names - fails` and its
+  `- stub` twin in the pinned `modules/nf-core/fairbioheaders/convert/tests/main.nf.test`
+  assert `process.stdout.toString().contains("Input and output names are the same")`, and
+  26.10.4 writes the Nextflow log — the `ERROR ~ Error executing process` block included —
+  to **stderr**, so on that leg `process.stdout` is empty (`[]`) even though the module's
+  name-collision guard fires identically (`Caused by: Input and output names are the same,
+  set prefix in module configuration to disambiguate! -- Check script
+  '.../fairbioheaders/convert/main.nf' at line: 27`, and line 40 under `-stub`). The
+  assertion therefore pins a Nextflow log-stream behavior, not the module contract, and it
+  moved between the two baselines. These two are the only stdout-**alone** failure assertions
+  among the eight stream-reading ones across the four pinned suites; the other six read
+  `(process.stdout + process.stderr)` and passed on both legs — the asymmetry is the defect.
+  A native local run of the convert file under `NXF_VER=26.10.4` in the verification
+  container reproduced both failures identically (`Executed 11 tests in 677.086s (3 failed)`;
+  the third failure, `sarscov2 - fasta - no header - fails`, sees empty streams on this
+  host's emulated native executor — a local-environment artifact, since that case is
+  stream-agnostic and passes in both CI legs). **Disposition:** the correct fix is a
+  stream-tolerant assertion **upstream** (match on stdout *or* stderr, like the other six),
+  adopted here by moving the convert pin through the recorded procedure — it joins the staged,
+  unfiled upstream requests above (filing is a maintainer action, standing posture unchanged). Until then
+  the 26.10.4 leg stays red on this PR as a named compatibility finding; it is **not** to
+  be silenced by editing the pinned test, by skipping the two cases, or by making the leg
+  advisory. Bumping the supported baseline to 26.10.4 would *not* fix it either — the same
+  assertion fails under that engine regardless of which baseline is called supported.
+- **The layout migration is #7's now** (decision 6A, 2026-11-14): moving `modules/*` →
+  `modules/local/` plus every importer path is what makes `nf-core modules update`,
+  `list local` and `lint` usable in this repository, and it pairs with the next toolkit bump
+  because that bump is when the container pins are re-evaluated anyway. Until it lands, the
+  CLI-less fetch procedure and the manifest-driven drift check above stay the only
+  supported way to touch a pinned module.
+- **FHT stays draft-only and opt-in here** until it has a released contract: no FHT-named
+  module, output name, fixture set or README support claim takes release form (rule V7 in
+  FAIR-bioHeaders-Specification). Any FHT composition in this suite must be explicitly
+  labelled draft, off by default, and pinned to the draft contract, and the upstream module
+  set must not be asked to claim family completeness on FHT's behalf.

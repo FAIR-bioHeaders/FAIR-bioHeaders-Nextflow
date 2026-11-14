@@ -167,7 +167,8 @@ directly and publishes their input-faithful names, so **no output file name carr
 `fhr`/`fhp`/`fhgff3` marker any more**. Two consequences for direct importers: (1) the
 upstream modules do not shell-quote `ext.prefix`/`meta.id`, so **you must constrain
 `meta.id` to safe filenames yourself** (`FHR_ATTACH`/the example already do via
-`isSampleId`); (2) `bioheaders combine`/`convert` refuse to overwrite a staged input
+`isSampleId`), and a prefix containing a space fails in the task as a bare shell parse error
+that does not name the prefix (see [Diagnosing failures](#diagnosing-failures)); (2) `bioheaders combine`/`convert` refuse to overwrite a staged input
 (`FHR: Output must differ from the input files` / `Input and output names are the same,
 set prefix...`), so pick ids where `<id>.<extension>` cannot equal the sequence file's
 own name, or set `ext.prefix`. The upstream COMBINE and VERIFY leave format inference to the
@@ -239,6 +240,7 @@ The minimal Dockstore workflow [workflows/fairbioheaders](../workflows/fairbiohe
 - **Toolkit version:** the modules no longer stop on a version mismatch; each task reports the version it ran on the `versions` topic. Use the modules' BioContainers images (or the pinned environment) for the supported baseline, and upgrade the compatibility contract and tests together before claiming another version.
 - **Checksum mismatch:** verify that no program changed the header, whitespace, line endings or sequence bytes after attachment. Reattach when changing metadata.
 - **Unsafe ID or unsupported format:** use IDs and format values from the README contract. The repository modules quote staged paths and explicitly restrict command formats; the pinned upstream modules rely on Nextflow's interpolation of staged paths, so supply only ID-constrained names and controlled `ext.prefix` values to them.
+- **`syntax error near unexpected token` naming a fragment of your output name:** that is a **space in `ext.prefix`**, not a metadata problem. The pinned upstream modules interpolate `ext.prefix` into their output redirect unquoted, so `{ 'spaced prefix' }` makes the shell see a second word; the message quotes only the tail (`... token `prefix.verify.txt'`) and never mentions `ext.prefix`. A spaced *input* file name is different — Nextflow shell-escapes staged paths, so that verifies cleanly (both cases are pinned in `tests/run.py`). Keep prefixes single-token; the suite's own callers never set one and stay on `isSampleId`-gated `meta.id`.
 - **GFF3 validation failed:** read the findings in the task error or the JSON/HTML report in the task work directory; with `fail_on_errors = false` the reports are emitted instead. An "incomplete" failure means the GFF3 or genome could not be read.
 - **Failed converter tests:** inspect the published `converter-tests/converter-tests.log` and JUnit XML. A checkout whose declared version differs from the installed toolkit is rejected before tests run.
 - **Parent-link verification failed:** read the report (and the task error) for the `derivedFrom` entry that did not match; supply the parent file the header records, recombine the parent if it changed, or set `ext.fail_on_mismatch = false` to survey a batch. An "incomplete" failure means the input or a parent could not be read or validated. A match proves file identity, not translation correctness.

@@ -10,3 +10,5 @@ results-*/
 # nf-test
 .nf-test/
 .nf-test.log
+# nf-test writes one generated launcher script per test run into the repo root
+/.nf-test-*.nf
