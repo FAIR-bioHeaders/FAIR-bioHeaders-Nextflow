@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Capability matrix (docs, 2026-11-16)
+
+Published the module × operation × type × serialization × version matrix in
+`docs/CAPABILITY-MATRIX.md` (FAIR-bioHeaders-Specification#211 item 5; the
+current-matrix acceptance item of issue #35, which stays open for the FHGM
+runtime lane and pin upgrades). Every `tested`/`partial` cell cites a named
+nf-test case, a `tests/run.py` assertion or a CI command; FHT and FHGM rows
+state only that no released contract exists to target (rule V7). The pinned
+toolkit stays **0.9.0**: the 0.11.0 / specification-v0.6.0 bump is recorded as
+an open item with evidence, not applied. Added `scripts/check_capability_matrix.py`,
+wired as a new additive `docs-matrix` CI job (no existing job, step, pin or
+matrix leg in `ci.yml` was changed), which verifies every citation, pin, cell
+state and module row against the tree; its `--self-test` fails the build unless
+five deliberate matrix defects are each caught.
+
 ### Naming decision — issue #29 option (a): adopt upstream naming (BREAKING / CHANGED, targets minor **0.3.0**)
 
 **This is the documented external-contract change requested by issue #29 and is the

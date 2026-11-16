@@ -1,6 +1,6 @@
 # Building FHR pipelines
 
-See [README](../README.md) for setup and complete module contracts. These modules preserve caller-supplied metadata and use the converter's schema; they do not infer biological provenance or query external services.
+See [README](../README.md) for setup and complete module contracts. These modules preserve caller-supplied metadata and use the converter's schema; they do not infer biological provenance or query external services. For what each module and lane actually tests per type, serialization and pinned version — and which cells are open — see the [capability matrix](CAPABILITY-MATRIX.md).
 
 ## Construct metadata, attach it, and validate
 

@@ -258,3 +258,31 @@ jobs:
           done
           test -s results/combine/proteins.faa
           ls -l results/combine results/verify
+
+  docs-matrix:
+    # Added 2026-11-16 for FAIR-bioHeaders-Specification#211 item 5: verifies
+    # docs/CAPABILITY-MATRIX.md against this tree — every evidence citation
+    # resolves in the cited file, every tested/partial cell is cited, the FHT
+    # and FHGM columns claim nothing (rule V7), the matrix-pins block agrees
+    # with modules.json, the module container/conda references,
+    # environment/requirements.in, nextflow.config and this workflow, every
+    # process and named workflow has a row, and relative links resolve.
+    # --self-test injects five deliberate matrix defects and fails unless each
+    # is caught, so this guard cannot rot into a no-op. Standard library
+    # Python only: no Nextflow, containers or network. The job is purely
+    # additive; no existing job, step, pin or matrix leg above was changed.
+    name: docs matrix check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13'
+      - name: Check the capability matrix against the tree
+        run: python3 scripts/check_capability_matrix.py
+      - name: Prove the check fails on deliberate defects
+        run: python3 scripts/check_capability_matrix.py --self-test
+      - run: git diff --check HEAD
