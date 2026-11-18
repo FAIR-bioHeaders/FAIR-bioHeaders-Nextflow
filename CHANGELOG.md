@@ -39,6 +39,11 @@
 - **Citation metadata.** `CITATION.cff` and the README now record the Zenodo concept DOI
   (10.5281/zenodo.23751088) and the v0.2.0 release DOI (10.5281/zenodo.23986093) that
   Zenodo's GitHub integration minted, instead of saying the suite has no DOI.
+  A new `.zenodo.json` gives future Zenodo releases the title "FAIR-bioHeaders-Nextflow:
+  workflows for FAIR-bioHeaders sequence headers", the CITATION.cff creators and the MPL-2.0
+  license. Earlier records were titled
+  `github.com/FAIR-bioHeaders/FAIR-bioHeaders-Nextflow/fair-bioheaders`; renaming those needs
+  a maintainer's Zenodo login.
 - Verification: `python tests/run.py` (Nextflow 26.04.6, Java 21, hash-locked environment)
   adds the injection, traversal, duplicate, odd-default-id and spaced-`--id` rejections for
   the Dockstore workflow, two `FHR_ATTACH` id rejections, the `combineId` extension cases,
