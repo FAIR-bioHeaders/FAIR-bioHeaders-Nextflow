@@ -1,8 +1,16 @@
 cff-version: 1.2.0
 title: FAIR-bioHeaders-Nextflow
-message: For the FHR standard, cite the preferred paper. This module suite has no
-  published release or assigned DOI.
+message: For the FHR standard, cite the preferred paper. To cite this module suite,
+  use its Zenodo concept DOI (all versions) or the DOI of the release you used.
 type: software
+doi: 10.5281/zenodo.23751088
+identifiers:
+- type: doi
+  value: 10.5281/zenodo.23751088
+  description: Zenodo concept DOI, resolving to the latest release of this module suite
+- type: doi
+  value: 10.5281/zenodo.23986093
+  description: Zenodo DOI of the v0.2.0 release
 authors:
 - given-names: David
   family-names: Molik

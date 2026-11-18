@@ -14,6 +14,27 @@ def sampleId(Map meta) {
     return id.toString()
 }
 
+// The extension the upstream combine keeps for the given sequence file: its last
+// name token, or the last two when the last is exactly gz or bgz (compression is
+// preserved). This mirrors the pinned module's own case-sensitive rule, so an
+// upper-case genome.FA.GZ keeps only GZ there and here alike.
+def combineExtension(String name) {
+    def tokens = name.tokenize('.')
+    return tokens.takeRight(tokens.last() in ['gz', 'bgz'] ? 2 : 1).join('.')
+}
+
+// The combine output is <id>.<extension>; the toolkit refuses to overwrite the
+// staged input. When that name would equal the sequence file's own name (which is
+// exactly what the default id derived from the file name produces), add the prefix
+// disambiguator the upstream module documents. (Issue #29 option (a) collision guard;
+// used by the Dockstore workflow and the example's --sequence path.)
+def combineId(String id, String sequenceName) {
+    if (!id) {
+        return id
+    }
+    return ("${id}.${combineExtension(sequenceName)}" == sequenceName) ? "${id}.combined" : id
+}
+
 def quote(Object value) {
     return "'" + value.toString().replace("'", "'\"'\"'") + "'"
 }

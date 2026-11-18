@@ -9,7 +9,7 @@ include { FHR_ATTACH } from './subworkflows/attach/main'
 include { FHR_CONVERTER_TESTS } from './modules/converter_tests/main'
 include { GFF3_VALIDATE } from './modules/gff3_validate/main'
 include { FHR_VERIFY_LINKS } from './modules/verify_links/main'
-include { isSampleId } from './modules/utils/main'
+include { isSampleId; combineId } from './modules/utils/main'
 
 // One record per metadata file. --id names the output of a single file;
 // otherwise each ID is the file name without .fhr.json or .json. Functions
@@ -84,7 +84,13 @@ workflow {
     // published: their checksum is computed from the attached file, whereas the
     // standalone checksum is whatever the input supplied (a placeholder in the example).
     FHR_ATTACH(params.sequence
-        ? FHR_CREATE_JSON.out.json.map { meta, json -> tuple(meta, json, file(params.sequence, checkIfExists: true), params.sequence_format) }
+        ? FHR_CREATE_JSON.out.json.map { meta, json ->
+            // The pinned combine writes <id>.<input extension> and refuses to overwrite
+            // its input, so --metadata genome.json --sequence genome.fasta would collide;
+            // combineId adds the documented .combined disambiguator only in that case.
+            def sequence = file(params.sequence, checkIfExists: true)
+            tuple(meta + [id: combineId(meta.id, sequence.name)], json, sequence, params.sequence_format)
+        }
         : channel.empty())
     final_json = params.sequence ? FHR_ATTACH.out.json : FHR_CREATE_JSON.out.json
     // Published YAML via the pinned upstream convert (two input rows: the

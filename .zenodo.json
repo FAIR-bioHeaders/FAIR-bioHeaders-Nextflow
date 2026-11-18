@@ -1,0 +1,33 @@
+{
+    "title": "FAIR-bioHeaders-Nextflow: workflows for FAIR-bioHeaders sequence headers",
+    "upload_type": "software",
+    "description": "Reusable Nextflow DSL2 modules for FHR JSON creation, metadata conversion and validation, FASTA/GFA header attachment and stripping, and converter test execution.",
+    "creators": [
+        {
+            "name": "Molik, David",
+            "orcid": "0000-0003-3192-6538"
+        },
+        {
+            "name": "Wright, Adam",
+            "affiliation": "OICR",
+            "orcid": "0000-0002-5719-4024"
+        }
+    ],
+    "license": "MPL-2.0",
+    "keywords": [
+        "FHR",
+        "FAIR",
+        "TRUST",
+        "Nextflow",
+        "DSL2",
+        "genome assembly",
+        "provenance"
+    ],
+    "related_identifiers": [
+        {
+            "identifier": "10.1093/bib/bbae122",
+            "relation": "references",
+            "resource_type": "publication-article"
+        }
+    ]
+}

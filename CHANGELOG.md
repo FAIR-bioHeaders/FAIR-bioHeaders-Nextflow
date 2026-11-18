@@ -2,6 +2,55 @@
 
 ## Unreleased
 
+### Sample-id hardening and module pin move (2026-11-18)
+
+- **Dockstore workflow checks every sample id (FIXED).** `workflows/fairbioheaders`
+  passed samplesheet `id` values and `--id` straight through as the pinned modules' output
+  prefix, which they write into shell commands. An id such as `x;touch PWNED_$(id -un);#`
+  ran a command and `../../../../ESCAPE` pointed the output outside the task directory.
+  Both input branches now require `isSampleId` (letters, digits, dot, underscore or
+  hyphen, starting with a letter or digit), the rule the example already used, and stop
+  before any task runs with a message naming the id. A default id derived from an odd file
+  name is checked too (give `--id`). `nextflow_schema.json` carries the same pattern.
+- **Duplicate samplesheet ids are rejected (FIXED).** Two rows with one id used to publish
+  over each other while the run reported success. The workflow now fails with
+  `duplicate sample id <id> (<n> rows)`, checked on the final ids (after the `.combined`
+  collision guard), matching the example's duplicate check.
+- **`FHR_ATTACH` gates `meta.id` (FIXED).** It checked only `kind`, although
+  docs/module-migration.md said it gated ids with `isSampleId`; it now does.
+- **Example `--metadata genome.json --sequence genome.fasta` works (FIXED).** The derived id
+  `genome` made the combine output `genome.fasta` equal the input, and the toolkit refused
+  with `Output must differ from the input files`. The example now applies the Dockstore
+  workflow's `combineId` guard (moved to `modules/utils/main.nf` and shared), so this case
+  publishes under `genome.combined/`. Other ids are unchanged.
+- **Upper-case compressed extensions (FIXED).** `combineExtension` lower-cased the name
+  before looking for `.gz`/`.bgz`, while the pinned combine compares case-sensitively, so
+  the collision guard could miss a real collision (`genome.GZ`) or fire for none
+  (`genome.FA.GZ`). It now uses the module's own rule.
+- **Pinned modules moved to nf-core/modules `def10bc21a` (CHANGED).** All four
+  `fairbioheaders` modules moved through the recorded procedure to nf-core/modules#13771,
+  which double-quotes the prefix-derived output paths and adds a convert nf-test (31 nf-test
+  cases now). `tests/run.py` check F8 now asserts that a spaced `ext.prefix` names the
+  report `spaced prefix.verify.txt` instead of the old shell parse error. Double quotes do
+  not stop `$(...)` expansion, so the id checks above remain the safeguard.
+- **Dockstore manifest floor aligned (CHANGED).** `workflows/fairbioheaders/nextflow.config`
+  declared `nextflowVersion '>=25.04.0'`, a version CI never ran; it now says `>=26.04.6`,
+  like the root manifest.
+- **Citation metadata.** `CITATION.cff` and the README now record the Zenodo concept DOI
+  (10.5281/zenodo.23751088) and the v0.2.0 release DOI (10.5281/zenodo.23986093) that
+  Zenodo's GitHub integration minted, instead of saying the suite has no DOI.
+  A new `.zenodo.json` gives future Zenodo releases the title "FAIR-bioHeaders-Nextflow:
+  workflows for FAIR-bioHeaders sequence headers", the CITATION.cff creators and the MPL-2.0
+  license. Earlier records were titled
+  `github.com/FAIR-bioHeaders/FAIR-bioHeaders-Nextflow/fair-bioheaders`; renaming those needs
+  a maintainer's Zenodo login.
+- Verification: `python tests/run.py` (Nextflow 26.04.6, Java 21, hash-locked environment)
+  adds the injection, traversal, duplicate, odd-default-id and spaced-`--id` rejections for
+  the Dockstore workflow, two `FHR_ATTACH` id rejections, the `combineId` extension cases,
+  a valid Dockstore samplesheet run and the example collision case;
+  `python3 scripts/check_upstream_modules.py` reports all four modules matching
+  `def10bc21a`; `python3 scripts/check_capability_matrix.py` passes.
+
 ### Capability matrix (docs, 2026-11-16)
 
 Published the module × operation × type × serialization × version matrix in

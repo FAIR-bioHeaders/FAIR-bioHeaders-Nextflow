@@ -29,7 +29,8 @@
         },
         "id": {
           "type": "string",
-          "description": "Name of the outputs of a single run (default: the sequence file name without its extension)."
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+          "description": "Name of the outputs of a single run (default: the sequence file name without its extension). Letters, digits, dot, underscore or hyphen, starting with a letter or digit."
         },
         "outdir": {
           "type": "string",

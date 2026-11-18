@@ -43,6 +43,11 @@ own name (the four ids above — `genome-a`, `graph-b`, `proteome-c`, `annotatio
 output distinct from the input); when they would collide the workflow falls back to
 `<id>.combined.<extension>` so the run still completes.
 
+Each `id` must be a plain file-name token: letters, digits, dot, underscore or hyphen,
+starting with a letter or digit (the same rule as the repository's example workflow), and
+the ids in one samplesheet must be unique. The workflow checks every row before any task
+runs and stops with a message naming the offending id.
+
 ```bash
 nextflow run FAIR-bioHeaders/FAIR-bioHeaders-Nextflow \
     -main-script workflows/fairbioheaders/main.nf \
@@ -61,7 +66,7 @@ nextflow run FAIR-bioHeaders/FAIR-bioHeaders-Nextflow \
 | --- | --- |
 | `--input` | Samplesheet (CSV: `id,metadata,sequence`). Relative paths are relative to the samplesheet, which may be a URL. |
 | `--metadata`, `--sequence` | Metadata (JSON, YAML, JSON-LD or HTML microdata) and one FASTA, protein FASTA, GFA or GFF3 file, plain or gzip/BGZF, in place of `--input`. |
-| `--id` | Output name for `--sequence` (default: its file name without the extension; if that would make the combine output equal the input, `.combined` is appended). |
+| `--id` | Output name for `--sequence` (default: its file name without the extension; if that would make the combine output equal the input, `.combined` is appended). Letters, digits, dot, underscore or hyphen, starting with a letter or digit. |
 | `--outdir` | Output directory (default `results`). |
 
 The file type comes from the sequence file's extension: `.gfa` is GFA, `.gff3` or `.gff`
