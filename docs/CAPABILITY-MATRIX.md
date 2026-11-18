@@ -50,7 +50,7 @@ Test lanes referenced below (all run in [CI](../.github/workflows/ci.yml)):
 
 - **nf-test** — `nf-test test --profile docker --ci` over the four pinned upstream
   suites, matrix over Nextflow 26.04.6 and 26.10.4 (`.github/workflows/ci.yml ::
-  nxf_version: ['26.04.6', '26.10.4']`). 30 tests total.
+  nxf_version: ['26.04.6', '26.10.4']`). 31 tests total.
 - **harness** — `python tests/run.py` (job `test`): positive and rejection pipeline runs
   from an external project against the hash-locked native environment.
 - **example** — `nextflow run main.nf -profile docker` steps
@@ -64,10 +64,10 @@ Test lanes referenced below (all run in [CI](../.github/workflows/ci.yml)):
 
 | component | path | processes / workflows | provenance | tested by |
 | --- | --- | --- | --- | --- |
-| `FAIRBIOHEADERS_COMBINE` | `modules/nf-core/fairbioheaders/combine` | `FAIRBIOHEADERS_COMBINE` | **pinned upstream** nf-core/modules `8faff34023b16ecdc41b02bac42989834075e3f1` (`modules.json :: 8faff34023b16ecdc41b02bac42989834075e3f1`); never patch locally | nf-test (8 cases), harness, example, dockstore, guard |
-| `FAIRBIOHEADERS_CONVERT` | `modules/nf-core/fairbioheaders/convert` | `FAIRBIOHEADERS_CONVERT` | **pinned upstream** `4dc3bc54779d6caf3a47d49f37811e651fa2700a` (`modules.json :: 4dc3bc54779d6caf3a47d49f37811e651fa2700a`) | nf-test (11 cases), harness, example (as the aliased `FHR_YAML` publish) |
-| `FAIRBIOHEADERS_VALIDATE` | `modules/nf-core/fairbioheaders/validate` | `FAIRBIOHEADERS_VALIDATE` | **pinned upstream** `86e852ef429e021d16f7279aaddb9b81eb067f8a` (`modules.json :: 86e852ef429e021d16f7279aaddb9b81eb067f8a`) | nf-test (7 cases), harness |
-| `FAIRBIOHEADERS_VERIFY` | `modules/nf-core/fairbioheaders/verify` | `FAIRBIOHEADERS_VERIFY` | **pinned upstream** `6fb4f8f1f3f70a34a1f0efdc84729c5dacbc33e5` (`modules.json :: 6fb4f8f1f3f70a34a1f0efdc84729c5dacbc33e5`), adopted 2026-11-14 by issue #29 slice 4 (`docs/module-migration.md :: verify parity: done 2026-11-14`) | nf-test (4 cases), harness, example, dockstore, guard |
+| `FAIRBIOHEADERS_COMBINE` | `modules/nf-core/fairbioheaders/combine` | `FAIRBIOHEADERS_COMBINE` | **pinned upstream** nf-core/modules `def10bc21ae4952973f9e07952fc899aa060dfc5` (`modules.json :: def10bc21ae4952973f9e07952fc899aa060dfc5`); never patch locally | nf-test (8 cases), harness, example, dockstore, guard |
+| `FAIRBIOHEADERS_CONVERT` | `modules/nf-core/fairbioheaders/convert` | `FAIRBIOHEADERS_CONVERT` | **pinned upstream** `def10bc21ae4952973f9e07952fc899aa060dfc5` (`modules.json :: def10bc21ae4952973f9e07952fc899aa060dfc5`) | nf-test (12 cases), harness, example (as the aliased `FHR_YAML` publish) |
+| `FAIRBIOHEADERS_VALIDATE` | `modules/nf-core/fairbioheaders/validate` | `FAIRBIOHEADERS_VALIDATE` | **pinned upstream** `def10bc21ae4952973f9e07952fc899aa060dfc5` (`modules.json :: def10bc21ae4952973f9e07952fc899aa060dfc5`) | nf-test (7 cases), harness |
+| `FAIRBIOHEADERS_VERIFY` | `modules/nf-core/fairbioheaders/verify` | `FAIRBIOHEADERS_VERIFY` | **pinned upstream** `def10bc21ae4952973f9e07952fc899aa060dfc5` (`modules.json :: def10bc21ae4952973f9e07952fc899aa060dfc5`), adopted 2026-11-14 by issue #29 slice 4 (`docs/module-migration.md :: verify parity: done 2026-11-14`) | nf-test (4 cases), harness, example, dockstore, guard |
 | `FHR_CREATE_JSON` | `modules/create_json` | `FHR_CREATE_JSON` (wraps `FHR_WRITE_JSON`, then the pinned `FAIRBIOHEADERS_VALIDATE` as `VALIDATE_CREATED_JSON`) | repository-owned | harness (integration, FHP compose, FHR/FHP rejections), example |
 | `FHR_STRIP` | `modules/strip` | `FHR_STRIP` | repository-owned | harness (integration bytes, FHP bytes) |
 | `FHR_VERIFY_LINKS` | `modules/verify_links` | `FHR_VERIFY_LINKS` | repository-owned (wraps `bioheaders verify-links`) | harness (match/mismatch/unchecked/chain), example |
@@ -164,10 +164,10 @@ nextflow_nextflow_version_directive = >=26.04.6
 nextflow_dual_leg = 26.10.4
 nextflow_dist_sha256 = 182a63c74074e2dc7956ffa3c8cd59de952ed2c44394e21faf5e1736b945444c
 nf_test = 0.9.5
-upstream_pin(combine) = 8faff34023b16ecdc41b02bac42989834075e3f1
-upstream_pin(validate) = 86e852ef429e021d16f7279aaddb9b81eb067f8a
-upstream_pin(convert) = 4dc3bc54779d6caf3a47d49f37811e651fa2700a
-upstream_pin(verify) = 6fb4f8f1f3f70a34a1f0efdc84729c5dacbc33e5
+upstream_pin(combine) = def10bc21ae4952973f9e07952fc899aa060dfc5
+upstream_pin(validate) = def10bc21ae4952973f9e07952fc899aa060dfc5
+upstream_pin(convert) = def10bc21ae4952973f9e07952fc899aa060dfc5
+upstream_pin(verify) = def10bc21ae4952973f9e07952fc899aa060dfc5
 ```
 
 | axis | pinned / exercised value | evidence |
@@ -197,20 +197,17 @@ document; each names its owner.
    `AGENTS.md` and issue #35's deliberate-upgrade acceptance item, paired with the
    `modules/local/` layout migration and container re-evaluation in #7. **No pin is moved
    by this document.**
-2. **Pending upstream module bump (`def10bc2`).** Upstream nf-core/modules commit
+2. **Upstream module bump (`def10bc2`): done 2026-11-18.** Upstream nf-core/modules commit
    `def10bc21a` ("fairbioheaders: quote prefix-derived output paths", nf-core/modules#13771,
-   merged 2026-11-14T19:06:18Z) rewrites the prefix-derived output redirects of
-   combine/convert/validate/verify and reworks two convert tests. Adopting it means moving
-   the pins in `modules.json` through the recorded procedure in
-   [docs/module-migration.md](module-migration.md) — never hand-editing a pinned copy —
-   and it will flip the harness's deliberately pinned spaced-`ext.prefix` failure
-   (`tests/run.py :: ext.prefix = { 'spaced prefix' }`) from red-by-design to
-   red-until-repinned. That work belongs to the #29/#7 owner's next adoption slice, not
-   to this docs change.
+   merged 2026-11-14T19:06:18Z) double-quotes the prefix-derived output paths of
+   combine/convert/validate/verify and adds one convert test. All four pins moved through the
+   recorded procedure in [docs/module-migration.md](module-migration.md), and the harness's
+   spaced-`ext.prefix` case (`tests/run.py :: ext.prefix = { 'spaced prefix' }`) now asserts
+   success instead of the old shell parse error.
 3. **Pre-existing red CI leg (do not "fix" it from a docs PR).** The `nf-test (Nextflow
    26.10.4)` job fails on `main` (`44b5b2c`) on two stdout-only assertions in the pinned
    upstream convert suite, because 26.10.4 writes the Nextflow log to stderr; the remedy
-   is upstream and lands via item 2's pin move. The 26.04.6 leg passes with all 30 tests.
+   is upstream (item 2's pin move did not touch those assertions). The 26.04.6 leg passed with all 30 tests before item 2 added a 31st.
    Full receipt: `docs/module-migration.md :: FAILURE: Executed 30 tests in 151.763s (2
    failed)`; the assertion inventory is in the same section
    (`docs/module-migration.md :: The two red assertions are not snapshot tests`). This

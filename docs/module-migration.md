@@ -64,6 +64,16 @@ pre-decision record and are annotated in place below. The family-signifying-file
 "Open questions" entry is closed for this repository (it can be reopened upstream — see the
 staged follow-up request at the end of this document).
 
+**Pin move 2026-11-18:** all four modules now sit at nf-core/modules
+`def10bc21ae4952973f9e07952fc899aa060dfc5` ([nf-core/modules#13771](https://github.com/nf-core/modules/pull/13771),
+merged 2026-11-14), installed with the recorded procedure below. That commit wraps the
+prefix-derived output paths in double quotes in each script and stub (and adds one convert
+nf-test for a prefix with a space); nothing else in the four module directories changed.
+Double quotes stop word splitting and `;`, but not `$(...)` or backtick expansion, so the
+suite still gates every id that becomes a prefix with `isSampleId` — the example, `FHR_ATTACH`
+and, since the same change, the Dockstore workflow. The revision table below records the
+original adoption commits.
+
 ## Upstream state (verified 2026-11-13/14)
 
 | Upstream module | PR | State | Revision |
@@ -132,31 +142,31 @@ and verify hold seven files each, convert eight because it also ships
 
 | Module @ revision | File | Upstream blob sha |
 | --- | --- | --- |
-| combine @ `8faff340…` | main.nf | `c0ab92a8870cb6559831b4e97b4398d86e6d94dc` |
-| combine @ `8faff340…` | meta.yml | `46bc346cde2ece850d0908aecbd2018d0c26510e` |
-| combine @ `8faff340…` | environment.yml | `d0c0735cb08e0a193ca197dc24ca046d2e6c2cc8` |
-| combine @ `8faff340…` | tests/main.nf.test | `12929b19472353afe08c436aa6060d11603b54de` |
-| combine @ `8faff340…` | tests/main.nf.test.snap | `9b5315d19c16bedd74290ae543af29077ad05661` |
-| validate @ `86e852ef…` | main.nf | `95f0dc9fe3e00fa5e6f43e2b93766413820367a4` |
-| validate @ `86e852ef…` | meta.yml | `00142fe21147bb05cbd7204110c36a713b398561` |
-| validate @ `86e852ef…` | environment.yml | `d0c0735cb08e0a193ca197dc24ca046d2e6c2cc8` |
-| validate @ `86e852ef…` | tests/main.nf.test | `10a065dfaa3e2b87951bf477a1a1a2d6a628ad82` |
-| validate @ `86e852ef…` | tests/main.nf.test.snap | `00026dfbe88f2b86155ad17276d90bb92e16c8e1` |
-| convert @ `4dc3bc5477…` | main.nf | `cbf0d43c8552e4ecf231f171c1117fc8251c00f0` |
-| convert @ `4dc3bc5477…` | meta.yml | `357ef5e80a7ac9fd318827a8d0105b4e43c4924e` |
-| convert @ `4dc3bc5477…` | environment.yml | `d0c0735cb08e0a193ca197dc24ca046d2e6c2cc8` |
-| convert @ `4dc3bc5477…` | tests/main.nf.test | `708785efbfde32aa87884fd9a725dc9e0e0bb6cf` |
-| convert @ `4dc3bc5477…` | tests/main.nf.test.snap | `261014efe7e2c4c95c291a78917471a968cddb5b` |
-| convert @ `4dc3bc5477…` | tests/nextflow.config | `3bf6653083dee274273e4f72bbe61db2f5d4874d` |
-| convert @ `4dc3bc5477…` | `.conda-lock/linux_amd64-bd-71029206d3ce1119_1.txt` | `614f61ced8ebef6dc1a6e78742a2f0672b805031` |
-| convert @ `4dc3bc5477…` | `.conda-lock/linux_arm64-bd-1ff11621d7e9a7c8_1.txt` | `8cc63c8d8b1d37b467b2074e22af63c10a61a6fa` |
-| verify @ `6fb4f8f1f3…` | main.nf | `69ea8fba319e498ce3e71cb6fe120529b5920abb` |
-| verify @ `6fb4f8f1f3…` | meta.yml | `f420baaccf215c1530b595a8b5b0c4fe25d9b698` |
-| verify @ `6fb4f8f1f3…` | environment.yml | `d0c0735cb08e0a193ca197dc24ca046d2e6c2cc8` |
-| verify @ `6fb4f8f1f3…` | tests/main.nf.test | `62b1e97997550e2e6b6646c49b36d7f2ca7b4d16` |
-| verify @ `6fb4f8f1f3…` | tests/main.nf.test.snap | `e83cd3cdb6bce2c8280c91792b051154bd1a9a06` |
-| verify @ `6fb4f8f1f3…` | `.conda-lock/linux_amd64-bd-71029206d3ce1119_1.txt` | `614f61ced8ebef6dc1a6e78742a2f0672b805031` |
-| verify @ `6fb4f8f1f3…` | `.conda-lock/linux_arm64-bd-1ff11621d7e9a7c8_1.txt` | `8cc63c8d8b1d37b467b2074e22af63c10a61a6fa` |
+| combine @ `def10bc21a…` | main.nf | `6daf9ba99a051c9c5cb367253c2be67a7d361f0b` |
+| combine @ `def10bc21a…` | meta.yml | `46bc346cde2ece850d0908aecbd2018d0c26510e` |
+| combine @ `def10bc21a…` | environment.yml | `d0c0735cb08e0a193ca197dc24ca046d2e6c2cc8` |
+| combine @ `def10bc21a…` | tests/main.nf.test | `12929b19472353afe08c436aa6060d11603b54de` |
+| combine @ `def10bc21a…` | tests/main.nf.test.snap | `9b5315d19c16bedd74290ae543af29077ad05661` |
+| validate @ `def10bc21a…` | main.nf | `5ff3d6cba2808aa2910c16240f30b01edf2778f8` |
+| validate @ `def10bc21a…` | meta.yml | `00142fe21147bb05cbd7204110c36a713b398561` |
+| validate @ `def10bc21a…` | environment.yml | `d0c0735cb08e0a193ca197dc24ca046d2e6c2cc8` |
+| validate @ `def10bc21a…` | tests/main.nf.test | `10a065dfaa3e2b87951bf477a1a1a2d6a628ad82` |
+| validate @ `def10bc21a…` | tests/main.nf.test.snap | `00026dfbe88f2b86155ad17276d90bb92e16c8e1` |
+| convert @ `def10bc21a…` | main.nf | `93f4d7cd47c014ba903cf291829771c8304fa9c9` |
+| convert @ `def10bc21a…` | meta.yml | `357ef5e80a7ac9fd318827a8d0105b4e43c4924e` |
+| convert @ `def10bc21a…` | environment.yml | `d0c0735cb08e0a193ca197dc24ca046d2e6c2cc8` |
+| convert @ `def10bc21a…` | tests/main.nf.test | `7628fa098fd1a0c5739ba539207f1f2e7b4f9c8c` |
+| convert @ `def10bc21a…` | tests/main.nf.test.snap | `9d2917f1f4d461a5c30b6589e2941daf5626805b` |
+| convert @ `def10bc21a…` | tests/nextflow.config | `3bf6653083dee274273e4f72bbe61db2f5d4874d` |
+| convert @ `def10bc21a…` | `.conda-lock/linux_amd64-bd-71029206d3ce1119_1.txt` | `614f61ced8ebef6dc1a6e78742a2f0672b805031` |
+| convert @ `def10bc21a…` | `.conda-lock/linux_arm64-bd-1ff11621d7e9a7c8_1.txt` | `8cc63c8d8b1d37b467b2074e22af63c10a61a6fa` |
+| verify @ `def10bc21a…` | main.nf | `8aeac898b8e44442671a65f38b8d1c3915560d44` |
+| verify @ `def10bc21a…` | meta.yml | `f420baaccf215c1530b595a8b5b0c4fe25d9b698` |
+| verify @ `def10bc21a…` | environment.yml | `d0c0735cb08e0a193ca197dc24ca046d2e6c2cc8` |
+| verify @ `def10bc21a…` | tests/main.nf.test | `62b1e97997550e2e6b6646c49b36d7f2ca7b4d16` |
+| verify @ `def10bc21a…` | tests/main.nf.test.snap | `e83cd3cdb6bce2c8280c91792b051154bd1a9a06` |
+| verify @ `def10bc21a…` | `.conda-lock/linux_amd64-bd-71029206d3ce1119_1.txt` | `614f61ced8ebef6dc1a6e78742a2f0672b805031` |
+| verify @ `def10bc21a…` | `.conda-lock/linux_arm64-bd-1ff11621d7e9a7c8_1.txt` | `8cc63c8d8b1d37b467b2074e22af63c10a61a6fa` |
 
 ### Updating a pinned module (recorded procedure)
 
@@ -324,7 +334,7 @@ merged revision against the retired local module:
 | Output | `tuple val(meta), path("${prefix}.verify.txt")`, emit `report` + versions | `path("*.verify.txt")` (glob) | matches for every caller: `ext.prefix` is set nowhere for verify, so the prefixed name equals the globbed one (`ID.verify.txt`) |
 | `--type` | **not passed**; the toolkit infers from the extension (`.fa/.fasta/.fna/.fas/.faa/.ffn/.frn/.fsa/.mpfa/.gfa/.gff/.gff3`, `.gz`/`.bgz` handled) | explicit whitelist: `.gfa→gfa`, `.gff3?→gff3`, **anything else forced to `fasta`** | **differs — the parity item.** Odd extensions change side: the local module verified a FHR/FHP-headed `sample.txt` (forced FASTA); the pinned module fails it in the task with `FHR: Unsupported file extension: sample.txt` (toolkit 0.9.0, probe-verified). All this repository's callers stage combine outputs or fixture names, which infer correctly; the new surface is pinned by a `tests/run.py` case |
 | Compression | same `.gz/.bgz` verification (toolkit side) | same | matches (covered through the `FHR_ATTACH` BGZF harness run) |
-| Quoting | report redirect and prefix unquoted; staged path interpolated (Nextflow escapes staged paths) | full single-quote closure on path, prefix, `meta.id` | differs (same caller-discipline caveat as combine/validate/convert: constrain `meta.id`/`ext.prefix`; `FHR_ATTACH` and the example gate IDs with `isSampleId`). Probe: a staged `protein with space.faa` verifies cleanly with a single-line `file:` report — pinned by a new `tests/run.py` case. The mirror case is **not** clean and is now pinned too: `ext.prefix = { 'spaced prefix' }` interpolates into the redirect unquoted and the task dies with `.command.sh: line 8: syntax error near unexpected token `prefix.verify.txt'` (exit 1, recorded verbatim 2026-11-14, F8) — the message names only the redirect tail, never the prefix. `tests/run.py` asserts that exact failure so the asymmetry is documented behavior, and an upstream quoting fix would surface as a failing assertion rather than a silent contract move |
+| Quoting | report redirect and prefix unquoted at `6fb4f8f1` (double-quoted since the `def10bc21a` pin move, see below); staged path interpolated (Nextflow escapes staged paths) | full single-quote closure on path, prefix, `meta.id` | differs (same caller-discipline caveat as combine/validate/convert: constrain `meta.id`/`ext.prefix`; `FHR_ATTACH` and the example gate IDs with `isSampleId`). Probe: a staged `protein with space.faa` verifies cleanly with a single-line `file:` report — pinned by a new `tests/run.py` case. The mirror case was **not** clean at `6fb4f8f1`: `ext.prefix = { 'spaced prefix' }` interpolated into the redirect unquoted and the task died with `.command.sh: line 8: syntax error near unexpected token `prefix.verify.txt'` (exit 1, recorded verbatim 2026-11-14, F8). nf-core/modules#13771 (`def10bc21a`) double-quotes the redirect; since the 2026-11-18 pin move `tests/run.py` asserts that the spaced prefix now names the report `spaced prefix.verify.txt` |
 | Failure semantics | schema/checksum failure fails the task; report keeps the `file: <path>` header | identical | matches; the harness failure substrings (`checksum`, `after sequence data`, `duplicate key`, `proteome`) are toolkit messages and still fire — all five rejection cases pass unchanged |
 | Report content | `file: <staged path>` + `bioheaders verify` stdout | same (quoted interpolation) | matches for space-free paths |
 | Conda | `"bioconda::fair-bioheaders=0.9.0"` (quoted line) | same pin, unquoted line | matches (content) |

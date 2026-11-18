@@ -309,19 +309,18 @@ workflow {
               and report_lines[0].endswith('protein with space.faa')
               and report_lines[1] == 'Checksum verified.',
               f'spaced-name verify report is not the documented two lines: {report_lines}')
-        # The same case on the **prefix** does not hold: the merged upstream module
-        # interpolates `ext.prefix` into the report redirect unquoted (the quoting its
-        # review head carried was dropped before merge), so a caller-supplied prefix
-        # containing a space dies in the task as a bare shell parse error naming only the
-        # tail of the redirect target — no mention of ext.prefix. Pinned rather than
-        # wrapped: this suite's own callers never set a verify prefix (it stays the
-        # isSampleId-gated `meta.id`), so this is the direct-importer edge documented in
-        # docs/PIPELINES.md, and the assertion is what fails loudly if upstream ever
-        # quotes the redirect and the observable behavior changes.
+        # The same case on the **prefix** (F8): since nf-core/modules def10bc21a the
+        # pinned modules double-quote their prefix-derived output paths, so a
+        # caller-supplied ext.prefix containing a space now names the report as given.
+        # (Until that pin move the unquoted redirect died with "syntax error near
+        # unexpected token `prefix.verify.txt'"; this assertion replaced that one.)
+        # Double quotes do not stop $(...) or backtick expansion, so the suite's own
+        # callers still gate every id with isSampleId (see the Dockstore cases below).
         prefix_dir = work / 'verify-spaced-prefix'
         prefix_dir.mkdir()
         (prefix_dir / 'nextflow.config').write_text("nextflow.enable.dsl = 2\nprocess { withName: FAIRBIOHEADERS_VERIFY { ext.prefix = { 'spaced prefix' } } }\n")
-        run(faa_verify, prefix_dir, ['--sequence', str(chain / 'protein.fhp.faa')], failure="syntax error near unexpected token `prefix.verify.txt'")
+        output = run(faa_verify, prefix_dir, ['--sequence', str(chain / 'protein.fhp.faa')])
+        check('VERIFIED protein spaced prefix.verify.txt' in output, f'a spaced ext.prefix did not name the verify report:\n{output}')
 
         # Standalone FHP metadata: FAIRBIOHEADERS_VALIDATE (no sequence, no checksum check).
         validate_script = work / 'fhp-validate.nf'
@@ -517,6 +516,74 @@ workflow {
         run(ROOT / 'main.nf', work, ['--verify_links', str(chain / 'protein.fhp.faa'), '--outdir', str(output)])
         report = (output / 'protein.fhp/verify-links/protein.fhp.verify-links.txt').read_text()
         check('not checked' in report, f'omitted --verify_parents did not reach the module as an empty list:\n{report}')
+
+        # Sample ids reach the pinned modules' shell commands as their output prefix, so
+        # every entry point gates them with isSampleId before any task runs.
+        pwned = 'x;touch PWNED_$(id -un);#'
+        attach_bad_id = work / 'attach-bad-id.nf'
+        attach_bad_id.write_text(attach + "workflow { FHR_ATTACH(Channel.of(tuple([id: params.bad], file(params.metadata), file(params.sequence), 'fasta'))) }\n")
+        for bad in [pwned, '../escape']:
+            run(attach_bad_id, work, ['--bad', bad, '--metadata', str(ROOT / 'examples/metadata.json'), '--sequence', str(ROOT / 'examples/genome.fasta')], failure="Invalid meta.id")
+        check(not list(work.rglob('PWNED_*')), 'FHR_ATTACH ran a shell command embedded in meta.id')
+
+        # The Dockstore workflow: both input branches check every id, and samplesheet ids
+        # must be unique (two rows with one id used to publish over each other and report
+        # success).
+        dockstore = ROOT / 'workflows/fairbioheaders/main.nf'
+        sheet_dir = work / 'dockstore'
+        sheet_dir.mkdir()
+        (sheet_dir / 'nextflow.config').write_text('nextflow.enable.dsl = 2\n')
+        shutil.copy(ROOT / 'examples/metadata.json', sheet_dir / 'genome.json')
+        shutil.copy(ROOT / 'examples/genome.fasta', sheet_dir / 'genome.fasta')
+        for name, rows, message in [
+            ('injection', [pwned], "Invalid sample id 'x;touch PWNED_"),
+            ('traversal', ['../../../../ESCAPE'], "Invalid sample id '../../../../ESCAPE'"),
+            ('duplicate', ['same', 'same'], 'duplicate sample id same (2 rows)'),
+            ('combined-duplicate', ['genome', 'genome.combined'], 'duplicate sample id genome.combined (2 rows)'),
+        ]:
+            sheet = sheet_dir / f'{name}.csv'
+            sheet.write_text('id,metadata,sequence\n' + ''.join(f'{row},genome.json,genome.fasta\n' for row in rows))
+            run(dockstore, sheet_dir, ['--input', str(sheet), '--outdir', str(sheet_dir / f'{name}-out')], failure=message)
+            check(not (sheet_dir / f'{name}-out').exists(), f'{name}: the Dockstore workflow published outputs')
+        run(dockstore, sheet_dir, ['--metadata', 'genome.json', '--sequence', 'genome.fasta', '--id', 'a b'], failure="Invalid sample id 'a b' in --id")
+        weird = sheet_dir / 'odd name.fasta'
+        shutil.copy(ROOT / 'examples/genome.fasta', weird)
+        run(dockstore, sheet_dir, ['--metadata', 'genome.json', '--sequence', str(weird)], failure="Invalid sample id 'odd name'")
+        check(not list(work.rglob('PWNED_*')) and not list(work.rglob('ESCAPE*')) and not list(work.parent.glob('ESCAPE*')), 'the Dockstore workflow ran or wrote outside its work directory')
+        # Valid input still runs end to end, and the default id that would collide with
+        # the input name gets the .combined disambiguator.
+        sheet = sheet_dir / 'valid.csv'
+        sheet.write_text('id,metadata,sequence\nsample-1,genome.json,genome.fasta\ngenome,genome.json,genome.fasta\n')
+        run(dockstore, sheet_dir, ['--input', str(sheet), '--outdir', str(sheet_dir / 'valid-out')])
+        check(published(sheet_dir / 'valid-out') == ['combine/genome.combined.fasta', 'combine/sample-1.fasta', 'verify/genome.combined.verify.txt', 'verify/sample-1.verify.txt'],
+              f'unexpected Dockstore outputs: {published(sheet_dir / "valid-out")}')
+
+        # combineId mirrors the pinned combine's case-sensitive extension rule: only a
+        # lower-case gz/bgz keeps two tokens, so genome.FA.GZ -> genome.GZ (no clash)
+        # while genome.GZ with id genome would overwrite its input and is disambiguated.
+        combine_id = work / 'combine-id.nf'
+        combine_id.write_text("include { combineId } from '" + str(ROOT / 'modules/utils/main') + """'
+workflow {
+    def cases = [['genome', 'genome.fa.gz', 'genome.combined'], ['genome', 'genome.fasta.bgz', 'genome.combined'],
+                 ['genome', 'genome.FA.GZ', 'genome'], ['genome', 'genome.GZ', 'genome.combined'],
+                 ['genome', 'genome.fasta', 'genome.combined'], ['sample', 'genome.fasta', 'sample']]
+    cases.each { id, name, expected ->
+        def got = combineId(id, name)
+        if (got != expected)
+            error("combineId(${id}, ${name}) = ${got}, expected ${expected}")
+    }
+    println 'COMBINE-ID OK'
+}
+""")
+        check('COMBINE-ID OK' in run(combine_id, work), 'combineId cases did not run')
+
+        # The example: --metadata genome.json --sequence genome.fasta derives the id
+        # genome, whose combine output genome.fasta would equal the input; the example
+        # now applies the same .combined disambiguator as the Dockstore workflow.
+        output = work / 'collision-output'
+        run(ROOT / 'main.nf', work, ['--metadata', str(sheet_dir / 'genome.json'), '--sequence', str(sheet_dir / 'genome.fasta'), '--outdir', str(output)])
+        check(published(output) == ['genome.combined/sequence/genome.combined.fasta', 'genome.combined/sequence/genome.combined.json', 'genome.combined/sequence/genome.combined.yaml'],
+              f'unexpected example outputs for a colliding name: {published(output)}')
 
         if args.converter_source:
             source = args.converter_source.resolve()

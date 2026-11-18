@@ -6,7 +6,7 @@
 include { FAIRBIOHEADERS_COMBINE }                 from '../../modules/nf-core/fairbioheaders/combine/main'
 include { FAIRBIOHEADERS_VERIFY as CHECK_COMBINED } from '../../modules/nf-core/fairbioheaders/verify/main'
 include { FAIRBIOHEADERS_CONVERT as EXTRACT_JSON }  from '../../modules/nf-core/fairbioheaders/convert/main'
-include { sequenceKindOf; sequenceType }           from '../../modules/utils/main'
+include { isSampleId; sequenceKindOf; sequenceType } from '../../modules/utils/main'
 
 // Attaches metadata to a sequence file, verifies the result and extracts its JSON.
 //
@@ -41,6 +41,11 @@ workflow FHR_ATTACH {
 
     main:
     combine_input = records.map { meta, metadata, sequence, kind ->
+        // meta.id is the pinned modules' output prefix and reaches their shell
+        // commands, so it is gated here (thrown from the closure, not from a helper,
+        // so the message is not wrapped in an InvocationTargetException).
+        if (!isSampleId(meta.id))
+            throw new IllegalArgumentException("Invalid meta.id '${meta.id}': meta.id must contain only letters, digits, dot, underscore or hyphen, starting with a letter or digit")
         if (!(kind in ['fasta', 'faa', 'gfa']))
             throw new IllegalArgumentException("Unsupported format '${kind}'; expected fasta, faa, gfa")
         def actual = sequenceKindOf(sequence)
