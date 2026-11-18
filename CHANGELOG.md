@@ -36,6 +36,9 @@
 - **Dockstore manifest floor aligned (CHANGED).** `workflows/fairbioheaders/nextflow.config`
   declared `nextflowVersion '>=25.04.0'`, a version CI never ran; it now says `>=26.04.6`,
   like the root manifest.
+- **Citation metadata.** `CITATION.cff` and the README now record the Zenodo concept DOI
+  (10.5281/zenodo.23751088) and the v0.2.0 release DOI (10.5281/zenodo.23986093) that
+  Zenodo's GitHub integration minted, instead of saying the suite has no DOI.
 - Verification: `python tests/run.py` (Nextflow 26.04.6, Java 21, hash-locked environment)
   adds the injection, traversal, duplicate, odd-default-id and spaced-`--id` rejections for
   the Dockstore workflow, two `FHR_ATTACH` id rejections, the `combineId` extension cases,

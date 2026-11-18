@@ -167,7 +167,7 @@ Wright, Adam, Mark D. Wilkinson, Christopher Mungall, Scott Cain, Stephen Richar
 - [Agent instructions](AGENTS.md): repository layout and implementation strategy inferred from the FHR paper.
 - [Citation metadata](CITATION.cff), [license notice](LICENSE) and [changelog](CHANGELOG.md).
 
-This repository is licensed under the [Mozilla Public License 2.0](LICENSE) (`MPL-2.0`). External dependencies retain their own licenses. The suite has no published DOI; the paper citation describes the FHR standard. Schema governance rests with the maintainers, David and Adam ([GOVERNANCE](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/blob/main/GOVERNANCE.md)).
+This repository is licensed under the [Mozilla Public License 2.0](LICENSE) (`MPL-2.0`). External dependencies retain their own licenses. Zenodo archives each release: cite the suite with its concept DOI [10.5281/zenodo.23751088](https://doi.org/10.5281/zenodo.23751088) (v0.2.0: [10.5281/zenodo.23986093](https://doi.org/10.5281/zenodo.23986093)); the paper citation describes the FHR standard. Schema governance rests with the maintainers, David and Adam ([GOVERNANCE](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/blob/main/GOVERNANCE.md)).
 
 ## Licensing
 
