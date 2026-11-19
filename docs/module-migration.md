@@ -136,17 +136,25 @@ after their merge").
   `https://github.com/nf-core/modules.git`, then `modules.nf-core`, then each
   `fairbioheaders/<name>` entry with `branch`, `git_sha` and
   `installed_by: ["modules"]`. `.nf-core.yml` declares `repository_type: pipeline`.
-- The repository still has a mixed module layout: repository-owned modules live
-  under `modules/*` (and `subworkflows/*`) beside the pinned `modules/nf-core/` tree —
-  since slice 4 the whole `modules/nf-core/fairbioheaders` set is upstream-pinned. nf-core
-  4.2.2 rejects those untracked directories. A valid manifest alone does **not**
-  make `nf-core modules update`, `list local` or `lint` usable here. Use the
-  CLI-less procedure below until a separate layout migration moves local modules
-  to `modules/local/` and updates every importer. **That migration is [#7
-  work](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Nextflow/issues/7), not #29 work**
-  (maintainer decision 6A, 2026-11-14), and it pairs with the next toolkit bump: that bump is
-  when the container pins are re-evaluated anyway (step 6 of the adoption list), so one reviewed
-  cycle moves the layout, the importers and the pins together instead of two.
+- The repository-owned modules live under `modules/local/` (and `subworkflows/`),
+  separate from the pinned `modules/nf-core/` tree. **The layout migration landed
+  2026-11-19 (round 14, decision 6A of 2026-11-14, [#7](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Nextflow/issues/7)):**
+  the six repository-owned modules (`create_json`, `strip`, `utils`,
+  `converter_tests`, `gff3_validate`, `verify_links`) moved from `modules/*` to
+  `modules/local/*`, and every importer moved with them (`main.nf`,
+  `subworkflows/attach`, `workflows/fairbioheaders`, the generated harness in
+  `tests/run.py`, `nf-test.config` — now `testsDir = "modules/nf-core"`, an
+  unambiguous test root — the CI pin loops, and the docs). Nothing under
+  `modules/nf-core/` or `modules.json` moved: the migration is path/import churn
+  only, with no observable module-contract change (no channel tuple, output name
+  or report text), and the pinned set — including convert at the approved
+  exact-pin exception `32d7eadd1f…` (#38, 2026-11-19, convert only; the normal
+  merged-source rule is intact for every other revision and module) — is
+  byte-identical through it. The CLI-less complete-tree fetch remains **the**
+  update procedure here, and the toolkit bump still has not happened (the
+  container pins stay at 0.9.0 by the same decision that forbids a silent
+  upgrade): #7 pairs them for the next deliberate pass, so pairing's purpose —
+  one reviewed cycle moving pins once — survives the split.
 - CI runs `python3 scripts/check_upstream_modules.py`. It iterates **every entry of
   `modules.json`**, retrieves the complete recursive GitHub tree at each pin with
   `curl --retry 3`, rejects truncated responses, and compares all module-relative

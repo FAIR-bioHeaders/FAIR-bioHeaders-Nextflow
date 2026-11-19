@@ -32,7 +32,7 @@ Standalone JSON requires an explicit schema-valid checksum. Attachment replaces 
 ## Run converter tests as part of a pipeline
 
 ```nextflow
-include { FHR_CONVERTER_TESTS } from '/path/to/FAIR-bioHeaders-Nextflow/modules/converter_tests/main'
+include { FHR_CONVERTER_TESTS } from '/path/to/FAIR-bioHeaders-Nextflow/modules/local/converter_tests/main'
 
 workflow {
     FHR_CONVERTER_TESTS(Channel.value(tuple(
@@ -54,7 +54,7 @@ gated = FHR_ATTACH.out.json.combine(gate).map { meta, json, _passed -> tuple(met
 ## Validate GFF3 annotations
 
 ```nextflow
-include { GFF3_VALIDATE } from '/path/to/FAIR-bioHeaders-Nextflow/modules/gff3_validate/main'
+include { GFF3_VALIDATE } from '/path/to/FAIR-bioHeaders-Nextflow/modules/local/gff3_validate/main'
 
 workflow {
     GFF3_VALIDATE(Channel.of(
@@ -97,9 +97,9 @@ The validator checks only the rules its catalogue marks as implemented; the JSON
 Protein FASTA uses the same composition with `kind` `faa`. The FHP metadata map must cite an FHP `schema` URL and carry the required FHP fields; the toolkit's bundled FHP schema validates it, so no FHP rule is repeated here.
 
 ```nextflow
-include { FHR_CREATE_JSON } from '/path/to/FAIR-bioHeaders-Nextflow/modules/create_json/main'
+include { FHR_CREATE_JSON } from '/path/to/FAIR-bioHeaders-Nextflow/modules/local/create_json/main'
 include { FHR_ATTACH } from '/path/to/FAIR-bioHeaders-Nextflow/subworkflows/attach/main'
-include { FHR_VERIFY_LINKS } from '/path/to/FAIR-bioHeaders-Nextflow/modules/verify_links/main'
+include { FHR_VERIFY_LINKS } from '/path/to/FAIR-bioHeaders-Nextflow/modules/local/verify_links/main'
 
 workflow {
     FHR_CREATE_JSON(records)  // records: tuple([id: 'proteome1'], fhp_fields)

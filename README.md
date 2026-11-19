@@ -62,7 +62,7 @@ See [Protein FASTA and parent links](#protein-fasta-and-parent-links-fhp) for th
 Import the module using its path in your local checkout:
 
 ```nextflow
-include { FHR_CREATE_JSON } from '/path/to/FAIR-bioHeaders-Nextflow/modules/create_json/main'
+include { FHR_CREATE_JSON } from '/path/to/FAIR-bioHeaders-Nextflow/modules/local/create_json/main'
 
 workflow {
     records = Channel.of(tuple([id: 'assembly1'], [
@@ -120,7 +120,7 @@ FHP metadata for protein FASTA is validated, converted, attached, verified and s
 `FHR_VERIFY_LINKS` wraps the toolkit's `bioheaders verify-links` command. It checks each `derivedFrom` entry against the candidate parent files by their FAIR-bioHeaders checksum, and any `genomeReference` against the supplied genomes. A match proves **file identity only**, never that a translation or annotation is biologically correct. It emits `report` when the task succeeds; on a hard failure the report stays in the task work directory and is not published. `verified` is emitted only when every recorded parent was checked and matched (or no parents were recorded): a successful run with an unavailable or unsupported parent reports `not checked` and omits the input from `verified`, so downstream steps cannot mistake an unchecked file for a verified one. Pass `[]` as `parents` when none are available. Exit status 1 (unreadable or invalid input, or an invalid parent) always fails. Exit status 3 (a recorded parent did not match, or with `ext.require_all` could not be checked) fails unless `ext.fail_on_mismatch` is `false`, which emits the report and omits the input from `verified`. Options come from `task.ext`, configured with `withName: FHR_VERIFY_LINKS`: `require_all` (default `false`) and `fail_on_mismatch` (default `true`).
 
 ```nextflow
-include { FHR_VERIFY_LINKS } from '/path/to/FAIR-bioHeaders-Nextflow/modules/verify_links/main'
+include { FHR_VERIFY_LINKS } from '/path/to/FAIR-bioHeaders-Nextflow/modules/local/verify_links/main'
 
 workflow {
     FHR_VERIFY_LINKS(Channel.of(

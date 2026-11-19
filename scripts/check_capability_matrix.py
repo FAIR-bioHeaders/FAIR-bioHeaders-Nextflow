@@ -75,9 +75,9 @@ CONDA_ENV_FILES = (
     f"{UPSTREAM_DIR}/convert/environment.yml",
     f"{UPSTREAM_DIR}/validate/environment.yml",
     f"{UPSTREAM_DIR}/verify/environment.yml",
-    "modules/strip/environment.yml",
-    "modules/verify_links/environment.yml",
-    "modules/converter_tests/environment.yml",
+    "modules/local/strip/environment.yml",
+    "modules/local/verify_links/environment.yml",
+    "modules/local/converter_tests/environment.yml",
     "workflows/fairbioheaders/environment.yml",
 )
 
@@ -235,7 +235,7 @@ def check_pins(doc, ck):
         rel = f"{UPSTREAM_DIR}/{module}/main.nf"
         expect(rel, f"community.wave.seqera.io/library/fair-bioheaders:{pins['toolkit']}--{pins['wave_build']}", f"Wave image pin of {module}")
         expect(f"{UPSTREAM_DIR}/{module}/environment.yml", f"bioconda::fair-bioheaders={pins['toolkit']}", f"conda pin of {module}")
-    for rel in ("modules/strip/main.nf", "modules/verify_links/main.nf"):
+    for rel in ("modules/local/strip/main.nf", "modules/local/verify_links/main.nf"):
         expect(rel, f"quay.io/biocontainers/fair-bioheaders:{pins['toolkit']}--{pins['biocontainers_build']}", f"BioContainers image in {rel}")
         expect(rel, f"depot.galaxyproject.org/singularity/fair-bioheaders:{pins['toolkit']}--{pins['biocontainers_build']}", f"Galaxy depot image in {rel}")
     for rel in CONDA_ENV_FILES:

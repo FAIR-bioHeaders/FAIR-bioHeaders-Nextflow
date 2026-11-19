@@ -3,8 +3,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-// Serializer edge cases for modules/utils/main.nf metadataJson().
-include { metadataJson } from '../modules/utils/main'
+// Serializer edge cases for modules/local/utils/main.nf metadataJson().
+include { metadataJson } from '../modules/local/utils/main'
 
 def failure(Closure action) {
     try {

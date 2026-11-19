@@ -3,13 +3,13 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-include { FHR_CREATE_JSON } from './modules/create_json/main'
+include { FHR_CREATE_JSON } from './modules/local/create_json/main'
 include { FAIRBIOHEADERS_CONVERT as FHR_YAML } from './modules/nf-core/fairbioheaders/convert/main'
 include { FHR_ATTACH } from './subworkflows/attach/main'
-include { FHR_CONVERTER_TESTS } from './modules/converter_tests/main'
-include { GFF3_VALIDATE } from './modules/gff3_validate/main'
-include { FHR_VERIFY_LINKS } from './modules/verify_links/main'
-include { isSampleId; combineId } from './modules/utils/main'
+include { FHR_CONVERTER_TESTS } from './modules/local/converter_tests/main'
+include { GFF3_VALIDATE } from './modules/local/gff3_validate/main'
+include { FHR_VERIFY_LINKS } from './modules/local/verify_links/main'
+include { isSampleId; combineId } from './modules/local/utils/main'
 
 // One record per metadata file. --id names the output of a single file;
 // otherwise each ID is the file name without .fhr.json or .json. Functions

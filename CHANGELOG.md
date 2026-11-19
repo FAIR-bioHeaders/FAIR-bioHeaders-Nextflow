@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+### Local module layout migration (2026-11-19, #7 decision 6A)
+
+- The six repository-owned modules move from `modules/*` to
+  `modules/local/{create_json,strip,utils,converter_tests,gff3_validate,verify_links}`,
+  and every importer moves with them: `main.nf`, `subworkflows/attach`,
+  `workflows/fairbioheaders`, the generated harness in `tests/run.py`,
+  `.github/workflows/ci.yml`'s container-pin loops, and the path examples in
+  README / `docs/PIPELINES.md` / `docs/module-migration.md` / CONTRIBUTING.
+  `nf-test.config` now sets `testsDir = "modules/nf-core"`, an unambiguous test
+  root. Nothing observable changes: no channel tuple, output name or report
+  text, and no pin, container or toolkit version moves.
+- `modules/nf-core/**` and `modules.json` are untouched, byte-identical through
+  the move, including convert's approved exact-pin exception at
+  `32d7eadd1f…` (#38, convert only — not repeated, not generalized). The
+  CLI-less complete-tree update procedure remains the way pinned modules move;
+  the layout migration simply stops the untracked-directory rejection that made
+  the nf-core CLI unusable at the repository root.
+- Evidence at this head: `python3 scripts/check_upstream_modules.py` (manifest-
+  driven identity check) and `python3 tests/test_upstream_modules.py` pass
+  unchanged; `python3 scripts/check_capability_matrix.py` passes with all 99
+  evidence citations re-pointed to the `modules/local/` paths (the checker is
+  what caught the first stale matrix citation, so the docs cannot drift from
+  the tree silently). `tests/run.py` and `nf-test` require the Nextflow
+  toolchain and run in CI.
+
 ### Convert CI stream compatibility (2026-11-19)
 
 - Authenticate the upstream-tree CI check with the workflow read token and fetch

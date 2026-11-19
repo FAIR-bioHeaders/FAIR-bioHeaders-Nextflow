@@ -21,7 +21,7 @@
 
 include { FAIRBIOHEADERS_COMBINE } from '../../modules/nf-core/fairbioheaders/combine/main'
 include { FAIRBIOHEADERS_VERIFY    } from '../../modules/nf-core/fairbioheaders/verify/main'
-include { isSampleId; combineId    } from '../../modules/utils/main'
+include { isSampleId; combineId    } from '../../modules/local/utils/main'
 
 // A samplesheet path: a URL or absolute path as is, otherwise relative to the sheet.
 // The sheet itself may be a URL, such as the raw GitHub URL of the test samplesheet.
