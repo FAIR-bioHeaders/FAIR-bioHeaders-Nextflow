@@ -1,5 +1,34 @@
 # Agent instructions
 
+## Independent review and merge authorization (2026-11-18)
+
+The maintainer's independent-review rule (2026-11-18) applies only to
+FAIR-bioHeaders repositories and agents operated by David Molik (`molikd`) or
+Adam Wright (`adamjohnwright`). A PR submitted by either maintainer or their
+agents may satisfy the approval gate through an independent **different model**:
+Copilot, or a model operated by David or Adam. The approving model/agent must be
+other than the submitter; an agent must not self-approve its PR, and another
+instance of the same model does not satisfy the different-model requirement.
+Record author/reviewer model provenance when needed to establish independence.
+David and Adam themselves may self-approve their PRs; this exception does not
+apply to their agents.
+
+An eligible agent may merge only after that approval requirement is met, all
+applicable CI checks are green, and its own validation of the current changes
+passes, including changes after review. Recheck the exact head, base branch,
+findings and dependencies immediately before merging. Missing checks are not
+passing checks, and branch protection must not be bypassed. Read every overall
+review and inline finding, reply with its disposition and fix/evidence, resolve
+handled threads, and post an overall response. Merge authorization does not grant
+contract adoption, curator acceptance, release, publication or deployment
+authority; those retain their separate maintainer gates.
+
+Authority: [approval by another, different model](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/issues/268#issuecomment-6984337685)
+and [human self-approval exception](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/issues/268#issuecomment-6984418624).
+
+Port source: FAIR-bioHeaders-Specification commit
+`0d0d6b43efdee96bc7548f1f7c65fdafb2a31f32` ([specification PR #269](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Specification/pull/269)).
+
 ## Current repository context
 
 This is the FAIR-bioHeaders Nextflow DSL2 suite (first release 0.1.0, pre-1.0), not the specification authority.
@@ -56,13 +85,13 @@ Keep orchestration and JSON creation native to Nextflow. `modules/utils/main.nf`
 
 The FHR paper (<https://doi.org/10.1093/bib/bbae122>) motivates provenance preservation, minimal required metadata and interoperable serializations. Interpreting those goals here: pass sample IDs through channels, never invent authors/software/accessions/SeqCol digests, preserve sequence bytes, and validate before exposing outputs downstream.
 
-Run `python tests/run.py` with Nextflow 26.04.6, Java 21 and the hash-locked environment in environment/requirements.txt (generated from requirements.in); run `nf-test test --profile docker` for the nf-core-style modules and `nextflow run workflows/fairbioheaders/main.nf -profile test,docker` for the Dockstore workflow. CI runs the nf-test suite on two snapshot baselines (Nextflow 26.04.6, the supported baseline, and 26.10.4, what the pinned upstream snapshots were recorded under; fail-fast off), so a failure on one leg is an engine-specific output difference (snapshot content, or which stream Nextflow logs to — 26.10.4 moved the Nextflow log to stderr and two pinned convert tests assert on stdout), not a module break — the remedy is upstream and adoption is a pin move per docs/module-migration.md, never a hand-edit of a pinned module or a skipped test. Tests exercise module composition, both sequence formats, all conversions, malformed/missing metadata, metadata quoting and converter tests. Use `--converter-source ../FAIR-bioHeaders-Tools` to run its tests. Docker environment checks use `docker build -t fhr-nextflow:0.1.0 environment` and `-profile docker`.
+Run `python tests/run.py` with Nextflow 26.04.6, Java 21 and the hash-locked environment in environment/requirements.txt (generated from requirements.in); run `nf-test test --profile docker` for the nf-core-style modules and `nextflow run workflows/fairbioheaders/main.nf -profile test,docker` for the Dockstore workflow. CI runs the nf-test suite on two snapshot baselines (Nextflow 26.04.6, the supported baseline, and 26.10.4, what the upstream snapshots were recorded under; fail-fast off). The former convert pin at `def10bc21a` had a measured stream mismatch: two convert assertions read stdout, while 26.10.4 writes the expected name-collision message to stderr. Existing upstream PR13819 corrects both assertions. David explicitly approved the convert-only pin to unmerged upstream head `32d7eadd1f53d15cc203e2a52c4b7b83fb7a1d50` on 2026-11-19, including its safe-prefix restriction, to fix PR #38 CI. This exact-pin exception does not relax the generic merged-revision rule in docs/module-migration.md for any other revision or module. Never hand-edit pinned copies, skip cases or waive a matrix leg. Tests exercise module composition, both sequence formats, all conversions, malformed/missing metadata, metadata quoting and converter tests. Use `--converter-source ../FAIR-bioHeaders-Tools` to run its tests. Docker environment checks use `docker build -t fhr-nextflow:0.1.0 environment` and `-profile docker`.
 
 Inspect module channel contracts and docs together. Native exec tasks write only under task.workDir. Quote staged paths, whitelist command formats and constrain output IDs. Do not copy or change schema rules in this repository. No placeholder checksum is silently supplied: standalone JSON requires a checksum; combine calculates the attached file's checksum, and the example publishes only attached-file metadata when given a sequence. Exceptions thrown from helper functions reach users as an opaque InvocationTargetException outside tasks; return a problem message and throw from the closure instead. Record verification and compatibility changes in CHANGELOG.md.
 
 ## Repository map and review
 
-`main.nf` is the runnable example; `modules/*/main.nf` contains reusable processes and the JSON workflow — `create_json`, `strip`, `converter_tests` and `utils`, plus `verify_links` (`FHR_VERIFY_LINKS`, wrapping `bioheaders verify-links` parent checks) and `gff3_validate` (`GFF3_VALIDATE`, wrapping the pinned gff3-validator 0.1.0). The former header-family compatibility modules `modules/combine` (`FHR_COMBINE`) and `modules/convert` (`FHR_CONVERT`) were retired on 2026-11-13 by the issue #29 maintainer decision (option (a)); callers now use the pinned upstream modules directly. `modules/nf-core/fairbioheaders/{combine,convert,validate,verify}` are **byte-identical pinned copies of the upstream nf-core/modules revisions recorded in `modules.json`** (all four at `def10bc21a` since 2026-11-18, which double-quotes the prefix-derived output paths; verify was adopted 2026-11-14 by issue #29 slice 4, which retired the repository's own verify implementation under the same canonical path; never patch the pinned copies — update them only via the procedure in `docs/module-migration.md`; CI checks byte identity). All four carry meta.yml (upstream layout), environment.yml and nf-test tests (`nf-test.config`, `tests/config/`); follow nf-core/modules conventions there. The mixed local layout currently prevents nf-core CLI updates/list/lint here; use the CLI-less update procedure and lint in a clean upstream modules checkout at the recorded revision (docs/module-migration.md); that `modules/local/` layout migration is #7 work since the 2026-11-14 maintainer decision (it pairs with the next toolkit bump, when the container pins are re-evaluated anyway), not #29 work. `subworkflows/attach/main.nf` composes the pinned upstream `FAIRBIOHEADERS_COMBINE`, verify and `FAIRBIOHEADERS_CONVERT` JSON extraction and publishes the upstream input-faithful output names (`<id>.<ext>`, `<id>.json`; the `ext.prefix`/collision rules in `docs/module-migration.md` apply). `workflows/fairbioheaders` is the minimal Dockstore workflow (`.dockstore.yml`). The nf-core modules, the Dockstore workflow and their CI moved from FAIR-bioHeaders-Tools `nextflow/` with history (#21); the upstream alignment is #29. Protein (`.faa`/FHP) coverage and the FHR→FHGFF3→FHP parent-chain fixtures are recorded in CHANGELOG.md. `nextflow.config` configures the example, not importing projects. `environment/` pins the converter runtime. `tests/integration.nf` checks native composition; `tests/run.py` drives positive and rejection cases from an external project, including cases that run the pinned upstream `FAIRBIOHEADERS_CONVERT` (the suite's convert since #29 option (a) retired the compat `FHR_CONVERT`) and assert its plain `ID.<format>` naming and its in-task failure surfaces.
+`main.nf` is the runnable example; `modules/*/main.nf` contains reusable processes and the JSON workflow — `create_json`, `strip`, `converter_tests` and `utils`, plus `verify_links` (`FHR_VERIFY_LINKS`, wrapping `bioheaders verify-links` parent checks) and `gff3_validate` (`GFF3_VALIDATE`, wrapping the pinned gff3-validator 0.1.0). The former header-family compatibility modules `modules/combine` (`FHR_COMBINE`) and `modules/convert` (`FHR_CONVERT`) were retired on 2026-11-13 by the issue #29 maintainer decision (option (a)); callers now use the pinned upstream modules directly. `modules/nf-core/fairbioheaders/{combine,convert,validate,verify}` are **byte-identical pinned copies of the upstream nf-core/modules revisions recorded in `modules.json`** (combine, validate and verify at `def10bc21a`; convert at `32d7eadd1f53d15cc203e2a52c4b7b83fb7a1d50` from upstream PR #13819 under David’s explicit 2026-11-19 unmerged-source exception; all retain double-quoted prefix-derived output paths; verify was adopted 2026-11-14 by issue #29 slice 4, which retired the repository's own verify implementation under the same canonical path; never patch the pinned copies — update them only via the procedure in `docs/module-migration.md`; CI checks byte identity). All four carry meta.yml (upstream layout), environment.yml and nf-test tests (`nf-test.config`, `tests/config/`); follow nf-core/modules conventions there. The mixed local layout currently prevents nf-core CLI updates/list/lint here; use the CLI-less update procedure and lint in a clean upstream modules checkout at the recorded revision (docs/module-migration.md); that `modules/local/` layout migration is #7 work since the 2026-11-14 maintainer decision (it pairs with the next toolkit bump, when the container pins are re-evaluated anyway), not #29 work. `subworkflows/attach/main.nf` composes the pinned upstream `FAIRBIOHEADERS_COMBINE`, verify and `FAIRBIOHEADERS_CONVERT` JSON extraction and publishes the upstream input-faithful output names (`<id>.<ext>`, `<id>.json`; the `ext.prefix`/collision rules in `docs/module-migration.md` apply). `workflows/fairbioheaders` is the minimal Dockstore workflow (`.dockstore.yml`). The nf-core modules, the Dockstore workflow and their CI moved from FAIR-bioHeaders-Tools `nextflow/` with history (#21); the upstream alignment is #29. Protein (`.faa`/FHP) coverage and the FHR→FHGFF3→FHP parent-chain fixtures are recorded in CHANGELOG.md. `nextflow.config` configures the example, not importing projects. `environment/` pins the converter runtime. `tests/integration.nf` checks native composition; `tests/run.py` drives positive and rejection cases from an external project, including cases that run the pinned upstream `FAIRBIOHEADERS_CONVERT` (the suite's convert since #29 option (a) retired the compat `FHR_CONVERT`) and assert its plain `ID.<format>` naming and its in-task failure surfaces.
 
 Read README, CONTRIBUTING, SECURITY and the pipeline guide before changing their contracts. Preserve CRLF fixture bytes and sample IDs. For documentation-only changes, check relative links and examples; rerun pipelines when executable behavior changes. Update CHANGELOG with relevant verification. Keep human-readable citations in Chicago style with DOI links and machine-readable citation metadata distinct from release identifiers.
 
@@ -167,7 +196,7 @@ David Molik on 2026-10-28). Follow them unless a later issue changes them.
 
 ### Code review on a PR
 
-When a PR receives code review (human or Copilot):
+When a PR receives code review (human or model):
 
 1. Read the overall review and every inline comment before changing anything.
 2. Make each fix in a **new commit**. Do not amend or force-push over reviewed
@@ -179,5 +208,5 @@ When a PR receives code review (human or Copilot):
 6. Treat optional suggestions as required unless they are genuinely out of
    scope; state why and link a follow-up issue.
 
-Do not push to a repository's main branch or merge a PR without maintainer
-approval.
+Do not push directly to the default branch. PR merges follow the independent
+review authorization above; adoption and publication keep their separate gates.

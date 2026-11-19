@@ -1,5 +1,27 @@
 # Capability matrix: module × operation × type × serialization × version
 
+**Approved exact-pin exception — 2026-11-19.** David Molik explicitly approved
+using the complete convert module from [upstream PR #13819](https://github.com/nf-core/modules/pull/13819)
+at immutable review head `32d7eadd1f53d15cc203e2a52c4b7b83fb7a1d50` to repair
+PR #38 CI, including its safe-prefix restriction. This source was unmerged at
+approval; it must not be described as a merged revision. The exception covers
+only this convert pin, not future review heads or other modules. The normal
+merged-source procedure in `docs/module-migration.md` remains unchanged. Combine, validate and verify,
+toolkit 0.9.0 and all container/environment pins are unchanged.
+
+Convert now rejects prefixes outside `[A-Za-z0-9._+][A-Za-z0-9._+ -]*`, and the
+exact prefix `..`, in both script and stub. This excludes non-ASCII characters,
+path separators, shell metacharacters and leading spaces/hyphens; ordinary safe
+names and internal spaces remain supported. Both collision tests still require
+process failure and now accept the diagnostic on either stdout or stderr.
+
+Local validation: all 13 convert tests passed on each of Nextflow 26.04.6 and
+26.10.4 with nf-test 0.9.5 and toolkit 0.9.0, using native tasks inside the
+verification container. This is separate from the full 32-case Docker-profile
+CI matrix, which must pass before merge. All 29 installed files match their
+recorded immutable upstream blobs.
+
+
 Status date: **2026-11-16**. This is the honest capability statement of
 FAIR-bioHeaders-Nextflow (the DSL2 suite, repository version **0.3.0**, last published
 release 0.2.0). It exists so that a gap is a named row rather than an inference, and so
@@ -50,7 +72,7 @@ Test lanes referenced below (all run in [CI](../.github/workflows/ci.yml)):
 
 - **nf-test** — `nf-test test --profile docker --ci` over the four pinned upstream
   suites, matrix over Nextflow 26.04.6 and 26.10.4 (`.github/workflows/ci.yml ::
-  nxf_version: ['26.04.6', '26.10.4']`). 31 tests total.
+  nxf_version: ['26.04.6', '26.10.4']`). 32 tests total.
 - **harness** — `python tests/run.py` (job `test`): positive and rejection pipeline runs
   from an external project against the hash-locked native environment.
 - **example** — `nextflow run main.nf -profile docker` steps
@@ -65,7 +87,7 @@ Test lanes referenced below (all run in [CI](../.github/workflows/ci.yml)):
 | component | path | processes / workflows | provenance | tested by |
 | --- | --- | --- | --- | --- |
 | `FAIRBIOHEADERS_COMBINE` | `modules/nf-core/fairbioheaders/combine` | `FAIRBIOHEADERS_COMBINE` | **pinned upstream** nf-core/modules `def10bc21ae4952973f9e07952fc899aa060dfc5` (`modules.json :: def10bc21ae4952973f9e07952fc899aa060dfc5`); never patch locally | nf-test (8 cases), harness, example, dockstore, guard |
-| `FAIRBIOHEADERS_CONVERT` | `modules/nf-core/fairbioheaders/convert` | `FAIRBIOHEADERS_CONVERT` | **pinned upstream** `def10bc21ae4952973f9e07952fc899aa060dfc5` (`modules.json :: def10bc21ae4952973f9e07952fc899aa060dfc5`) | nf-test (12 cases), harness, example (as the aliased `FHR_YAML` publish) |
+| `FAIRBIOHEADERS_CONVERT` | `modules/nf-core/fairbioheaders/convert` | `FAIRBIOHEADERS_CONVERT` | **pinned upstream (approved unmerged exception)** `32d7eadd1f53d15cc203e2a52c4b7b83fb7a1d50` (`modules.json :: 32d7eadd1f53d15cc203e2a52c4b7b83fb7a1d50`) | nf-test (13 cases), harness, example (as the aliased `FHR_YAML` publish) |
 | `FAIRBIOHEADERS_VALIDATE` | `modules/nf-core/fairbioheaders/validate` | `FAIRBIOHEADERS_VALIDATE` | **pinned upstream** `def10bc21ae4952973f9e07952fc899aa060dfc5` (`modules.json :: def10bc21ae4952973f9e07952fc899aa060dfc5`) | nf-test (7 cases), harness |
 | `FAIRBIOHEADERS_VERIFY` | `modules/nf-core/fairbioheaders/verify` | `FAIRBIOHEADERS_VERIFY` | **pinned upstream** `def10bc21ae4952973f9e07952fc899aa060dfc5` (`modules.json :: def10bc21ae4952973f9e07952fc899aa060dfc5`), adopted 2026-11-14 by issue #29 slice 4 (`docs/module-migration.md :: verify parity: done 2026-11-14`) | nf-test (4 cases), harness, example, dockstore, guard |
 | `FHR_CREATE_JSON` | `modules/create_json` | `FHR_CREATE_JSON` (wraps `FHR_WRITE_JSON`, then the pinned `FAIRBIOHEADERS_VALIDATE` as `VALIDATE_CREATED_JSON`) | repository-owned | harness (integration, FHP compose, FHR/FHP rejections), example |
@@ -166,7 +188,7 @@ nextflow_dist_sha256 = 182a63c74074e2dc7956ffa3c8cd59de952ed2c44394e21faf5e1736b
 nf_test = 0.9.5
 upstream_pin(combine) = def10bc21ae4952973f9e07952fc899aa060dfc5
 upstream_pin(validate) = def10bc21ae4952973f9e07952fc899aa060dfc5
-upstream_pin(convert) = def10bc21ae4952973f9e07952fc899aa060dfc5
+upstream_pin(convert) = 32d7eadd1f53d15cc203e2a52c4b7b83fb7a1d50
 upstream_pin(verify) = def10bc21ae4952973f9e07952fc899aa060dfc5
 ```
 
@@ -204,14 +226,17 @@ document; each names its owner.
    recorded procedure in [docs/module-migration.md](module-migration.md), and the harness's
    spaced-`ext.prefix` case (`tests/run.py :: ext.prefix = { 'spaced prefix' }`) now asserts
    success instead of the old shell parse error.
-3. **Pre-existing red CI leg (do not "fix" it from a docs PR).** The `nf-test (Nextflow
+3. **Historical red CI leg, repaired by the approved 2026-11-19 pin exception.** The `nf-test (Nextflow
    26.10.4)` job fails on `main` (`44b5b2c`) on two stdout-only assertions in the pinned
    upstream convert suite, because 26.10.4 writes the Nextflow log to stderr; the remedy
    is upstream (item 2's pin move did not touch those assertions). The 26.04.6 leg passed with all 30 tests before item 2 added a 31st.
    Full receipt: `docs/module-migration.md :: FAILURE: Executed 30 tests in 151.763s (2
    failed)`; the assertion inventory is in the same section
    (`docs/module-migration.md :: The two red assertions are not snapshot tests`). This
-   matrix changes no workflow, pin or test.
+   historical matrix described the original failure. PR #38 now updates only the
+   complete convert pin through David’s exact-source exception; the two
+   stream-tolerant assertions and new unsafe-prefix test bring the inventory to 32.
+   Full two-engine Docker-profile CI remains required before merge.
 4. **Test-lane asymmetry.** The four pinned upstream modules carry nf-test; the
    repository-owned modules (`verify_links`, `gff3_validate`, `strip`, `create_json`,
    `converter_tests`, `utils`) carry **no nf-test** and are covered only by the

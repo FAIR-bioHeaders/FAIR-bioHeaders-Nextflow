@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Convert CI stream compatibility (2026-11-19)
+
+- Authenticate the upstream-tree CI check with the workflow read token and fetch
+  each immutable revision once, avoiding the observed anonymous API HTTP 403.
+  Authentication/API errors still fail the check; tokens stay out of arguments.
+- Pin only `fairbioheaders/convert` to the complete eight-file tree from
+  nf-core/modules PR #13819 at `32d7eadd1f53d15cc203e2a52c4b7b83fb7a1d50`.
+  David approved this exact unmerged-source exception, including the upstream
+  safe-prefix restriction; the normal merged-source rule remains in force for
+  other pins. Both collision assertions retain process-failure checks and accept
+  the diagnostic on stdout or stderr. Unsafe/non-ASCII prefixes and leading
+  spaces/hyphens are rejected by both script and stub; internal spaces remain valid.
+- All 13 convert tests pass on both Nextflow 26.04.6 and 26.10.4 in native local
+  validation. Full Docker-profile CI remains a merge requirement. No snapshot,
+  container or toolkit versions change; the other three modules remain pinned to
+  `def10bc21ae4952973f9e07952fc899aa060dfc5`.
+
 ### Sample-id hardening and module pin move (2026-11-18)
 
 - **Dockstore workflow checks every sample id (FIXED).** `workflows/fairbioheaders`

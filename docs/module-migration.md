@@ -1,5 +1,27 @@
 # Module migration: upstream nf-core `fairbioheaders` modules (issue #29)
 
+**Approved exact-pin exception — 2026-11-19.** David Molik explicitly approved
+using the complete convert module from [upstream PR #13819](https://github.com/nf-core/modules/pull/13819)
+at immutable review head `32d7eadd1f53d15cc203e2a52c4b7b83fb7a1d50` to repair
+PR #38 CI, including its safe-prefix restriction. This source was unmerged at
+approval; it must not be described as a merged revision. The exception covers
+only this convert pin, not future review heads or other modules. The normal
+merged-source procedure below remains unchanged. Combine, validate and verify,
+toolkit 0.9.0 and all container/environment pins are unchanged.
+
+Convert now rejects prefixes outside `[A-Za-z0-9._+][A-Za-z0-9._+ -]*`, and the
+exact prefix `..`, in both script and stub. This excludes non-ASCII characters,
+path separators, shell metacharacters and leading spaces/hyphens; ordinary safe
+names and internal spaces remain supported. Both collision tests still require
+process failure and now accept the diagnostic on either stdout or stderr.
+
+Local validation: all 13 convert tests passed on each of Nextflow 26.04.6 and
+26.10.4 with nf-test 0.9.5 and toolkit 0.9.0, using native tasks inside the
+verification container. This is separate from the full 32-case Docker-profile
+CI matrix, which must pass before merge. All 29 installed files match their
+recorded immutable upstream blobs.
+
+
 This document tracks the migration of this repository's Nextflow workflows to the
 upstream [nf-core/modules](https://github.com/nf-core/modules) `fairbioheaders`
 module set, the pinned revisions, the per-module contract comparison against the
@@ -152,14 +174,14 @@ and verify hold seven files each, convert eight because it also ships
 | validate @ `def10bc21a…` | environment.yml | `d0c0735cb08e0a193ca197dc24ca046d2e6c2cc8` |
 | validate @ `def10bc21a…` | tests/main.nf.test | `10a065dfaa3e2b87951bf477a1a1a2d6a628ad82` |
 | validate @ `def10bc21a…` | tests/main.nf.test.snap | `00026dfbe88f2b86155ad17276d90bb92e16c8e1` |
-| convert @ `def10bc21a…` | main.nf | `93f4d7cd47c014ba903cf291829771c8304fa9c9` |
-| convert @ `def10bc21a…` | meta.yml | `357ef5e80a7ac9fd318827a8d0105b4e43c4924e` |
-| convert @ `def10bc21a…` | environment.yml | `d0c0735cb08e0a193ca197dc24ca046d2e6c2cc8` |
-| convert @ `def10bc21a…` | tests/main.nf.test | `7628fa098fd1a0c5739ba539207f1f2e7b4f9c8c` |
-| convert @ `def10bc21a…` | tests/main.nf.test.snap | `9d2917f1f4d461a5c30b6589e2941daf5626805b` |
-| convert @ `def10bc21a…` | tests/nextflow.config | `3bf6653083dee274273e4f72bbe61db2f5d4874d` |
-| convert @ `def10bc21a…` | `.conda-lock/linux_amd64-bd-71029206d3ce1119_1.txt` | `614f61ced8ebef6dc1a6e78742a2f0672b805031` |
-| convert @ `def10bc21a…` | `.conda-lock/linux_arm64-bd-1ff11621d7e9a7c8_1.txt` | `8cc63c8d8b1d37b467b2074e22af63c10a61a6fa` |
+| convert @ `32d7eadd1f…` (approved unmerged exception) | main.nf | `d472c3361d774601109870d5c5408b9c58e93d3d` |
+| convert @ `32d7eadd1f…` (approved unmerged exception) | meta.yml | `357ef5e80a7ac9fd318827a8d0105b4e43c4924e` |
+| convert @ `32d7eadd1f…` (approved unmerged exception) | environment.yml | `d0c0735cb08e0a193ca197dc24ca046d2e6c2cc8` |
+| convert @ `32d7eadd1f…` (approved unmerged exception) | tests/main.nf.test | `7ca2a86c425064346aab478df88347ad4dc8595c` |
+| convert @ `32d7eadd1f…` (approved unmerged exception) | tests/main.nf.test.snap | `9d2917f1f4d461a5c30b6589e2941daf5626805b` |
+| convert @ `32d7eadd1f…` (approved unmerged exception) | tests/nextflow.config | `3bf6653083dee274273e4f72bbe61db2f5d4874d` |
+| convert @ `32d7eadd1f…` (approved unmerged exception) | `.conda-lock/linux_amd64-bd-71029206d3ce1119_1.txt` | `614f61ced8ebef6dc1a6e78742a2f0672b805031` |
+| convert @ `32d7eadd1f…` (approved unmerged exception) | `.conda-lock/linux_arm64-bd-1ff11621d7e9a7c8_1.txt` | `8cc63c8d8b1d37b467b2074e22af63c10a61a6fa` |
 | verify @ `def10bc21a…` | main.nf | `8aeac898b8e44442671a65f38b8d1c3915560d44` |
 | verify @ `def10bc21a…` | meta.yml | `f420baaccf215c1530b595a8b5b0c4fe25d9b698` |
 | verify @ `def10bc21a…` | environment.yml | `d0c0735cb08e0a193ca197dc24ca046d2e6c2cc8` |
@@ -954,8 +976,13 @@ current upstream naming (option (a)). Filing it is a maintainer action.
   stream-agnostic and passes in both CI legs). **Disposition:** the correct fix is a
   stream-tolerant assertion **upstream** (match on stdout *or* stderr, like the other six),
   adopted here by moving the convert pin through the recorded procedure — it joins the staged,
-  unfiled upstream requests above (filing is a maintainer action, standing posture unchanged). Until then
-  the 26.10.4 leg stays red on this PR as a named compatibility finding; it is **not** to
+  unfiled upstream requests above (filing was recorded as a maintainer action).
+  **Historical disposition, superseded 2026-11-19:** Adam has filed upstream
+  PR #13819, and David approved the exact convert-only review-head pin described
+  at the start of this document. Both 13-case native convert suites now pass;
+  actual downstream two-engine Docker-profile CI remains required before merge.
+  Before that approved repair,
+  the 26.10.4 leg stayed red as a named compatibility finding; it was **not** to
   be silenced by editing the pinned test, by skipping the two cases, or by making the leg
   advisory. Bumping the supported baseline to 26.10.4 would *not* fix it either — the same
   assertion fails under that engine regardless of which baseline is called supported.
