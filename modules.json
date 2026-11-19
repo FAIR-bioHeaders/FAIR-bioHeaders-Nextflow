@@ -21,7 +21,7 @@
                     },
                     "fairbioheaders/convert": {
                         "branch": "master",
-                        "git_sha": "def10bc21ae4952973f9e07952fc899aa060dfc5",
+                        "git_sha": "32d7eadd1f53d15cc203e2a52c4b7b83fb7a1d50",
                         "installed_by": [
                             "modules"
                         ]
