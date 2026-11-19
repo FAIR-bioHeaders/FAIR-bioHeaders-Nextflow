@@ -6,7 +6,7 @@
 include { FAIRBIOHEADERS_COMBINE }                 from '../../modules/nf-core/fairbioheaders/combine/main'
 include { FAIRBIOHEADERS_VERIFY as CHECK_COMBINED } from '../../modules/nf-core/fairbioheaders/verify/main'
 include { FAIRBIOHEADERS_CONVERT as EXTRACT_JSON }  from '../../modules/nf-core/fairbioheaders/convert/main'
-include { isSampleId; sequenceKindOf; sequenceType } from '../../modules/utils/main'
+include { isSampleId; sequenceKindOf; sequenceType } from '../../modules/local/utils/main'
 
 // Attaches metadata to a sequence file, verifies the result and extracts its JSON.
 //

@@ -3,11 +3,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-include { FHR_CREATE_JSON } from '../modules/create_json/main'
+include { FHR_CREATE_JSON } from '../modules/local/create_json/main'
 include { FAIRBIOHEADERS_CONVERT as TO_FORMAT } from '../modules/nf-core/fairbioheaders/convert/main'
 include { FAIRBIOHEADERS_CONVERT as BACK_JSON } from '../modules/nf-core/fairbioheaders/convert/main'
 include { FHR_ATTACH } from '../subworkflows/attach/main'
-include { FHR_STRIP } from '../modules/strip/main'
+include { FHR_STRIP } from '../modules/local/strip/main'
 
 process ASSERT_ROUNDTRIP {
     input:

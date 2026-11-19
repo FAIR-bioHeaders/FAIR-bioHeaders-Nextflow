@@ -171,13 +171,13 @@ jobs:
             grep -q "bioconda::fair-bioheaders=$version" "modules/nf-core/fairbioheaders/$module/environment.yml"
             grep -q "community.wave.seqera.io/library/fair-bioheaders:$version--" "modules/nf-core/fairbioheaders/$module/main.nf"
           done
-          for module in modules/strip modules/verify_links; do
+          for module in modules/local/strip modules/local/verify_links; do
             grep -q "^ *- bioconda::fair-bioheaders=$version$" "$module/environment.yml"
             grep -q "quay.io/biocontainers/fair-bioheaders:$version--" "$module/main.nf"
             grep -q "depot.galaxyproject.org/singularity/fair-bioheaders:$version--" "$module/main.nf"
           done
           # The converter tests' conda environment and the hash-locked image follow the same release.
-          grep -q "^ *- bioconda::fair-bioheaders=$version$" modules/converter_tests/environment.yml
+          grep -q "^ *- bioconda::fair-bioheaders=$version$" modules/local/converter_tests/environment.yml
           grep -q "fair_bioheaders-$version-py3-none-any.whl" environment/requirements.in
       - name: Check that the pinned upstream modules match their recorded revisions
         env:

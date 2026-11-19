@@ -87,7 +87,7 @@ def main():
         json_test.write_text((ROOT / 'tests/json.nf').read_text().replace("from '../", f"from '{ROOT}/"))
         check('JSON serialization:' in run(json_test, work), 'JSON edge-case script did not report')
         date_field = work / 'date-field.nf'
-        date_field.write_text("include { FHR_CREATE_JSON } from '" + str(ROOT / 'modules/create_json/main') + "'\nworkflow { FHR_CREATE_JSON(Channel.of(tuple([id:'date'], [dateCreated: new Date(0)]))) }\n")
+        date_field.write_text("include { FHR_CREATE_JSON } from '" + str(ROOT / 'modules/local/create_json/main') + "'\nworkflow { FHR_CREATE_JSON(Channel.of(tuple([id:'date'], [dateCreated: new Date(0)]))) }\n")
         run(date_field, work, failure='unsupported type java.util.Date')
 
         # Missing required metadata and invalid digest must fail before JSON is emitted.
@@ -150,7 +150,7 @@ def main():
 
         # GFF3 validation: optional genome ([]), gzip input, warnings, errors, incomplete input.
         gff3 = ROOT / 'tests/fixtures/gff3'
-        module = "include { GFF3_VALIDATE } from '" + str(ROOT / 'modules/gff3_validate/main') + "'\n"
+        module = "include { GFF3_VALIDATE } from '" + str(ROOT / 'modules/local/gff3_validate/main') + "'\n"
         gff3_module = work / 'gff3-module.nf'
         gff3_module.write_text(module + """workflow {
     def fixtures = params.fixtures
@@ -208,13 +208,13 @@ def main():
         # headers and parent-link verification through the pinned toolkit.
         fhp = ROOT / 'tests/fixtures/fhp'
         chain = fhp / 'chain'
-        create = "include { FHR_CREATE_JSON } from '" + str(ROOT / 'modules/create_json/main') + "'\n"
+        create = "include { FHR_CREATE_JSON } from '" + str(ROOT / 'modules/local/create_json/main') + "'\n"
         convert = "include { FAIRBIOHEADERS_CONVERT } from '" + str(ROOT / 'modules/nf-core/fairbioheaders/convert/main') + "'\n"
         attach = "include { FHR_ATTACH } from '" + str(ROOT / 'subworkflows/attach/main') + "'\n"
-        strip = "include { FHR_STRIP } from '" + str(ROOT / 'modules/strip/main') + "'\n"
+        strip = "include { FHR_STRIP } from '" + str(ROOT / 'modules/local/strip/main') + "'\n"
         verify_header = "include { FAIRBIOHEADERS_VERIFY } from '" + str(ROOT / 'modules/nf-core/fairbioheaders/verify/main') + "'\n"
         validate = "include { FAIRBIOHEADERS_VALIDATE } from '" + str(ROOT / 'modules/nf-core/fairbioheaders/validate/main') + "'\n"
-        verify = "include { FHR_VERIFY_LINKS } from '" + str(ROOT / 'modules/verify_links/main') + "'\n"
+        verify = "include { FHR_VERIFY_LINKS } from '" + str(ROOT / 'modules/local/verify_links/main') + "'\n"
 
         compose = work / 'fhp-compose.nf'
         compose.write_text(create + convert + attach + strip + """process ASSERT_PROTEIN_BYTES {
@@ -562,7 +562,7 @@ workflow {
         # lower-case gz/bgz keeps two tokens, so genome.FA.GZ -> genome.GZ (no clash)
         # while genome.GZ with id genome would overwrite its input and is disambiguated.
         combine_id = work / 'combine-id.nf'
-        combine_id.write_text("include { combineId } from '" + str(ROOT / 'modules/utils/main') + """'
+        combine_id.write_text("include { combineId } from '" + str(ROOT / 'modules/local/utils/main') + """'
 workflow {
     def cases = [['genome', 'genome.fa.gz', 'genome.combined'], ['genome', 'genome.fasta.bgz', 'genome.combined'],
                  ['genome', 'genome.FA.GZ', 'genome'], ['genome', 'genome.GZ', 'genome.combined'],
@@ -584,6 +584,141 @@ workflow {
         run(ROOT / 'main.nf', work, ['--metadata', str(sheet_dir / 'genome.json'), '--sequence', str(sheet_dir / 'genome.fasta'), '--outdir', str(output)])
         check(published(output) == ['genome.combined/sequence/genome.combined.fasta', 'genome.combined/sequence/genome.combined.json', 'genome.combined/sequence/genome.combined.yaml'],
               f'unexpected example outputs for a colliding name: {published(output)}')
+
+        # FHGFF3 workflow composition beyond parent fixtures (issue #7 / #35):
+        # FHR_CREATE_JSON map -> FAIRBIOHEADERS_VALIDATE (JSON) -> FAIRBIOHEADERS_COMBINE
+        # (plain and gzip GFF3) -> FAIRBIOHEADERS_VERIFY -> FAIRBIOHEADERS_CONVERT
+        # (header extraction to json/yaml/gff3 and round trips back to json, plus
+        # rejection of unsupported jsonld/html in toolkit 0.9.0) -> FHR_VERIFY_LINKS
+        # -> GFF3_VALIDATE header-mode options (ext.header require/skip).
+        combine = "include { FAIRBIOHEADERS_COMBINE } from '" + str(ROOT / 'modules/nf-core/fairbioheaders/combine/main') + "'\n"
+        fhgff3_fields = {
+            'schema': 'https://w3id.org/fair-bioheaders/fhgff3/v0.4.0',
+            'schemaVersion': '1.0',
+            'annotation': 'Synthetic example annotation',
+            'taxon': {'name': 'Homo sapiens', 'uri': 'https://identifiers.org/taxonomy:9606'},
+            'version': '0.0.1',
+            'metadataAuthor': [{'name': 'Adam Wright', 'uri': 'https://orcid.org/0000-0002-5719-4024'}],
+            'dateCreated': '2026-10-21',
+            'annotationProtocol': 'https://example.org/synthetic-annotation-protocol',
+            'annotationSoftware': [{'name': 'Synthetic annotator', 'version': '1.0'}],
+            'derivedFrom': [{'headerType': 'FHR', 'checksum': 'IHnspOEQ7lB6QJ5S+ZoWIFgWkOekkupMTD+O8pDY9IA=', 'relationship': 'annotates'}],
+            'checksum': PLACEHOLDER,
+        }
+        fhgff3_json = work / 'fhgff3-meta.json'
+        fhgff3_json.write_text(json.dumps(fhgff3_fields))
+        fhgff3_compose = work / 'fhgff3-compose.nf'
+        fhgff3_compose.write_text(
+            create + combine + verify_header + convert
+            + "include { FAIRBIOHEADERS_CONVERT as FHGFF3_BACK_JSON } from '" + str(ROOT / 'modules/nf-core/fairbioheaders/convert/main') + "'\n"
+            + verify + """workflow {
+    def fields = new groovy.json.JsonSlurper().parseText(file(params.metadata, checkIfExists: true).text)
+    FHR_CREATE_JSON(Channel.of(tuple([id: 'fhgff3-created'], fields)))
+    FAIRBIOHEADERS_COMBINE(FHR_CREATE_JSON.out.json.flatMap { meta, json ->
+        [
+            tuple([id: 'fhgff3-plain'], json, file(params.gff3, checkIfExists: true)),
+            tuple([id: 'fhgff3-gz'], json, file(params.gff3_gz, checkIfExists: true))
+        ]
+    })
+    FAIRBIOHEADERS_VERIFY(FAIRBIOHEADERS_COMBINE.out.sequence)
+    def plain_headed = FAIRBIOHEADERS_COMBINE.out.sequence.filter { meta, path -> meta.id == 'fhgff3-plain' }
+    def formats = ['json', 'yaml', 'gff3']
+    FAIRBIOHEADERS_CONVERT(
+        plain_headed.flatMap { meta, path ->
+            formats.collect { fmt -> tuple([id: "fhgff3-extract-${fmt}".toString()], path) }
+        },
+        Channel.fromList(formats)
+    )
+    def non_json = FAIRBIOHEADERS_CONVERT.out.metadata.filter { meta, path -> meta.id != 'fhgff3-extract-json' }
+    FHGFF3_BACK_JSON(
+        non_json.map { meta, path -> tuple([id: "${meta.id}-back".toString()], path) },
+        Channel.fromList(['json', 'json'])
+    )
+    FHR_VERIFY_LINKS(plain_headed.map { meta, path ->
+        tuple([id: 'fhgff3-links'], path, [file(params.parent, checkIfExists: true)])
+    })
+    FHR_CREATE_JSON.out.json.view { meta, path -> "FHGFF3_CREATED ${meta.id} ${path.name}" }
+    FAIRBIOHEADERS_COMBINE.out.sequence.view { meta, path -> "FHGFF3_COMBINED ${meta.id} ${path.name}" }
+    FAIRBIOHEADERS_VERIFY.out.report.view { meta, path -> "FHGFF3_VERIFIED ${meta.id} ${path.name}" }
+    FAIRBIOHEADERS_CONVERT.out.metadata.view { meta, path -> "FHGFF3_EXTRACTED ${meta.id} ${path.name}" }
+    FHGFF3_BACK_JSON.out.metadata.view { meta, path -> "FHGFF3_ROUNDTRIP ${meta.id} ${path.name}" }
+    FHR_VERIFY_LINKS.out.verified.view { meta, path -> "FHGFF3_LINKED ${meta.id} ${path.name}" }
+}
+""")
+        output = run(
+            fhgff3_compose,
+            work,
+            [
+                '--metadata', str(fhgff3_json),
+                '--gff3', str(ROOT / 'workflows/fairbioheaders/assets/test/no-header.gff3'),
+                '--gff3_gz', str(gff3 / 'canonical-gene-gzip.gff3.gz'),
+                '--parent', str(chain / 'genome.fhr.fasta'),
+            ],
+        )
+        for marker in [
+            'FHGFF3_CREATED fhgff3-created fhgff3-created.json',
+            'FHGFF3_COMBINED fhgff3-plain fhgff3-plain.gff3',
+            'FHGFF3_COMBINED fhgff3-gz fhgff3-gz.gff3.gz',
+            'FHGFF3_VERIFIED fhgff3-plain fhgff3-plain.verify.txt',
+            'FHGFF3_VERIFIED fhgff3-gz fhgff3-gz.verify.txt',
+            'FHGFF3_EXTRACTED fhgff3-extract-json fhgff3-extract-json.json',
+            'FHGFF3_EXTRACTED fhgff3-extract-yaml fhgff3-extract-yaml.yaml',
+            'FHGFF3_EXTRACTED fhgff3-extract-gff3 fhgff3-extract-gff3.gff3',
+            'FHGFF3_ROUNDTRIP fhgff3-extract-yaml-back fhgff3-extract-yaml-back.json',
+            'FHGFF3_ROUNDTRIP fhgff3-extract-gff3-back fhgff3-extract-gff3-back.json',
+            'FHGFF3_LINKED fhgff3-links fhgff3-plain.gff3',
+        ]:
+            check(marker in output, f'missing FHGFF3 workflow marker {marker!r}:\n{output}')
+        extracted_fhgff3 = json.loads(next((work / 'work').glob('*/*/fhgff3-extract-json.json')).read_text())
+        check(
+            extracted_fhgff3['schema'].endswith('/fhgff3/v0.4.0')
+            and extracted_fhgff3['checksum'] != PLACEHOLDER,
+            f'FHGFF3 header extraction did not replace the placeholder checksum: {extracted_fhgff3}',
+        )
+        for back_name in ('fhgff3-extract-yaml-back.json', 'fhgff3-extract-gff3-back.json'):
+            back_record = json.loads(next((work / 'work').glob(f'*/*/{back_name}')).read_text())
+            check(back_record == extracted_fhgff3, f'{back_name} did not round-trip FHGFF3 metadata')
+        header_only_gff3 = next((work / 'work').glob('*/*/fhgff3-extract-gff3.gff3')).read_text()
+        check(
+            header_only_gff3.startswith('##gff-version 3\n#~schema: https://w3id.org/fair-bioheaders/fhgff3/'),
+            f'FHGFF3 --to gff3 output is not a GFF3 header block:\n{header_only_gff3}',
+        )
+        invalid_fhgff3 = dict(fhgff3_fields)
+        invalid_fhgff3.pop('annotation')
+        bad_fhgff3_source = work / 'fhgff3-missing.json'
+        bad_fhgff3_source.write_text(json.dumps(invalid_fhgff3))
+        run(ROOT / 'main.nf', work, ['--metadata', str(bad_fhgff3_source), '--outdir', str(work / 'fhgff3-missing')], failure='annotation')
+        check(not (work / 'fhgff3-missing').exists(), 'fhgff3-missing: outputs were published after a validation failure')
+        for unsupported_fmt in ('jsonld', 'html'):
+            fhgff3_unsupported = work / f'fhgff3-convert-{unsupported_fmt}.nf'
+            fhgff3_unsupported.write_text(pinned_convert + f"""workflow {{
+    FAIRBIOHEADERS_CONVERT(Channel.of(tuple([id: 'fhgff3-bad'], file(params.metadata, checkIfExists: true))), Channel.value('{unsupported_fmt}'))
+}}
+""")
+            run(fhgff3_unsupported, work, ['--metadata', str(fhgff3_json)], failure='JSON-LD and HTML microdata output are not available for FHGFF3 metadata yet')
+
+        # GFF3_VALIDATE header-mode options (ext.header require/skip) on headed and
+        # headerless GFF3 files.
+        gff3_header_script = work / 'gff3-header.nf'
+        gff3_header_script.write_text(module + """workflow {
+    GFF3_VALIDATE(Channel.of(tuple([id: params.id], file(params.gff3, checkIfExists: true), [])))
+    GFF3_VALIDATE.out.valid.view { meta, gff3 -> "VALID_HEADER ${meta.id} ${gff3.name}" }
+    GFF3_VALIDATE.out.reports.view { meta, json, html -> "REPORT_HEADER ${meta.id} ${json.name}" }
+}
+""")
+        for mode, rule in [('require', 'HDR-002'), ('skip', 'HDR-003')]:
+            mode_dir = work / f'gff3-header-{mode}'
+            mode_dir.mkdir()
+            (mode_dir / 'nextflow.config').write_text(f"nextflow.enable.dsl = 2\nprocess {{ withName: GFF3_VALIDATE {{ ext.header = '{mode}' }} }}\n")
+            output = run(gff3_header_script, mode_dir, ['--id', f'headed-{mode}', '--gff3', str(chain / 'annotation.fhgff3.gff3')])
+            check(f'VALID_HEADER headed-{mode} annotation.fhgff3.gff3' in output, f'headed GFF3 failed under ext.header={mode}:\n{output}')
+            report = json.loads(next((mode_dir / 'work').glob(f'*/*/headed-{mode}.gff3-validate.json')).read_text())
+            check(report['valid'] and report['header_lines'] == 20 and [f['rule'] for f in report['findings']] == [rule],
+                  f'unexpected GFF3 header report for ext.header={mode}: {report}')
+        run(gff3_header_script, work / 'gff3-header-require', ['--id', 'no-header-require', '--gff3', str(gff3 / 'genes-with-genome.gff3')],
+            failure='GFF3 validation failed for genes-with-genome.gff3')
+        check(any('HDR-001' in path.read_text() for path in (work / 'gff3-header-require/work').glob('*/*/no-header-require.gff3-validate.json')),
+              'ext.header=require on a headerless GFF3 did not record HDR-001')
 
         if args.converter_source:
             source = args.converter_source.resolve()
