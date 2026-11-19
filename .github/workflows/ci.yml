@@ -180,6 +180,8 @@ jobs:
           grep -q "^ *- bioconda::fair-bioheaders=$version$" modules/converter_tests/environment.yml
           grep -q "fair_bioheaders-$version-py3-none-any.whl" environment/requirements.in
       - name: Check that the pinned upstream modules match their recorded revisions
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           python3 -m unittest discover -s tests -p test_upstream_modules.py -v
           python3 scripts/check_upstream_modules.py

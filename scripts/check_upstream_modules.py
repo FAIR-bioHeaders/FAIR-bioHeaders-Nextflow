@@ -52,6 +52,20 @@ def compare(expected, actual):
     return errors
 
 
+def fetch_tree(sha):
+    endpoint = f"repos/nf-core/modules/git/trees/{sha}?recursive=1"
+    if os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN"):
+        # gh consumes the token from its environment, never a logged argument.
+        command = ["gh", "api", "--method", "GET", endpoint]
+    else:
+        command = [
+            "curl", "--fail", "--silent", "--show-error", "--location",
+            "--retry", "3", "--connect-timeout", "15", "--max-time", "120",
+            f"https://api.github.com/{endpoint}",
+        ]
+    return json.loads(subprocess.check_output(command))
+
+
 def main():
     root = Path(__file__).resolve().parents[1]
     manifest = json.loads((root / "modules.json").read_text())
@@ -59,26 +73,13 @@ def main():
         "nf-core"
     ]
     failed = False
+    trees = {}
     for name, entry in modules.items():
         sha = entry["git_sha"]
-        result = subprocess.check_output(
-            [
-                "curl",
-                "--fail",
-                "--silent",
-                "--show-error",
-                "--location",
-                "--retry",
-                "3",
-                "--connect-timeout",
-                "15",
-                "--max-time",
-                "120",
-                f"https://api.github.com/repos/nf-core/modules/git/trees/{sha}?recursive=1",
-            ]
-        )
+        if sha not in trees:
+            trees[sha] = fetch_tree(sha)
         prefix = f"modules/nf-core/{name}/"
-        expected = tree_files(json.loads(result), prefix)
+        expected = tree_files(trees[sha], prefix)
         if not expected:
             raise ValueError(f"No upstream files for {name} at {sha}")
         errors = compare(expected, local_files(root / prefix))

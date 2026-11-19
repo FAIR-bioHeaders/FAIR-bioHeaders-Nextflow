@@ -4,6 +4,9 @@
 
 ### Convert CI stream compatibility (2026-11-19)
 
+- Authenticate the upstream-tree CI check with the workflow read token and fetch
+  each immutable revision once, avoiding the observed anonymous API HTTP 403.
+  Authentication/API errors still fail the check; tokens stay out of arguments.
 - Pin only `fairbioheaders/convert` to the complete eight-file tree from
   nf-core/modules PR #13819 at `32d7eadd1f53d15cc203e2a52c4b7b83fb7a1d50`.
   David approved this exact unmerged-source exception, including the upstream
