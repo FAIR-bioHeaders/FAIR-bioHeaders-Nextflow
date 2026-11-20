@@ -72,6 +72,9 @@ jobs:
           "$RUNNER_TEMP/venv/bin/python" -m pip check
           echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
 
+      - name: JUnit reporting controls
+        run: python tests/test_junit_reporting.py
+
       - name: Integration tests
         run: python tests/run.py --converter-source converter
 
