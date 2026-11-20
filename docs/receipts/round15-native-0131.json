@@ -1,0 +1,504 @@
+{
+  "toolkit": "0.13.1",
+  "toolkitCommit": "531d98ea742277b1ec391c646f2d32d94f520b56",
+  "githubRelease": 452294001,
+  "preparationOnly": false,
+  "installedSourceProof": {
+    "version": "0.13.1",
+    "wheelSHA256": "9f600347711ee771c8bc8f8e545438c255685736206b1342413b16076da20a45",
+    "installedFilesByteCompared": 65,
+    "files": [
+      "bioheaders/__init__.py",
+      "bioheaders/__main__.py",
+      "bioheaders/_microdata.py",
+      "bioheaders/assess/__init__.py",
+      "bioheaders/assess/batch.py",
+      "bioheaders/assess/circumstantial.py",
+      "bioheaders/assess/conformance.py",
+      "bioheaders/assess/conventions.py",
+      "bioheaders/assess/data/assessment-report.schema.json",
+      "bioheaders/assess/data/reference/formats.json",
+      "bioheaders/assess/data/reference/id-schemes.json",
+      "bioheaders/assess/data/reference/spdx-licenses.json",
+      "bioheaders/assess/data/rubric.json",
+      "bioheaders/assess/data/rubric.schema.json",
+      "bioheaders/assess/data/synonyms.json",
+      "bioheaders/assess/data/synonyms.schema.json",
+      "bioheaders/assess/data.py",
+      "bioheaders/assess/links.py",
+      "bioheaders/assess/model.py",
+      "bioheaders/assess/online.py",
+      "bioheaders/assess/related.py",
+      "bioheaders/assess/render.py",
+      "bioheaders/assess/rubric.py",
+      "bioheaders/assess/sniff.py",
+      "bioheaders/assess/suggestions.py",
+      "bioheaders/assess/synonyms.py",
+      "bioheaders/cli.py",
+      "bioheaders/dcmi.py",
+      "bioheaders/extensions.py",
+      "bioheaders/faidx.py",
+      "bioheaders/fhgff3_microdata.py",
+      "bioheaders/fhgff3_schema.json",
+      "bioheaders/fhgm.py",
+      "bioheaders/fhp.context.jsonld",
+      "bioheaders/fhp_microdata.py",
+      "bioheaders/fhp_schema.json",
+      "bioheaders/fhr.context.jsonld",
+      "bioheaders/fhr_schema.json",
+      "bioheaders/fht_microdata.py",
+      "bioheaders/gff3.py",
+      "bioheaders/jsonld.py",
+      "bioheaders/mappings/assembly-export-context.schema.json",
+      "bioheaders/mappings/loss-notes.json",
+      "bioheaders/metadata.py",
+      "bioheaders/pin_audit.py",
+      "bioheaders/pin_currency.py",
+      "bioheaders/pins.json",
+      "bioheaders/schema_validator.py",
+      "bioheaders/schemas/bundled.json",
+      "bioheaders/schemas/fhgff3-1.0.json",
+      "bioheaders/schemas/fhgff3-1.1.json",
+      "bioheaders/schemas/fhgff3-1.2.json",
+      "bioheaders/schemas/fhgm-model-0.1.json",
+      "bioheaders/schemas/fhgm-model-draft.json",
+      "bioheaders/schemas/fhgm-transport-draft.json",
+      "bioheaders/schemas/fhp-1.0.json",
+      "bioheaders/schemas/fhp-1.1.json",
+      "bioheaders/schemas/fhp-1.2.json",
+      "bioheaders/schemas/fhr-1.json",
+      "bioheaders/schemas/fhr-2.0.json",
+      "bioheaders/schemas/fhr-2.1.json",
+      "bioheaders/schemas/fht-1.0.json",
+      "bioheaders/schemas/fht-draft.json",
+      "bioheaders/selection.py",
+      "fhr.py"
+    ]
+  },
+  "runs": [
+    {
+      "nextflow": "N E X T F L O W\n      version 26.04.6 build 12646\n      created 09-07-2026 18:50 UTC (14:50 EDT)\n      cite doi:10.1038/nbt.3820\n      http://nextflow.io",
+      "fullReceiptSHA256": "434f93d690e1e767825ff4aef925c64b61310f9fb1d691d5ede3d59a087488fb",
+      "wheelURL": "https://files.pythonhosted.org/packages/92/10/a412a877fb8de6e4b28fa4bc5f6f0b65b62701e30d8433afbd5ccfb0629a/fair_bioheaders-0.13.1-py3-none-any.whl",
+      "wheelSHA256": "9f600347711ee771c8bc8f8e545438c255685736206b1342413b16076da20a45",
+      "packageFilesByteCompared": 64,
+      "cases": [
+        {
+          "case": "FHR",
+          "family": "FHR",
+          "kind": "fasta",
+          "compressed": false,
+          "formats": [
+            "json",
+            "yaml",
+            "html",
+            "fasta",
+            "gfa",
+            "jsonld"
+          ],
+          "exit": 0,
+          "parentIdentity": "not-requested",
+          "featureBiology": "not-run",
+          "published": [
+            "attached/attached.fasta",
+            "attached/attached.json",
+            "to-fasta-back/to-fasta-back.json",
+            "to-gfa-back/to-gfa-back.json",
+            "to-html-back/to-html-back.json",
+            "to-json-back/to-json-back.json",
+            "to-jsonld-back/to-jsonld-back.json",
+            "to-yaml-back/to-yaml-back.json"
+          ]
+        },
+        {
+          "case": "FHP",
+          "family": "FHP",
+          "kind": "fasta",
+          "compressed": false,
+          "formats": [
+            "json",
+            "yaml",
+            "html",
+            "fasta"
+          ],
+          "exit": 0,
+          "parentIdentity": "not-requested",
+          "featureBiology": "not-run",
+          "published": [
+            "attached/attached.fasta",
+            "attached/attached.json",
+            "to-fasta-back/to-fasta-back.json",
+            "to-html-back/to-html-back.json",
+            "to-json-back/to-json-back.json",
+            "to-yaml-back/to-yaml-back.json"
+          ]
+        },
+        {
+          "case": "FHGFF3",
+          "family": "FHGFF3",
+          "kind": "gff3",
+          "compressed": false,
+          "formats": [
+            "json",
+            "yaml",
+            "html",
+            "gff3"
+          ],
+          "exit": 0,
+          "parentIdentity": "not-requested",
+          "featureBiology": "not-run",
+          "published": [
+            "attached/attached.gff3",
+            "attached/attached.json",
+            "to-gff3-back/to-gff3-back.json",
+            "to-html-back/to-html-back.json",
+            "to-json-back/to-json-back.json",
+            "to-yaml-back/to-yaml-back.json"
+          ]
+        },
+        {
+          "case": "FHT",
+          "family": "FHT",
+          "kind": "fasta",
+          "compressed": false,
+          "formats": [
+            "json",
+            "yaml",
+            "html",
+            "fasta"
+          ],
+          "exit": 0,
+          "parentIdentity": "not-requested",
+          "featureBiology": "not-run",
+          "published": [
+            "attached/attached.fasta",
+            "attached/attached.json",
+            "to-fasta-back/to-fasta-back.json",
+            "to-html-back/to-html-back.json",
+            "to-json-back/to-json-back.json",
+            "to-yaml-back/to-yaml-back.json"
+          ]
+        },
+        {
+          "case": "FHGM",
+          "family": "FHGM",
+          "kind": "gff3",
+          "compressed": false,
+          "formats": [
+            "json",
+            "yaml",
+            "gff3"
+          ],
+          "exit": 0,
+          "parentIdentity": "not-requested",
+          "featureBiology": "not-run",
+          "published": [
+            "attached/attached.gff3",
+            "attached/attached.json",
+            "to-gff3-back/to-gff3-back.json",
+            "to-json-back/to-json-back.json",
+            "to-yaml-back/to-yaml-back.json"
+          ]
+        },
+        {
+          "case": "FHT-gzip",
+          "family": "FHT",
+          "kind": "fasta",
+          "compressed": true,
+          "formats": [
+            "json",
+            "yaml",
+            "html",
+            "fasta"
+          ],
+          "exit": 0,
+          "parentIdentity": "not-requested",
+          "featureBiology": "not-run",
+          "published": [
+            "attached/attached.fasta.gz",
+            "attached/attached.json",
+            "to-fasta-back/to-fasta-back.json",
+            "to-html-back/to-html-back.json",
+            "to-json-back/to-json-back.json",
+            "to-yaml-back/to-yaml-back.json"
+          ]
+        },
+        {
+          "case": "FHGM-gzip",
+          "family": "FHGM",
+          "kind": "gff3",
+          "compressed": true,
+          "formats": [
+            "json",
+            "yaml",
+            "gff3"
+          ],
+          "exit": 0,
+          "parentIdentity": "not-requested",
+          "featureBiology": "not-run",
+          "published": [
+            "attached/attached.gff3.gz",
+            "attached/attached.json",
+            "to-gff3-back/to-gff3-back.json",
+            "to-json-back/to-json-back.json",
+            "to-yaml-back/to-yaml-back.json"
+          ]
+        },
+        {
+          "case": "FHT-parent",
+          "family": "FHT",
+          "kind": "fasta",
+          "compressed": false,
+          "formats": [
+            "json",
+            "yaml",
+            "html",
+            "fasta"
+          ],
+          "exit": 0,
+          "parentIdentity": "checked-pass",
+          "featureBiology": "not-run",
+          "published": [
+            "attached/attached.fasta",
+            "attached/attached.json",
+            "to-fasta-back/to-fasta-back.json",
+            "to-html-back/to-html-back.json",
+            "to-json-back/to-json-back.json",
+            "to-yaml-back/to-yaml-back.json"
+          ]
+        },
+        {
+          "case": "FHT-reject",
+          "family": "FHT",
+          "exit": 1,
+          "expectedRejection": true,
+          "published": []
+        },
+        {
+          "case": "FHGM-reject",
+          "family": "FHGM",
+          "exit": 1,
+          "expectedRejection": true,
+          "published": []
+        }
+      ],
+      "limits": [
+        "Native host execution; upstream 0.9.0 conda/container pins are not promoted by this receipt.",
+        "FHGM is a native model in FHGFF3, not a fifth header type; model checks are explicitly enabled.",
+        "GFF3 feature/biology validation is separate and not claimed by model checks."
+      ]
+    },
+    {
+      "nextflow": "N E X T F L O W\n      version 26.10.4 build 14435\n      created 26-10-2026 21:12 UTC (17:12 EDT)\n      cite doi:10.1038/nbt.3820\n      http://nextflow.io",
+      "fullReceiptSHA256": "0ef89f170caf9861b9adc1c6d7d0ce80005fcf68fe7fd9bef3eac80d492856ed",
+      "wheelURL": "https://files.pythonhosted.org/packages/92/10/a412a877fb8de6e4b28fa4bc5f6f0b65b62701e30d8433afbd5ccfb0629a/fair_bioheaders-0.13.1-py3-none-any.whl",
+      "wheelSHA256": "9f600347711ee771c8bc8f8e545438c255685736206b1342413b16076da20a45",
+      "packageFilesByteCompared": 65,
+      "cases": [
+        {
+          "case": "FHR",
+          "family": "FHR",
+          "kind": "fasta",
+          "compressed": false,
+          "formats": [
+            "json",
+            "yaml",
+            "html",
+            "fasta",
+            "gfa",
+            "jsonld"
+          ],
+          "exit": 0,
+          "parentIdentity": "not-requested",
+          "featureBiology": "not-run",
+          "published": [
+            "attached/attached.fasta",
+            "attached/attached.json",
+            "to-fasta-back/to-fasta-back.json",
+            "to-gfa-back/to-gfa-back.json",
+            "to-html-back/to-html-back.json",
+            "to-json-back/to-json-back.json",
+            "to-jsonld-back/to-jsonld-back.json",
+            "to-yaml-back/to-yaml-back.json"
+          ]
+        },
+        {
+          "case": "FHP",
+          "family": "FHP",
+          "kind": "fasta",
+          "compressed": false,
+          "formats": [
+            "json",
+            "yaml",
+            "html",
+            "fasta"
+          ],
+          "exit": 0,
+          "parentIdentity": "not-requested",
+          "featureBiology": "not-run",
+          "published": [
+            "attached/attached.fasta",
+            "attached/attached.json",
+            "to-fasta-back/to-fasta-back.json",
+            "to-html-back/to-html-back.json",
+            "to-json-back/to-json-back.json",
+            "to-yaml-back/to-yaml-back.json"
+          ]
+        },
+        {
+          "case": "FHGFF3",
+          "family": "FHGFF3",
+          "kind": "gff3",
+          "compressed": false,
+          "formats": [
+            "json",
+            "yaml",
+            "html",
+            "gff3"
+          ],
+          "exit": 0,
+          "parentIdentity": "not-requested",
+          "featureBiology": "not-run",
+          "published": [
+            "attached/attached.gff3",
+            "attached/attached.json",
+            "to-gff3-back/to-gff3-back.json",
+            "to-html-back/to-html-back.json",
+            "to-json-back/to-json-back.json",
+            "to-yaml-back/to-yaml-back.json"
+          ]
+        },
+        {
+          "case": "FHT",
+          "family": "FHT",
+          "kind": "fasta",
+          "compressed": false,
+          "formats": [
+            "json",
+            "yaml",
+            "html",
+            "fasta"
+          ],
+          "exit": 0,
+          "parentIdentity": "not-requested",
+          "featureBiology": "not-run",
+          "published": [
+            "attached/attached.fasta",
+            "attached/attached.json",
+            "to-fasta-back/to-fasta-back.json",
+            "to-html-back/to-html-back.json",
+            "to-json-back/to-json-back.json",
+            "to-yaml-back/to-yaml-back.json"
+          ]
+        },
+        {
+          "case": "FHGM",
+          "family": "FHGM",
+          "kind": "gff3",
+          "compressed": false,
+          "formats": [
+            "json",
+            "yaml",
+            "gff3"
+          ],
+          "exit": 0,
+          "parentIdentity": "not-requested",
+          "featureBiology": "not-run",
+          "published": [
+            "attached/attached.gff3",
+            "attached/attached.json",
+            "to-gff3-back/to-gff3-back.json",
+            "to-json-back/to-json-back.json",
+            "to-yaml-back/to-yaml-back.json"
+          ]
+        },
+        {
+          "case": "FHT-gzip",
+          "family": "FHT",
+          "kind": "fasta",
+          "compressed": true,
+          "formats": [
+            "json",
+            "yaml",
+            "html",
+            "fasta"
+          ],
+          "exit": 0,
+          "parentIdentity": "not-requested",
+          "featureBiology": "not-run",
+          "published": [
+            "attached/attached.fasta.gz",
+            "attached/attached.json",
+            "to-fasta-back/to-fasta-back.json",
+            "to-html-back/to-html-back.json",
+            "to-json-back/to-json-back.json",
+            "to-yaml-back/to-yaml-back.json"
+          ]
+        },
+        {
+          "case": "FHGM-gzip",
+          "family": "FHGM",
+          "kind": "gff3",
+          "compressed": true,
+          "formats": [
+            "json",
+            "yaml",
+            "gff3"
+          ],
+          "exit": 0,
+          "parentIdentity": "not-requested",
+          "featureBiology": "not-run",
+          "published": [
+            "attached/attached.gff3.gz",
+            "attached/attached.json",
+            "to-gff3-back/to-gff3-back.json",
+            "to-json-back/to-json-back.json",
+            "to-yaml-back/to-yaml-back.json"
+          ]
+        },
+        {
+          "case": "FHT-parent",
+          "family": "FHT",
+          "kind": "fasta",
+          "compressed": false,
+          "formats": [
+            "json",
+            "yaml",
+            "html",
+            "fasta"
+          ],
+          "exit": 0,
+          "parentIdentity": "checked-pass",
+          "featureBiology": "not-run",
+          "published": [
+            "attached/attached.fasta",
+            "attached/attached.json",
+            "to-fasta-back/to-fasta-back.json",
+            "to-html-back/to-html-back.json",
+            "to-json-back/to-json-back.json",
+            "to-yaml-back/to-yaml-back.json"
+          ]
+        },
+        {
+          "case": "FHT-reject",
+          "family": "FHT",
+          "exit": 1,
+          "expectedRejection": true,
+          "published": []
+        },
+        {
+          "case": "FHGM-reject",
+          "family": "FHGM",
+          "exit": 1,
+          "expectedRejection": true,
+          "published": []
+        }
+      ],
+      "limits": [
+        "Native host execution; upstream 0.9.0 conda/container pins are not promoted by this receipt.",
+        "FHGM is a native model in FHGFF3, not a fifth header type; model checks are explicitly enabled.",
+        "GFF3 feature/biology validation is separate and not claimed by model checks."
+      ]
+    }
+  ]
+}

@@ -9,7 +9,7 @@ A record has two separate maps: `meta` carries the pipeline ID and any routing i
 The following composition consumes an existing `records` channel of `(meta, fields)` tuples and a single sequence file supplied as `params.sequence`:
 
 ```nextflow
-include { FHR_CREATE_JSON } from '/path/to/FAIR-bioHeaders-Nextflow/modules/create_json/main'
+include { FHR_CREATE_JSON } from '/path/to/FAIR-bioHeaders-Nextflow/modules/local/create_json/main'
 include { FHR_ATTACH } from '/path/to/FAIR-bioHeaders-Nextflow/subworkflows/attach/main'
 
 workflow {
@@ -247,3 +247,7 @@ The minimal Dockstore workflow [workflows/fairbioheaders](../workflows/fairbiohe
 - **JSON serialization errors:** the message names the field location, for example `$.dateCreated`; convert dates to ISO 8601 strings and remove NaN, Infinity and `null` list items.
 
 See [SECURITY.md](../SECURITY.md) for sensitive findings and [CONTRIBUTING.md](../CONTRIBUTING.md) for changes to modules or their contracts.
+
+## Published family handoff
+
+See [FIVE-TYPE-HANDOFF](FIVE-TYPE-HANDOFF.md) for the distinct native-runtime acceptance lane and actual contract identities. `FHR_ATTACH`/`FHR_STRIP` support `gff3` using the existing upstream combine/verify and toolkit strip commands. Native model checks remain explicitly enabled and separate from GFF3 feature/biology results. Existing container/conda pins do not change implicitly.

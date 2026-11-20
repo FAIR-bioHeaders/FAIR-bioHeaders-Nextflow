@@ -169,7 +169,7 @@ David Molik on 2026-10-28). Follow them unless a later issue changes them.
   depot Singularity image); pin only a version that exists in all three. Use
   nf-core-style version reporting and nf-test, not exact-version gates. The
   repository image in `environment/` stays only for what BioContainers cannot supply
-  (gff3-validator until bioconda/bioconda-recipes#70098 merges; pytest for the
+  (gff3-validator while its required depot image remains unavailable; pytest for the
   converter tests), then goes.
 - **Name, demo status, Dockstore, in this order.** Rename the repository to
   FAIR-bioHeaders-Nextflow before the first release and before Dockstore registration
@@ -210,3 +210,7 @@ When a PR receives code review (human or model):
 
 Do not push directly to the default branch. PR merges follow the independent
 review authorization above; adoption and publication keep their separate gates.
+
+## Five-type native handoff (Round15)
+
+Published FHT contract 1.0 belongs to shared v0.7.0; native FHGM model 0.1 belongs to shared v0.8.0 outside the header registry. See docs/FIVE-TYPE-HANDOFF.md for the named runtime lane. The default 0.9.0 pins remain independent and unchanged until actual distributions and approved upstream revisions are verified. Repository-owned attach/strip accept gff3 by reusing existing toolkit commands. Preserve explicit native model opt-in and distinct base/header, checksum, model and feature/biology results. Never relabel candidate receipts as released support.

@@ -23,8 +23,8 @@ process FHR_STRIP {
 
     script:
     def id = sampleId(meta)
-    def type = fhrFormat(kind, ['fasta', 'faa', 'gfa'])
+    def type = fhrFormat(kind, ['fasta', 'faa', 'gfa', 'gff3'])
     """
-    fhr-${sequenceType(type, ['fasta', 'faa', 'gfa'])}-strip ${quote(sequence)} ${quote("${id}.stripped.${type}")}
+    fhr-${sequenceType(type, ['fasta', 'faa', 'gfa', 'gff3'])}-strip ${quote(sequence)} ${quote("${id}.stripped.${type}")}
     """
 }

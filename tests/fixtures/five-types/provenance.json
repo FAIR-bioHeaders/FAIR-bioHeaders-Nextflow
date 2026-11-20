@@ -1,0 +1,62 @@
+{
+  "repository": "FAIR-bioHeaders/FAIR-bioHeaders-Specification",
+  "ref": "v0.8.0",
+  "commit": "72cb46b98160ecc7a7f20ef579a6879d5030c40b",
+  "description": "Selected immutable published and preserved-owning inputs; no regenerated schema/vector corpus. Native model uses preserved owning carrier as measured by its published contract.",
+  "copied": [
+    {
+      "file": "fhr.fasta",
+      "source": "examples/example.fhr.fasta",
+      "bytes": 1584,
+      "sha256": "8f45dd786a623071921d278c2392dd4e28638774498f9b8ac356086c3cb34496"
+    },
+    {
+      "file": "fhp.fasta",
+      "source": "examples/fhp/example.fhp.fasta",
+      "bytes": 647,
+      "sha256": "151621730e4236012af051206fe451597f56ae2aeb08c97a329e1bbed69059bf"
+    },
+    {
+      "file": "fhgff3.gff3",
+      "source": "examples/fhgff3/annotation.fhgff3.gff3",
+      "bytes": 943,
+      "sha256": "7754357bd2280306b45cdbc804850fc59a52e79487483f2f9e2e7f0dda9fb437"
+    },
+    {
+      "file": "fht.fasta",
+      "source": "examples/fht/minimal-de-novo.fht.fasta",
+      "bytes": 575,
+      "sha256": "8f4859bd46bfc4cdd7e619393bd449fed0f62a3aa6ca3811c81b026a0266ed1c"
+    },
+    {
+      "file": "fhgm.gff3",
+      "source": "drafts/fhgm/upstream/development/examples/contract/minimal.fhgff3.gff3",
+      "bytes": 755,
+      "sha256": "14c37f5d09604d9514f5e98eb0fd289f9434ccce7d199ccdd1588dd011c34f57"
+    },
+    {
+      "file": "fht-parent.fasta",
+      "source": "conformance/fht-v0.7.0/valid/fht-v070-fasta-parent-transcribed-from.fht.fasta",
+      "bytes": 906,
+      "sha256": "6a05b9ff65009819c8bfe39a4f928ec074fce9bec85601dba391c82fc6e4e1b9"
+    },
+    {
+      "file": "parent.fasta",
+      "source": "drafts/fht/upstream/conformance/parents/parent-genome.fhr.fasta",
+      "bytes": 612,
+      "sha256": "c8c7a420847e3ba732c957ceffc27684a7f0c3a0b508d30c8484f3f7ed8b7209"
+    },
+    {
+      "file": "fht-reject.fasta",
+      "source": "conformance/fht-v0.7.0/invalid/fht-v070-fasta-completeness-sum-exceeds-total.fht.fasta",
+      "bytes": 802,
+      "sha256": "30421d27a5744e8ddc0885cacafcfc82b981697f8928fcba1a8459cf9efe8621"
+    },
+    {
+      "file": "fhgm-reject.gff3",
+      "source": "drafts/fhgm/upstream/development/conformance/vectors/invalid/empty-model-array.fhgff3.gff3",
+      "bytes": 782,
+      "sha256": "2428eaaad84045477ce5e8063eab7cfca6a0369a4c628e0841e0a3054e15f6c3"
+    }
+  ]
+}
