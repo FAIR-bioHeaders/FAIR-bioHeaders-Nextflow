@@ -54,7 +54,7 @@ def main():
             assert digest == args.wheel_sha256
         package = Path(installed['location'])
         with zipfile.ZipFile(wheel) as archive:
-            package_files = [n for n in archive.namelist() if n.startswith('bioheaders/') and not n.endswith('/')]
+            package_files = [n for n in archive.namelist() if (n.startswith('bioheaders/') or n == 'fhr.py') and not n.endswith('/')]
             assert package_files
             for name in package_files:
                 assert archive.read(name) == (package.parent/name).read_bytes(), name

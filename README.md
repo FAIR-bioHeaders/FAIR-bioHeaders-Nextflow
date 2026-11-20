@@ -8,7 +8,7 @@ Toolkit version, validator version, the per-type schema contract and the suite v
 
 ## Five-type handoff
 
-The [native runtime handoff](docs/FIVE-TYPE-HANDOFF.md) names the actually published FHT and native FHGM contracts and the new composition acceptance surface. The default conda/container pins remain toolkit 0.9.0 until verified artifacts and reviewed upstream revisions are deliberately adopted. Candidate receipts are preparation evidence only. Repository-owned `FHR_ATTACH` and `FHR_STRIP` additionally accept `gff3`; they reuse the existing toolkit GFF3 commands and preserve channel/output contracts.
+The [native runtime handoff](docs/FIVE-TYPE-HANDOFF.md) names the actually published FHT and native FHGM contracts and actual toolkit 0.13.1 ten-case acceptance on both supported Nextflow engines. The default conda/container pins remain toolkit 0.9.0 until verified artifacts and reviewed upstream revisions are deliberately adopted. Candidate receipts are preparation evidence only. Repository-owned `FHR_ATTACH` and `FHR_STRIP` additionally accept `gff3`; they reuse the existing toolkit GFF3 commands and preserve channel/output contracts.
 
 ## Run the example
 

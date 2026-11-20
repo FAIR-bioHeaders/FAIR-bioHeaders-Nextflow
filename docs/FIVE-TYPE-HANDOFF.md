@@ -40,22 +40,28 @@ record it as not requested, rather than counting an unchecked parent as a pass.
 | FHT | create/validate/verify/attach/strip; JSON/YAML/typed HTML/FASTA; gzip and exact FHR-parent case; C1 rejection with no normal outputs | No JSON-LD/GFA adoption; parent identity is not derivation proof |
 | FHGM | native model verification in FHGFF3, JSON/YAML/GFF3 extension preservation, gzip; invalid model rejection with no normal outputs | Explicit implementation opt-in; no FHGM header or HTML/JSON-LD parity, predecessor-history staging remains outside this lane |
 
-At this preparation checkpoint the next toolkit publication is not yet available.
-The 0.13.0 tag failed its publication metadata guard and produced no GitHub Release
-or registry release; its candidate receipts remain historical preparation. The
-corrected publication vehicle is 0.13.1, to be used only after actual artifact verification. Candidate runs
-must use `--preparation-only` and never fill the published-release receipt. The
-final owning FHT handoff needs a named actual published wheel and exact installed
-source proof; a candidate version string is insufficient.
+Toolkit [0.13.1](https://github.com/FAIR-bioHeaders/FAIR-bioHeaders-Tools/releases/tag/v0.13.1)
+is published from `531d98ea742277b1ec391c646f2d32d94f520b56` (GitHub Release
+452294001; [archive](https://doi.org/10.5281/zenodo.24387470)). The actual PyPI
+wheel SHA-256 is `9f600347711ee771c8bc8f8e545438c255685736206b1342413b16076da20a45`.
+A clean installation was byte-compared with all 65 source files in that wheel.
+The ten-case native acceptance runs pass on Nextflow 26.04.6 and 26.10.4, including FHT
+positive, compressed, exact FHR-parent and C1 rejection/no-output cases. This is
+a [recorded published-package handoff](receipts/round15-native-0131.json) for FHT-Specification#9; upstream default
+container/history promotion remains separate #7 delivery work.
+
+The earlier 0.13.0 candidate runs remain historical preparation: that tag failed
+its publication guard. Candidate runs must use `--preparation-only` and never
+fill a published-release receipt.
 
 ```sh
 python tests/run_family_acceptance.py \
   --nextflow /absolute/path/nextflow \
   --bioheaders /absolute/released/venv/bin/bioheaders \
-  --expected-toolkit ACTUAL_PUBLISHED_VERSION \
-  --wheel /absolute/release/fair_bioheaders-ACTUAL_PUBLISHED_VERSION-py3-none-any.whl \
-  --wheel-sha256 MEASURED_PYPI_SHA256 \
-  --artifact-url VERIFIED_RELEASE_DOWNLOAD_URL \
+  --expected-toolkit 0.13.1 \
+  --wheel /absolute/release/fair_bioheaders-0.13.1-py3-none-any.whl \
+  --wheel-sha256 9f600347711ee771c8bc8f8e545438c255685736206b1342413b16076da20a45 \
+  --artifact-url https://files.pythonhosted.org/packages/92/10/a412a877fb8de6e4b28fa4bc5f6f0b65b62701e30d8433afbd5ccfb0629a/fair_bioheaders-0.13.1-py3-none-any.whl \
   --output /absolute/evidence/26.04.6
 ```
 
@@ -67,8 +73,8 @@ FHT or native FHGM.
 
 ## Remaining delivery and dependency direction
 
-Actual toolkit publication/installed receipts precede final native release
-acceptance. A default conda/container promotion additionally needs an actual
+The actual toolkit publication and installed native receipt establish this
+scoped handoff. A default conda/container promotion additionally needs an actual
 Bioconda package, BioContainer and Galaxy depot image plus reviewed upstream
 module revisions. Existing pinned upstream files stay byte-identical; no future
 container URL is invented. Source #7 retains this delivery work. Historical #35
