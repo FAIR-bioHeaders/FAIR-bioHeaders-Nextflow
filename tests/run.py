@@ -53,17 +53,19 @@ def published(directory):
 
 
 def junit_totals(path):
-    root = ET.parse(path).getroot()
-    cases = list(root.iter('testcase'))
-    if cases:
-        # Count atomic cases rather than aggregate parent/child suite attributes.
-        return (len(cases), sum(case.find('failure') is not None for case in cases),
-                sum(case.find('error') is not None for case in cases),
-                sum(case.find('skipped') is not None for case in cases))
-    # Some producers emit only summary suites. Aggregate leaf suites once.
-    suites = [suite for suite in root.iter('testsuite') if not list(suite.iter('testsuite'))[1:]]
-    return tuple(sum(int(suite.get(key, 0)) for suite in suites)
-                 for key in ('tests', 'failures', 'errors', 'skipped'))
+    def count(node):
+        cases = list(node.findall('testcase'))
+        suites = [child for child in node if child.tag in ('testsuite', 'testsuites')]
+        if not cases and not suites:
+            # A summary-only leaf has no atomic evidence to count instead.
+            return tuple(int(node.get(key, 0)) for key in ('tests', 'failures', 'errors', 'skipped'))
+        own = (len(cases), sum(case.find('failure') is not None for case in cases),
+               sum(case.find('error') is not None for case in cases),
+               sum(case.find('skipped') is not None for case in cases))
+        # Ignore aggregate attributes, but retain summary-only sibling leaves.
+        children = [count(suite) for suite in suites]
+        return tuple(own[i] + sum(child[i] for child in children) for i in range(4))
+    return count(ET.parse(path).getroot())
 
 
 def snapshot(directory):
