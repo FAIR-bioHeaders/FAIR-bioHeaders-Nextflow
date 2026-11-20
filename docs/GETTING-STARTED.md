@@ -43,3 +43,7 @@ This suite is not a hostile workflow isolation service. Ordinary data validation
 uses bundled schemas; dependency installation and explicit Nextflow/container
 resolution can use the network. See [maintenance](ROUND16-MAINTENANCE.md) and
 [CONTRIBUTING](../CONTRIBUTING.md) for checks and human-only merges.
+
+A supplied parent glob that matches no files leaves parent checks not-checked.
+Inspect those outcomes and correct the glob; an empty candidate set never
+establishes parent identity, even when the workflow itself completes.
