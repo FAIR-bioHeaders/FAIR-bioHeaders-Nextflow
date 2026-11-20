@@ -53,11 +53,19 @@ def published(directory):
 
 
 def junit_totals(path):
-    tests = failures = 0
-    for suite in ET.parse(path).getroot().iter('testsuite'):
-        tests += int(suite.get('tests', 0))
-        failures += int(suite.get('failures', 0)) + int(suite.get('errors', 0))
-    return tests, failures
+    def count(node):
+        cases = list(node.findall('testcase'))
+        suites = [child for child in node if child.tag in ('testsuite', 'testsuites')]
+        if not cases and not suites:
+            # A summary-only leaf has no atomic evidence to count instead.
+            return tuple(int(node.get(key, 0)) for key in ('tests', 'failures', 'errors', 'skipped'))
+        own = (len(cases), sum(case.find('failure') is not None for case in cases),
+               sum(case.find('error') is not None for case in cases),
+               sum(case.find('skipped') is not None for case in cases))
+        # Ignore aggregate attributes, but retain summary-only sibling leaves.
+        children = [count(suite) for suite in suites]
+        return tuple(own[i] + sum(child[i] for child in children) for i in range(4))
+    return count(ET.parse(path).getroot())
 
 
 def snapshot(directory):
@@ -725,11 +733,11 @@ workflow {
             before = snapshot(source)
             output = work / 'converter-output'
             run(ROOT / 'main.nf', work, ['--converter_source', str(source), '--outdir', str(output)])
-            total, failures = junit_totals(output / 'converter-tests/converter-tests.xml')
-            check(total > 0 and failures == 0, f'converter JUnit report: {total} tests, {failures} failures')
+            total, failures, errors, skipped = junit_totals(output / 'converter-tests/converter-tests.xml')
+            check(total > 0 and failures + errors == 0, f'converter JUnit report: {total} tests, {failures} failures, {errors} errors')
             check((output / 'example/metadata/example.json').exists(), 'results were not published after passing tests')
             check(snapshot(source) == before, 'converter tests modified the supplied checkout')
-            print(f'Converter wrapper: {total} tests passed.', flush=True)
+            print(f'Converter wrapper: {total - failures - errors - skipped} passed, {skipped} skipped, {failures} failures, {errors} errors ({total} total).', flush=True)
 
             # A failing test publishes reports, withholds results and fails the run, also
             # when -resume follows an edit to a nested test file.
@@ -741,8 +749,8 @@ workflow {
             output = work / 'failing-output'
             run(ROOT / 'main.nf', work, ['-resume', '--converter_source', str(mutable), '--outdir', str(output)], failure='Converter tests failed')
             check(published(output) == ['converter-tests/converter-tests.log', 'converter-tests/converter-tests.xml'], f'unexpected outputs after failing tests: {published(output)}')
-            total, failures = junit_totals(output / 'converter-tests/converter-tests.xml')
-            check(failures == 1, f'expected one failing converter test, found {failures}')
+            total, failures, errors, skipped = junit_totals(output / 'converter-tests/converter-tests.xml')
+            check(failures + errors == 1, f'expected one failing converter test, found {failures} failures, {errors} errors')
             check('test_injected_failure' in (output / 'converter-tests/converter-tests.log').read_text(), 'failure missing from published log')
 
             # 0.0.0 is never the installed version (a fixed future version stops mismatching
