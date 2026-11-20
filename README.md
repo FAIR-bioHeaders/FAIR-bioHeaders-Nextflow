@@ -6,6 +6,13 @@ Compatibility: Nextflow **26.04.6**, Java **21**, [FAIR-bioHeaders-Tools](https:
 
 Toolkit version, validator version, the per-type schema contract and the suite version are separate. The toolkit selects a schema from the record's `schema` URL (FHR-Specification `docs/SCHEMA-VERSIONS.md`): a raw-main URL selects the bundled current schema, and a release's raw tag or `https://w3id.org/fair-bioheaders/<type>/vX.Y.Z` URL selects that release. Since toolkit **0.7.0** the raw-main FHR URL selects FHR schemaVersion **2.0** (since **0.9.0** the FHR **2.1** schema, which also accepts `"2.0"`), so the bundled FHR example cites `https://w3id.org/fair-bioheaders/fhr/v0.3.1` to stay on schemaVersion 1 (since toolkit **0.8.4** a raw-main record whose `schemaVersion` is the number 1 is read as FHR 1 with a deprecation warning, spec rule V6); cite a v0.4.0 URL and `"2.0"` to move it. FHR 2.1 and FHP/FHGFF3 1.1 (the `v0.5.0` release URLs, toolkit 0.9.0+) accept top-level `x-` extension fields (spec rule R15); an `x-` key in a record that states `"2.0"`/`"1.0"` or cites v0.4.x is rejected, and the convert's HTML (microdata) output leaves `x-` fields out with a warning. An unsupported release URL is rejected, never checked against another schema.
 
+## Documentation map
+
+Start with [the operator guide](docs/GETTING-STARTED.md) for setup, important
+module/helper contracts and result interpretation. [Round 16 maintenance](docs/ROUND16-MAINTENANCE.md)
+records the source review and security checks. The detailed examples below and
+[PIPELINES.md](docs/PIPELINES.md) remain the integration reference.
+
 ## Five-type handoff
 
 The [native runtime handoff](docs/FIVE-TYPE-HANDOFF.md) names the actually published FHT and native FHGM contracts and actual toolkit 0.13.1 ten-case acceptance on both supported Nextflow engines. The default conda/container pins remain toolkit 0.9.0 until verified artifacts and reviewed upstream revisions are deliberately adopted. Candidate receipts are preparation evidence only. Repository-owned `FHR_ATTACH` and `FHR_STRIP` additionally accept `gff3`; they reuse the existing toolkit GFF3 commands and preserve channel/output contracts.
