@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Five-type native handoff preparation (2026-11-20, #7)
+
+- Extend existing local attach/strip composition to GFF3, retaining upstream module bytes, tuple/output contracts and0.9.0 dependency pins. Native Groovy/Python integration checks use selected byte-exact published FHT/native FHGM inputs and the existing toolkit, not another validator.
+- Separate the historical pinned matrix from actual published contracts and a named native runtime handoff. New checks cover typed serialization round trips, exact payload bytes, gzip, FHT parent identity and C1/native-model rejection withholding normal outputs. Candidate and actual released-package receipts remain distinct.
+
 ### Local module layout migration (2026-11-19, #7 decision 6A)
 
 - The six repository-owned modules move from `modules/*` to

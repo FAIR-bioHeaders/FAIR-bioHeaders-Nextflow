@@ -11,9 +11,9 @@ The capability matrix is a hand-authored table with machine-enforced honesty:
 - every evidence citation (`path :: verbatim text`) must resolve against the
   real file contents of this repository;
 - every `tested` or `partial` cell in a type matrix must carry a citation;
-- the FHT and FHGM columns may never claim more than `no released contract`
-  or `n/a` (rule V7 of FAIR-bioHeaders-Specification: drafts take no release
-  form), and no release-shaped FHT/FHGM string may appear anywhere;
+- the default pinned 0.9.0 baseline cannot claim FHT/native-FHGM execution;
+  their published contracts and separate native-runtime handoff are named
+  explicitly, while nonexistent FHGM header selectors remain forbidden;
 - the `matrix-pins` block must agree with modules.json, the module container
   and conda references, environment/requirements.in, nextflow.config and
   .github/workflows/ci.yml, in both directions;
@@ -56,15 +56,11 @@ STATES = (
     "tested",
     "n/a",
 )
-DRAFT_ALLOWED = ("no released contract", "n/a")
-# Rule V7: nothing release-shaped for the draft types, anywhere in the document.
+DRAFT_ALLOWED = ("not tested", "n/a", "unsupported")
+# Published native models remain distinct from header selection.
 FORBIDDEN = (
-    re.compile(r"(?i)\bfht/v\d"),
+    # FHGM is a native model, never a header /fhgm/vX selector.
     re.compile(r"(?i)\bfhgm/v\d"),
-    re.compile(r"(?i)\breleased FHT\b"),
-    re.compile(r"(?i)\breleased FHGM\b"),
-    re.compile(r"(?i)\bFHT is released\b"),
-    re.compile(r"(?i)\bFHGM is released\b"),
     re.compile(r"(?i)\bofficial FHT\b"),
     re.compile(r"(?i)\bofficial FHGM\b"),
 )
@@ -180,7 +176,7 @@ def check_matrix_tables(doc_lines, ck):
                     errors.append(f"cell in column {name} does not start with a matrix state word: {cell[:60]!r}")
                     continue
                 if name in DRAFT_COLUMNS and state not in DRAFT_ALLOWED:
-                    errors.append(f"rule V7 violation: column {name} claims {state!r}: {cell[:60]!r}")
+                    errors.append(f"unpromoted baseline: column {name} claims {state!r}: {cell[:60]!r}")
                 if state in ("tested", "partial") and "::" not in cell:
                     errors.append(f"{state} cell for {name} carries no citation: {cell[:60]!r}")
     return errors, tables, cells
@@ -321,7 +317,7 @@ def check_forbidden(doc):
     for pattern in FORBIDDEN:
         for match in pattern.finditer(doc):
             line = doc.count("\n", 0, match.start()) + 1
-            errors.append(f"rule V7 violation on line {line}: {match.group(0)!r} gives a draft type release form")
+            errors.append(f"invalid model-header/endorsement claim on line {line}: {match.group(0)!r}")
     return errors
 
 

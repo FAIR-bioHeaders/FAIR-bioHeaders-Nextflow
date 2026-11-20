@@ -37,7 +37,7 @@ include { isSampleId; sequenceKindOf; sequenceType } from '../../modules/local/u
 // non-colliding id or set ext.prefix yourself.
 workflow FHR_ATTACH {
     take:
-    records // tuple(meta, metadata, sequence, kind): kind is 'fasta', 'faa' or 'gfa'
+    records // tuple(meta, metadata, sequence, kind): kind is 'fasta', 'faa', 'gfa' or 'gff3'
 
     main:
     combine_input = records.map { meta, metadata, sequence, kind ->
@@ -46,10 +46,10 @@ workflow FHR_ATTACH {
         // so the message is not wrapped in an InvocationTargetException).
         if (!isSampleId(meta.id))
             throw new IllegalArgumentException("Invalid meta.id '${meta.id}': meta.id must contain only letters, digits, dot, underscore or hyphen, starting with a letter or digit")
-        if (!(kind in ['fasta', 'faa', 'gfa']))
-            throw new IllegalArgumentException("Unsupported format '${kind}'; expected fasta, faa, gfa")
+        if (!(kind in ['fasta', 'faa', 'gfa', 'gff3']))
+            throw new IllegalArgumentException("Unsupported format '${kind}'; expected fasta, faa, gfa, gff3")
         def actual = sequenceKindOf(sequence)
-        if (sequenceType(actual, ['fasta', 'faa', 'gfa', 'gff3']) != sequenceType(kind))
+        if (sequenceType(actual, ['fasta', 'faa', 'gfa', 'gff3']) != sequenceType(kind, ['fasta', 'faa', 'gfa', 'gff3']))
             throw new IllegalArgumentException("Sequence format '${kind}' does not match the extension of ${sequence.name} (${actual}); rename the file or change the format")
         tuple(meta, metadata, sequence)
     }
