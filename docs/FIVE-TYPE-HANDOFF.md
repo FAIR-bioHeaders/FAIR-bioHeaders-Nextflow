@@ -40,7 +40,10 @@ record it as not requested, rather than counting an unchecked parent as a pass.
 | FHT | create/validate/verify/attach/strip; JSON/YAML/typed HTML/FASTA; gzip and exact FHR-parent case; C1 rejection with no normal outputs | No JSON-LD/GFA adoption; parent identity is not derivation proof |
 | FHGM | native model verification in FHGFF3, JSON/YAML/GFF3 extension preservation, gzip; invalid model rejection with no normal outputs | Explicit implementation opt-in; no FHGM header or HTML/JSON-LD parity, predecessor-history staging remains outside this lane |
 
-At this preparation checkpoint toolkit 0.13 is not yet published. Candidate runs
+At this preparation checkpoint the next toolkit publication is not yet available.
+The 0.13.0 tag failed its publication metadata guard and produced no GitHub Release
+or registry release; its candidate receipts remain historical preparation. The
+corrected publication vehicle is 0.13.1, to be used only after actual artifact verification. Candidate runs
 must use `--preparation-only` and never fill the published-release receipt. The
 final owning FHT handoff needs a named actual published wheel and exact installed
 source proof; a candidate version string is insufficient.
@@ -49,7 +52,8 @@ source proof; a candidate version string is insufficient.
 python tests/run_family_acceptance.py \
   --nextflow /absolute/path/nextflow \
   --bioheaders /absolute/released/venv/bin/bioheaders \
-  --wheel /absolute/release/fair_bioheaders-0.13.0-py3-none-any.whl \
+  --expected-toolkit ACTUAL_PUBLISHED_VERSION \
+  --wheel /absolute/release/fair_bioheaders-ACTUAL_PUBLISHED_VERSION-py3-none-any.whl \
   --wheel-sha256 MEASURED_PYPI_SHA256 \
   --artifact-url VERIFIED_RELEASE_DOWNLOAD_URL \
   --output /absolute/evidence/26.04.6
@@ -63,7 +67,7 @@ FHT or native FHGM.
 
 ## Remaining delivery and dependency direction
 
-Actual toolkit 0.13 publication/installed receipts precede final native release
+Actual toolkit publication/installed receipts precede final native release
 acceptance. A default conda/container promotion additionally needs an actual
 Bioconda package, BioContainer and Galaxy depot image plus reviewed upstream
 module revisions. Existing pinned upstream files stay byte-identical; no future

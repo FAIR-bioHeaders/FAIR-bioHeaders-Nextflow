@@ -202,7 +202,7 @@ upstream_pin(verify) = def10bc21ae4952973f9e07952fc899aa060dfc5
 These are the holes the matrix exists to make visible. None of them is fixed by this
 document; each names its owner.
 
-1. **Deliberate runtime promotion.** The default pins remain0.9.0. Actual PyPI latest was independently read as0.12.0 on 2026-11-20 during this preparation; final 0.13 publication and native installed acceptance are separate. See [the handoff](FIVE-TYPE-HANDOFF.md); neither a new specification tag nor a candidate version string updates conda/container support.
+1. **Deliberate runtime promotion.** The default pins remain0.9.0. Actual PyPI latest was independently read as0.12.0 on 2026-11-20 during this preparation; corrected 0.13.1 publication and native installed acceptance are separate. See [the handoff](FIVE-TYPE-HANDOFF.md); neither a new specification tag nor a candidate version string updates conda/container support.
 2. **Upstream module bump (`def10bc2`): done 2026-11-18.** Upstream nf-core/modules commit
    `def10bc21a` ("fairbioheaders: quote prefix-derived output paths", nf-core/modules#13771,
    merged 2026-11-14T19:06:18Z) double-quotes the prefix-derived output paths of

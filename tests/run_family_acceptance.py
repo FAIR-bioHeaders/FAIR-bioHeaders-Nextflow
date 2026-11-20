@@ -24,7 +24,7 @@ def main():
     parser.add_argument('--nextflow', required=True)
     parser.add_argument('--bioheaders', required=True)
     parser.add_argument('--output', required=True, type=Path)
-    parser.add_argument('--expected-toolkit', default='0.13.0')
+    parser.add_argument('--expected-toolkit', required=True)
     parser.add_argument('--preparation-only', action='store_true')
     parser.add_argument('--wheel', type=Path)
     parser.add_argument('--wheel-sha256')
