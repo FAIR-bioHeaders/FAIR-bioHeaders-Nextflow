@@ -112,7 +112,7 @@ def main():
             link_reports = list((prepared/'work').rglob('source-links.verify-links.txt'))
             assert len(link_reports) == 1
             assert 'not checked' not in link_reports[0].read_text().lower()
-        rows.append({'case': label, 'family': family, 'kind': kind, 'compressed': compressed, 'formats': formats.split(','), 'exit': 0, 'published': artifacts})
+        rows.append({'case': label, 'family': family, 'kind': kind, 'compressed': compressed, 'formats': formats.split(','), 'exit': 0, 'parentIdentity': 'checked-pass' if parent else 'not-requested', 'featureBiology': 'not-run', 'published': artifacts})
         return metadata, expected_payload
 
     prepared_inputs = {}

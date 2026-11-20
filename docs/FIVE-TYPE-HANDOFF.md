@@ -27,8 +27,10 @@ conformance corpus. No biological provenance or metadata is invented.
 external working directory. It uses the existing create/validate, upstream
 verify/convert/combine, attach, strip and parent-link modules. Native Groovy
 assertions compare metadata values and exact payload bytes; no validator or
-checksum implementation is duplicated here. All verification/assertion branches
-must complete before normal results are published.
+checksum implementation is duplicated here. Source checks and all round-trip
+assertion branches must complete before normal results are published. Parent
+identity is asserted only for the explicit supplied-parent case; other cases
+record it as not requested, rather than counting an unchecked parent as a pass.
 
 | Type | Prepared operation/serialization checks | Explicit boundaries |
 | --- | --- | --- |
@@ -47,6 +49,9 @@ source proof; a candidate version string is insufficient.
 python tests/run_family_acceptance.py \
   --nextflow /absolute/path/nextflow \
   --bioheaders /absolute/released/venv/bin/bioheaders \
+  --wheel /absolute/release/fair_bioheaders-0.13.0-py3-none-any.whl \
+  --wheel-sha256 MEASURED_PYPI_SHA256 \
+  --artifact-url VERIFIED_RELEASE_DOWNLOAD_URL \
   --output /absolute/evidence/26.04.6
 ```
 
