@@ -70,12 +70,46 @@ David and Adam are the maintainers and jointly hold schema authority; the steeri
 
 This repository uses MPL-2.0. Preserve its source notices and keep CITATION.cff and README licensing consistent. Do not apply the companion repositories' USDA government-work notice to this suite. External dependencies retain their own licenses.
 
-## Licensing policy (2026-10-09)
+## Licensing policy
 
-This repository already uses MPL-2.0. Preserve its existing LICENSE and all
-third-party terms. The USDA public-domain notices in companion repositories
-do not apply here. Keep README badges and package/citation metadata consistent;
-do not rewrite historical releases or silently relicense upstream material.
+**This repository uses MPL-2.0.** Preserve its existing LICENSE and all third-party terms.
+The USDA public-domain notices in companion repositories do not apply here.
+
+**Software (new project-owned code from March 2025 onward):** MPL-2.0 — the family standard
+for new software contributions. David Molik left USDA in February 2025; contributions before
+that date carry public-domain / PDDL-era terms within the United States. The project's
+`LICENSE` file documents the provenance split between these eras. Do not normalize old
+notices to the new license, and do not "clean up" a historical PDDL/public-domain line.
+
+**Test datasets and generated databases:** ODbL-1.0 (Open Database License) for newly created
+project-owned database collections where the project has authority to grant database rights.
+Reference: <https://opendatacommons.org/licenses/odbl/>. This applies to test snapshot files,
+pipeline example data compilations and derived Nextflow channel-contract metadata where
+the project holds relevant rights.
+
+**Database rights versus content rights:** ODbL licenses the structure, curation and
+compilation of a database — not individual sequences, images, articles, books or other
+constituent works within it. Document the applicable terms for each source's constituent
+material separately. A project cannot grant ODbL-1.0 over third-party sequence data,
+NCBI-published records, INSDC minimum-specification texts, or any biological resource
+that was not authored by the project.
+
+**Mixed fixtures:** Distinguish (1) newly authored metadata headers and database schema,
+(2) database compilation/organization structure, (3) original Nextflow/NF code (MPL-2.0),
+and (4) third-party or public-domain source payloads. Do not apply a blanket license to a
+mixed fixture that contradicts any component's terms.
+
+**Preserved material:** Retain historical USDA/public-domain notices, previously distributed
+license permissions, third-party terms and immutable fixture bytes. Copying, converting,
+annotating, packaging or generating derivatives from third-party material does not establish
+ownership or authority to relicense it. Preserve released artifact bytes (conformance vectors,
+example data, schema snapshots) as-is. Do not rewrite historical releases or silently
+relicense upstream material. Keep README badges and package/citation metadata consistent.
+
+**Uncertainty:** Where rights or ODbL applicability are uncertain, document the specific
+question for maintainer disposition — do not invent permissions, ownership or legal
+conclusions. Flag for review: derived data with unclear upstream authority, cross-jurisdictional
+public-domain equivalence, and newly generated datasets built from mixed-license sources.
 
 ## Pin changes and the two Nextflow integration surfaces
 
